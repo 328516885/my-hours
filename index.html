@@ -3,23 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>אברהם יונג - חזון דב | מערכת נוכחות</title>
+    <title>אברהם יונג - חזון דב | מערכת נוכחות מתקדמת</title>
     <style>
         :root {
+            --bg-body: #f2f4f7;
+            --bg-card: #ffffff;
+            --text-main: #333333;
             --primary: #1A3A5C;
             --secondary: #2E6DA4;
             --accent: #d9534f;
             --light: #f8f9fa;
             --border: #d3d3d3;
             --btn-blue: #007bff;
+            --table-hover: #f1f5f9;
         }
+
+        body.dark-theme {
+            --bg-body: #12181f;
+            --bg-card: #1e2630;
+            --text-main: #e1e8ed;
+            --primary: #2c5282;
+            --secondary: #3182ce;
+            --light: #2a3441;
+            --border: #3c4858;
+            --table-hover: #2d3748;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f2f4f7;
+            background-color: var(--bg-body);
             margin: 0;
             padding: 20px;
-            color: #333;
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
         }
+
         .login-wrapper {
             display: flex;
             justify-content: center;
@@ -27,43 +45,67 @@
             min-height: 85vh;
         }
         .login-card {
-            background: #ffffff;
+            background: var(--bg-card);
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             width: 100%;
             max-width: 420px;
             padding: 40px 30px;
             text-align: center;
-            border: 1px solid #e1e8ed;
+            border: 1px solid var(--border);
         }
         .login-card h2 { margin-top: 0; color: var(--primary); font-size: 24px; }
-        .login-card p { color: #666; font-size: 14px; margin-bottom: 25px; }
+        .login-card p { color: #888; font-size: 14px; margin-bottom: 25px; }
         .form-group { margin-bottom: 18px; text-align: right; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #444; }
-        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; background: var(--bg-card); color: var(--text-main); }
         .btn-login { width: 100%; background-color: var(--btn-blue); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-login:hover { background-color: #0056b3; }
         .forgot-link { display: inline-block; margin-top: 15px; color: var(--secondary); text-decoration: none; font-size: 13px; cursor: pointer; }
-        .forgot-link:hover { text-decoration: underline; }
         .error-msg { color: var(--accent); font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
         .success-msg { color: #5cb85c; font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
+
         #mainApp, #resetStep1, #resetStep2 { display: none; }
-        .container { max-width: 1350px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        header { background-color: var(--primary); color: white; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; position: relative; }
+        .container { max-width: 1350px; margin: 0 auto; background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        
+        header { background-color: var(--primary); color: white; padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 20px; position: relative; }
         header h1 { margin: 0 0 5px 0; font-size: 26px; }
         header p { margin: 0; font-size: 13px; opacity: 0.9; }
-        .logout-btn { position: absolute; left: 15px; top: 15px; background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px; border-radius: 6px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
-        .month-label-display { background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 15px; }
-        .btn { background-color: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
-        .btn-green { background-color: #5cb85c; }
+        
+        .top-nav-btns { position: absolute; left: 15px; top: 15px; display: flex; gap: 8px; }
+        .nav-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
+        .nav-btn:hover { background: rgba(255,255,255,0.4); }
+
+        /* Dashboard Stats Panel */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--light); padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
+        .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; opacity: 0.8; }
+        .stat-card .value { font-size: 22px; font-weight: bold; color: var(--secondary); }
+        .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-bar-fill { background: #5cb85c; height: 100%; width: 0%; transition: width 0.5s ease; }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
+        .month-label-display { background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 15px; }
+        
+        .btn { background-color: var(--secondary); color: white; border: none; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-green { background-color: #28a745; }
+        .btn-excel { background-color: #1d6f42; }
         .btn-red { background-color: var(--accent); }
+
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
         th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
         th { background-color: var(--primary); color: white; }
-        .week-summary-row { background-color: #e8eef5; font-weight: bold; color: var(--primary); }
-        .month-summary-row { background-color: #1A3A5C; color: white; font-weight: bold; font-size: 15px; }
-        @media print { body { background: #fff; padding: 0; } .container { box-shadow: none; padding: 0; } .no-print { display: none !important; } }
+        td input { background: transparent; border: 1px solid transparent; color: var(--text-main); text-align: center; font-family: inherit; width: 95%; }
+        td input:focus { border-color: var(--secondary); background: var(--bg-card); outline: none; border-radius: 4px; }
+        
+        .week-summary-row { background-color: var(--light); font-weight: bold; color: var(--primary); }
+        .month-summary-row { background-color: var(--primary); color: white; font-weight: bold; font-size: 15px; }
+
+        @media print { 
+            body { background: #fff; color: #000; padding: 0; } 
+            .container { box-shadow: none; padding: 0; border: none; } 
+            .no-print { display: none !important; } 
+        }
     </style>
 </head>
 <body>
@@ -118,14 +160,36 @@
 
 <div id="mainApp" class="container">
     <header>
-        <button class="logout-btn no-print" onclick="handleLogout()">יציאה 🚪</button>
+        <div class="top-nav-btns no-print">
+            <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
+            <button class="nav-btn" onclick="exportBackup()">💾 גיבוי נתונים</button>
+            <button class="nav-btn" onclick="importBackup()">📂 טעון גיבוי</button>
+            <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
+        </div>
         <h1>אברהם יונג - חזון דב</h1>
-        <p>יומן שעות עבודה חודשי | תצוגה נקייה, חישוב שעות וסיכומים</p>
+        <p>מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
     </header>
+
+    <!-- Dashboard Panel -->
+    <div class="dashboard-grid no-print">
+        <div class="stat-card">
+            <h4>סה״כ שעות החודש</h4>
+            <div class="value" id="dashMonthHours">0.00 שעות</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="hoursProgressBar"></div></div>
+        </div>
+        <div class="stat-card">
+            <h4>סה״כ שכר משוער</h4>
+            <div class="value" id="dashMonthPay">0.00 ₪</div>
+        </div>
+        <div class="stat-card">
+            <h4>מגמה לעומת חודש שעבר</h4>
+            <div class="value" id="dashTrend">0%</div>
+        </div>
+    </div>
 
     <div class="controls no-print">
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <label for="monthPicker"><b>בחר חודש ושנה:</b></label>
+            <label for="monthPicker"><b>בחר חודש وشנה:</b></label>
             <input type="month" id="monthPicker" value="2026-09" onchange="syncFromPicker()">
             
             <label><b>מספר חודש (1-12):</b></label>
@@ -133,8 +197,9 @@
             
             <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
         </div>
-        <div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
+            <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
     </div>
@@ -201,14 +266,10 @@ function sendResetCode() {
     
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('sendMsg').style.display = 'block';
-    document.getElementById('sendError').style.display = 'none';
 
     fetch("https://formsubmit.co/ajax/" + email, {
         method: "POST",
-        headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
             name: "מערכת נוכחות - אברהם יונג",
             message: "קוד האימות שלך לשחזור הסיסמה הוא: " + generatedCode
@@ -248,6 +309,15 @@ function handleLogout() {
     sessionStorage.removeItem('isLoggedIn');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+}
+
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-theme');
 }
 
 function showApp() {
@@ -417,7 +487,7 @@ function render() {
         totalWeekPay += calc.pay;
 
         let tr = document.createElement('tr');
-        if (dayOfWeek === 6) tr.style.backgroundColor = '#f0f4f8';
+        if (dayOfWeek === 6) tr.style.backgroundColor = 'rgba(46, 109, 164, 0.1)';
 
         tr.innerHTML = `
             <td><input type="date" value="${item.date}" onblur="updateRow('${item.id}', 'date', this.value)"></td>
@@ -460,6 +530,40 @@ function render() {
         <td colspan="3"></td>
     `;
     tbody.appendChild(trM);
+
+    updateDashboard(totalMonthHours, totalMonthPay);
+}
+
+function updateDashboard(currentHours, currentPay) {
+    document.getElementById('dashMonthHours').innerText = `${currentHours.toFixed(2)} שעות`;
+    document.getElementById('dashMonthPay').innerText = `${currentPay.toFixed(2)} ₪`;
+
+    let maxTarget = 160; 
+    let percent = Math.min(100, (currentHours / maxTarget) * 100);
+    document.getElementById('hoursProgressBar').style.width = `${percent}%`;
+
+    let monthVal = document.getElementById('monthPicker').value;
+    let [y, m] = monthVal.split('-').map(Number);
+    let prevMonthNum = m === 1 ? 12 : m - 1;
+    let prevYear = m === 1 ? y - 1 : y;
+    let prevMonthKey = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}`;
+
+    let allShifts = getSavedShifts();
+    let prevData = allShifts[prevMonthKey] || [];
+    let prevHours = 0;
+    prevData.forEach(item => {
+        prevHours += calculatePay(item.inTime, item.outTime).hours;
+    });
+
+    let trendEl = document.getElementById('dashTrend');
+    if (prevHours > 0) {
+        let diff = ((currentHours - prevHours) / prevHours) * 100;
+        trendEl.innerText = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+        trendEl.style.color = diff >= 0 ? '#5cb85c' : '#d9534f';
+    } else {
+        trendEl.innerText = 'אין נתונים קודמים';
+        trendEl.style.color = 'inherit';
+    }
 }
 
 function updateRow(id, field, value) {
@@ -490,7 +594,6 @@ function duplicateRow(dateStr) {
     render();
 }
 
-// הוספת משמרת לפי בחירת תאריך מדויק
 function addCustomShiftByDate() {
     let todayStr = new Date().toISOString().split('T')[0];
     let selectedDate = prompt("הזן תאריך למשמרת חדשה (בפורמט YYYY-MM-DD):", todayStr);
@@ -526,6 +629,59 @@ function addCustomShiftByDate() {
     allShifts[targetMonth] = currentMonthData;
     saveShifts(allShifts);
     loadMonth();
+}
+
+function exportToExcel() {
+    let csv = "\uFEFFתאריך,יום,כניסה,יציאה,סה\"כ שעות,סה\"כ ₪,דירה / מיקום,הערות\n";
+    currentMonthData.forEach(item => {
+        let parts = item.date.split('-');
+        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        let calc = calculatePay(item.inTime, item.outTime);
+        csv += `"${item.date}","${daysHebrew[dateObj.getDay()]}","${item.inTime}","${item.outTime}","${calc.hours.toFixed(2)}","${calc.pay.toFixed(2)}","${item.apartment}","${item.note}"\n`;
+    });
+
+    let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    let link = document.createElement("a");
+    let monthVal = document.getElementById('monthPicker').value;
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `דוח_שעות_${monthVal}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportBackup() {
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localStorage));
+    let downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `גיבוי_מערכת_שעות_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+function importBackup() {
+    let input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = e => {
+        let file = e.target.files[0];
+        let reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+        reader.onload = readerEvent => {
+            let content = readerEvent.target.result;
+            try {
+                let parsed = JSON.parse(content);
+                Object.keys(parsed).forEach(key => {
+                    localStorage.setItem(key, parsed[key]);
+                });
+                alert("הגיבוי נטען בהצלחה!");
+                loadMonth();
+            } catch (err) {
+                alert("קובץ לא תקין");
+            }
+        }
+    }
+    input.click();
 }
 
 function saveCurrentMonth() {
