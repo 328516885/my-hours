@@ -86,7 +86,6 @@
         .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
         .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
 
-        /* עיצוב גרף עמודות אינטראקטיבי אמיתי */
         .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 130px; padding-top: 15px; border-bottom: 2px solid var(--border); gap: 6px; }
         .chart-bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; cursor: pointer; position: relative; }
         .chart-bar { width: 100%; max-width: 26px; background: var(--secondary); border-radius: 4px 4px 0 0; transition: height 0.4s ease, background 0.2s; }
@@ -311,7 +310,6 @@ function verifyAndResetPassword() {
     }
 }
 
-// פונקציית גיבוי אמינה לשליחה ישירה למייל עם הצגת קוד גיבוי מובטח
 function sendSecureBackupEmail() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -573,10 +571,9 @@ function updateDashboard(currentHours) {
     document.getElementById('dashMonthHours').innerText = `${currentHours.toFixed(2)} שעות`;
     let maxTarget = 160; 
     let percent = Math.min(100, (currentHours / maxTarget) * 100);
-    document.getElementById('hoursProgressBar').style.width = `${percent}`;
+    document.getElementById('hoursProgressBar').style.width = `${percent}%`;
 }
 
-// יצירת גרף עמודות חזותי אמיתי עם הצגת שעות במעבר עכבר (Tooltip)
 function renderVisualChart() {
     let chartEl = document.getElementById('monthlyChart');
     chartEl.innerHTML = '';
@@ -601,8 +598,6 @@ function renderVisualChart() {
         let heightPercent = Math.max(8, (item.hours / maxHoursFound) * 100);
         let wrapper = document.createElement('div');
         wrapper.className = 'chart-bar-wrapper';
-        
-        // הצגת השעות במעבר עכבר (Tooltip) וכשלוחצים עובר לחודש המבוקש
         wrapper.title = `${item.monthName}: ${item.hours.toFixed(2)} שעות סך הכל (לחץ למעבר לחודש)`;
         
         wrapper.onclick = () => {
