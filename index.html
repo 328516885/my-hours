@@ -1,91 +1,907 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head> 
-<meta charset="UTF-8"> 
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-<title>Abraham Jung | Advanced attendance system</title> 
-<meta name="theme-color" content="#1A3A5C"> 
-<style> 
-:root { 
---bg-body: #eef2f5; 
---bg-card: #ffffff; 
---text-main: #2b3648; 
---primary: #1A3A5C; 
---secondary: #2E6DA4; 
---accent: #d9534f; 
---light: #f4f7f9; 
---border: #cbd5e1; 
---btn-blue: #007bff; 
---purple: #6f42c1; 
-} 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אברהם יונג | מערכת נוכחות מתקדמת</title>
+    <meta name="theme-color" content="#1A3A5C">
+    <style>
+        :root {
+            --bg-body: #eef2f5;
+            --bg-card: #ffffff;
+            --text-main: #2b3648;
+            --primary: #1A3A5C;
+            --secondary: #2E6DA4;
+            --accent: #d9534f;
+            --light: #f4f7f9;
+            --border: #cbd5e1;
+            --btn-blue: #007bff;
+            --purple: #6f42c1;
+        }
 
-body.dark-theme { 
---bg-body: #0f172a; 
---bg-card: #1e293b; 
---text-main: #f1f5f9; 
---primary: #1e3a5f; 
---secondary: #3b82f6; 
---light: #334155; 
---border: #475569; 
-} 
+        body.dark-theme {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --primary: #1e3a5f;
+            --secondary: #3b82f6;
+            --light: #334155;
+            --border: #475569;
+        }
 
-body { 
-font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-background-color: var(--bg-body); 
-margin: 0; 
-padding: 15px; 
-color: var(--text-main); 
-transition: background-color 0.3s, color 0.3s; 
-} 
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            padding: 15px;
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
 
-.login-wrapper { display: flex; justify-content: center; align-items: center; min-height: 85vh; } 
-.login-card { 
-background: var(--bg-card); 
-border-radius: 12px; 
-box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-width: 100%; 
-max-width: 420px; 
-padding: 40px 30px; 
-text-align: center; 
-border: 1px solid var(--border); 
-} 
-.login-card h2 { margin-top: 0; color: var(--primary); font-size: 24px; } 
-.login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; } 
-.form-group { margin-bottom: 18px; text-align: right; } 
-.form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; } 
-.form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; background: var(--bg-card); color: var(--text-main); } 
-.btn-login { width: 100%; background-color: var(--btn-blue); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; } 
-.forgot-link { display: inline-block; margin-top: 15px; color: var(--secondary); text-decoration: none; font-size: 13px; cursor: pointer; } 
-.error-msg { color: var(--accent); font-size: 13px; margin-top: 12px; display: none; font-weight: bold; } 
-.success-msg { color: #5cb85c; font-size: 13px; margin-top: 12px; display: none; font-weight: bold; } 
+        .login-wrapper { display: flex; justify-content: center; align-items: center; min-height: 85vh; }
+        .login-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 30px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .login-card h2 { margin-top: 0; color: var(--primary); font-size: 24px; }
+        .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 18px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; background: var(--bg-card); color: var(--text-main); }
+        .btn-login { width: 100%; background-color: var(--btn-blue); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .forgot-link { display: inline-block; margin-top: 15px; color: var(--secondary); text-decoration: none; font-size: 13px; cursor: pointer; }
+        .error-msg { color: var(--accent); font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
+        .success-msg { color: #5cb85c; font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
 
-#mainApp, #resetStep1, #resetStep2 { display: none; } 
+        #mainApp, #resetStep1, #resetStep2 { display: none; }
+        
+        .container-full { 
+            width: 100%; 
+            box-sizing: border-box; 
+            background: var(--bg-card); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); 
+            border: 1px solid var(--border); 
+        }
+        
+        header { background: linear-gradient(135deg, var(--primary), #0d233a); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; position: relative; }
+        header h1 { margin: 0 0 5px 0; font-size: 28px; letter-spacing: 0.5px; }
+        header p { margin: 0; font-size: 14px; opacity: 0.9; }
+        
+        .top-nav-btns { position: absolute; left: 15px; top: 18px; display: flex; gap: 10px; }
+        .nav-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
 
-.container-full { 
-width: 100%; 
-box-sizing: border-box; 
-background: var(--bg-card); 
-padding: 20px; 
-border-radius: 12px; 
-box-shadow: 0 4px 20px rgba(0,0,0,0.06); 
-border: 1px solid var(--border); 
-} 
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--light); padding: 18px; border-radius: 10px; border: 1px solid var(--border); text-align: center; position: relative; }
+        .stat-card h4 { margin: 0 0 8px 0; font-size: 14px; opacity: 0.85; }
+        .stat-card .value { font-size: 24px; font-weight: bold; color: var(--secondary); }
+        .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+        .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
 
-header { background: linear-gradient(135deg, var(--primary), #0d233a); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; position: relative; } 
-header h1 { margin: 0 0 5px 0; font-size: 28px; letter-spacing: 0.5px; } 
-header p { margin: 0; font-size: 14px; opacity: 0.9; } 
+        .chart-container { position: relative; height: 140px; padding-top: 15px; border-bottom: 2px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; }
+        .chart-svg { position: absolute; top: 15px; left: 0; width: 100%; height: 100px; overflow: visible; pointer-events: none; }
+        .chart-labels-row { display: flex; justify-content: space-between; width: 100%; position: absolute; bottom: -22px; font-size: 10px; font-weight: 600; color: var(--text-main); }
 
-.top-nav-btns { position: absolute; left: 15px; top: 18px; display: flex; gap: 10px; } 
-.nav-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; } 
-.nav-btn:hover { background: rgba(255,255,255,0.3); } 
+        .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
+        .month-label-display { background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: bold; font-size: 15px; }
+        
+        .btn { background-color: var(--secondary); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-green { background-color: #10b981; }
+        .btn-excel { background-color: #15803d; }
+        .btn-purple { background-color: var(--purple); }
+        .btn-red { background-color: var(--accent); }
+        .btn-blue-custom { background-color: var(--btn-blue); }
 
-.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px; } 
-.stat-card { background: var(--light); padding: 18px; border-radius: 10px; border: 1px solid var(--border); text-align: center; position: relative; } 
-.stat-card h4 { margin: 0 0 8px 0; font-size: 14px; opacity: 0.85; } 
-.stat-card .value { font-size: 24px; font-weight: bold; color: var(--secondary); } 
-.progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; } 
-.progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; } 
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        th, td { border: 1px solid var(--border); padding: 10px 6px; text-align: center; }
+        th { background-color: var(--primary); color: white; font-weight: 600; }
+        
+        .note-input { width: 98% !important; text-align: right !important; padding: 4px 6px; }
+        
+        td input { background: transparent; border: 1px solid transparent; color: var(--text-main); text-align: center; font-family: inherit; font-size: 13px; }
+        td input:focus { border-color: var(--secondary); background: var(--bg-card); outline: none; border-radius: 4px; box-shadow: 0 0 0 2px rgba(46,109,164,0.2); }
+        
+        .alert-dot { color: #ef4444; font-weight: bold; margin-right: 4px; font-size: 15px; cursor: help; }
+        .week-summary-row { background-color: var(--light); font-weight: bold; color: var(--primary); }
+        .month-summary-row { background-color: var(--primary); color: white; font-weight: bold; font-size: 16px; }
 
-.chart-container { position: relative; height: 140px; padding-top: 15px; border-bottom: 2px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; } 
-.chart-svg { position: absolute; top: 15px; left: 0; width: 100%; height: 100px; overflow: visible; pointer-events: none; } 
-.chart-labels-row { display: flex; justify-content: space-between; width: 100%; position: absolute; bottom: -22px; font-size: 10px; font-weight: 600; color: var
+        .year-end-summary-box { display: none; background: linear-gradient(135deg, #1e3a5f, #0d233a); color: white; padding: 25px; border-radius: 12px; margin-top: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); border: 2px solid #3b82f6; }
+        .year-end-summary-box h3 { margin-top: 0; color: #60a5fa; font-size: 22px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .year-end-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .year-stat-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center; }
+        .year-stat-card .val { font-size: 24px; font-weight: bold; color: #34d399; margin-top: 5px; }
+
+        /* חלון מודל לעדכון שעות קבועות לימים בשבוע */
+        #presetModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-card { background: var(--bg-card); padding: 25px; border-radius: 12px; width: 90%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border); }
+        .modal-card h3 { margin-top: 0; color: var(--primary); }
+
+        @media print { 
+            body { background: #fff; color: #000; padding: 0; } 
+            .container-full { box-shadow: none; padding: 0; border: none; } 
+            .no-print { display: none !important; } 
+            .year-end-summary-box { display: block !important; background: #fff !important; color: #000 !important; border: 1px solid #000 !important; }
+            .year-stat-card { background: #f4f7f9 !important; border: 1px solid #ccc !important; }
+            .year-stat-card .val { color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrapper">
+    <div id="loginFormCard" class="login-card">
+        <h2>שלום אברהם, טוב לראות אותך!</h2>
+        <p>כניסה למערכת דיווח שעות נוכחות</p>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="username">שם משתמש (דוא"ל):</label>
+                <input type="text" id="username" value="ay0533115854@gmail.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">סיסמה:</label>
+                <input type="password" id="password" placeholder="הכנס סיסמה" required>
+            </div>
+            <button type="submit" class="btn-login">התחברות</button>
+            <div id="loginError" class="error-msg">שם המשתמש או הסיסמה אינם נכונים</div>
+            <a class="forgot-link" onclick="showResetStep1()">שכחת סיסמה? לחץ כאן לשחזור</a>
+        </form>
+    </div>
+
+    <div id="resetStep1" class="login-card">
+        <h2>שחזור סיסמה</h2>
+        <p>הזן את כתובת הדוא"ל שלך לקבלת קוד אימות</p>
+        <div class="form-group">
+            <label for="resetEmail">דוא"ל:</label>
+            <input type="email" id="resetEmail" value="ay0533115854@gmail.com">
+        </div>
+        <button id="sendBtn" class="btn-login" onclick="sendResetCode()">שלח קוד אימות למייל</button>
+        <div id="sendMsg" class="success-msg">שולח קוד אימות... אנא המתן.</div>
+        <div id="sendError" class="error-msg">שגיאה בתקשורת. אנא נסה שוב.</div>
+        <a class="forgot-link" onclick="showLoginForm()">חזרה להתחברות</a>
+    </div>
+
+    <div id="resetStep2" class="login-card">
+        <h2>איפוס סיסמה</h2>
+        <p>הזן את קוד האימות שנשלח אל <b>ay0533115854@gmail.com</b> והגדר סיסמה חדשה</p>
+        <div class="form-group">
+            <label for="inputCode">קוד אימות שנשלח למייל:</label>
+            <input type="text" id="inputCode" placeholder="הכנס קוד בן 4 ספרות">
+        </div>
+        <div class="form-group">
+            <label for="newPass">סיסמה חדשה:</label>
+            <input type="text" id="newPass" placeholder="הכנס סיסמה חדשה">
+        </div>
+        <button class="btn-login" onclick="verifyAndResetPassword()">עדכן סיסמה והתחבר</button>
+        <div id="resetError" class="error-msg">קוד האימות שגוי או שלא הוגדרה סיסמה</div>
+    </div>
+</div>
+
+<!-- מודל ניהול שעות קבועות לימים (כפתור כחול) -->
+<div id="presetModal">
+    <div class="modal-card">
+        <h3>⚙️ הגדרת שעות קבועות לפי יום בשבוע</h3>
+        <p style="font-size: 13px; color: #64748b;">קבע את השעות לכל יום (למשל יום חמישי ב-05:00 או איפוס ליום שישי). בלחיצה על החלת שעות, הן יתעדכנו לפי הגדרות אלו.</p>
+        <div id="weeklyPresetsContainer" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;"></div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-green" onclick="applyWeeklyPresetsToMonth()">החל על החודש הנוכחי</button>
+            <button class="btn btn-red" onclick="closePresetModal()">סגור</button>
+        </div>
+    </div>
+</div>
+
+<div id="mainApp" class="container-full">
+    <header>
+        <div class="top-nav-btns no-print">
+            <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
+            <button class="nav-btn" onclick="executeSafeCloudBackup()">✉️ גיבוי ענן מאובטח</button>
+            <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
+        </div>
+        <h1>אברהם יונג</h1>
+        <p>מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
+    </header>
+
+    <div class="dashboard-grid no-print">
+        <div class="stat-card">
+            <h4>סה״כ שעות החודש הנבחר</h4>
+            <div class="value" id="dashMonthHours">0.00 שעות</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="hoursProgressBar"></div></div>
+        </div>
+        <div class="stat-card">
+            <h4>📈 גרף מעקב שנתי (לחץ על נקודה/חודש לפרטים)</h4>
+            <div class="chart-container" id="monthlyChartContainer">
+                <svg class="chart-svg" id="chartSvgElement"></svg>
+                <div class="chart-labels-row" id="chartLabelsRow"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls no-print">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <label for="monthPicker"><b>בחר חודש:</b></label>
+            <input type="month" id="monthPicker" value="2026-09" onchange="loadMonth()">
+            <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
+            <button class="btn btn-blue-custom" onclick="openPresetModal()">⚙️ שעות קבועות לימים</button>
+            <button class="btn btn-purple" onclick="executeSafeCloudBackup()">✉️ גיבוי ענן למייל</button>
+            <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
+            <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 130px;">תאריך</th>
+                <th style="width: 60px;">יום</th>
+                <th style="width: 90px;">כניסה</th>
+                <th style="width: 90px;">יציאה</th>
+                <th style="width: 90px;">סה״כ שעות</th>
+                <th style="width: 100px;">סה״כ יומי ₪</th>
+                <th style="width: 160px;">דירה / מיקום</th>
+                <th>הוראות / הערות / חגים ושבתות</th>
+                <th class="no-print" style="width: 220px;">פעולות</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <div id="yearEndSummary" class="year-end-summary-box">
+        <h3>🎯 סיכום שנתי מרוכז לרואה חשבון (דצמבר / סוף שנה)</h3>
+        <p>להלן הסיכום השנתי המלא הכולל את כל השעות והשכר שנצברו מתחילת השנה ועד סופה:</p>
+        <div class="year-end-stats">
+            <div class="year-stat-card">
+                <div>סה״כ שעות שנתיות</div>
+                <div class="val" id="totalYearHours">0.00 שעות</div>
+            </div>
+            <div class="year-stat-card">
+                <div>סה״כ שכר שנתי</div>
+                <div class="val" id="totalYearPay">0.00 ₪</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;" class="no-print">
+            <button class="btn btn-excel" onclick="exportFullYearExcel()">📊 ייצא את כל השנה לאקסל</button>
+            <button class="btn btn-red" onclick="window.print()">🔴 הפק PDF / הדפס דוח שנתי מלא</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const DEFAULT_USER = "ay0533115854@gmail.com";
+let generatedCode = null;
+
+function getSavedPassword() {
+    return localStorage.getItem('user_password') || "123456789";
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    let userIn = document.getElementById('username').value.trim();
+    let passIn = document.getElementById('password').value.trim();
+    let errDiv = document.getElementById('loginError');
+
+    if (userIn === DEFAULT_USER && passIn === getSavedPassword()) {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        showApp();
+    } else {
+        errDiv.style.display = 'block';
+    }
+}
+
+function showResetStep1() {
+    document.getElementById('loginFormCard').style.display = 'none';
+    document.getElementById('resetStep1').style.display = 'block';
+    document.getElementById('sendError').style.display = 'none';
+    document.getElementById('sendMsg').style.display = 'none';
+}
+
+function showLoginForm() {
+    document.getElementById('resetStep1').style.display = 'none';
+    document.getElementById('resetStep2').style.display = 'none';
+    document.getElementById('loginFormCard').style.display = 'block';
+}
+
+function sendResetCode() {
+    let email = document.getElementById('resetEmail').value.trim();
+    if (email !== DEFAULT_USER) {
+        alert('כתובת הדוא"ל אינה תואמת למערכת');
+        return;
+    }
+    
+    generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
+    alert("קוד האימות לשחזור הסיסמה שלך הוא: " + generatedCode);
+    document.getElementById('resetStep1').style.display = 'none';
+    document.getElementById('resetStep2').style.display = 'block';
+}
+
+function verifyAndResetPassword() {
+    let inputCode = document.getElementById('inputCode').value.trim();
+    let newPass = document.getElementById('newPass').value.trim();
+    let resetErr = document.getElementById('resetError');
+
+    if (inputCode === generatedCode && newPass.length > 0) {
+        localStorage.setItem('user_password', newPass);
+        alert('הסיסמה עודכנה בהצלחה! כעת תוכל להתחבר.');
+        showLoginForm();
+    } else {
+        resetErr.style.display = 'block';
+    }
+}
+
+function executeSafeCloudBackup() {
+    let dataObj = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        dataObj[key] = localStorage.getItem(key);
+    }
+    let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
+
+    let blob = new Blob([encodedData], { type: 'text/plain;charset=utf-8;' });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `shuky_backup_secure_${new Date().toISOString().split('T')[0]}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    let subject = encodeURIComponent("🔒 גיבוי ענן מאובטח - מערכת נוכחות אברהם יונג (" + new Date().toLocaleDateString('he-IL') + ")");
+    let body = encodeURIComponent("שלום אברהם,\n\nזהו גיבוי הענן המעודכן שלך ממערכת ניהול השעות מתאריך " + new Date().toLocaleString('he-IL') + ".\n\nהנה מחרוזת הנתונים המלאה לשחזור במקרה הצורך:\n\n" + encodedData);
+
+    window.location.href = `mailto:${DEFAULT_USER}?subject=${subject}&body=${body}`;
+    alert("✅ קובץ גיבוי ירד בהצלחה למחשב שלך, ונפתח חלון שליחה למייל שלך!");
+}
+
+function handleLogout() {
+    executeSafeCloudBackup();
+    sessionStorage.removeItem('isLoggedIn');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+}
+
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-theme');
+}
+
+function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    loadMonth();
+}
+
+if (sessionStorage.getItem('isLoggedIn') === 'true') {
+    showApp();
+}
+
+const monthNamesHebrew = [
+    "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+    "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
+];
+
+const events = {
+    "2026-08-01": "שבת | פרשת עֵקֶב",
+    "2026-08-08": "שבת | פרשת רְאֵה",
+    "2026-08-15": "שבת | פרשת שֹׁפְטִים",
+    "2026-08-22": "שבת | פרשת כִּי תֵצֵא",
+    "2026-08-29": "שבת | פרשת כִּי תָבוֹא",
+
+    "2026-09-05": "שבת | פרשת נִצָּבִים",
+    "2026-09-11": "ערב ראש השנה תשפ\"ז",
+    "2026-09-12": "שבת | חג ראש השנה - יום א'",
+    "2026-09-13": "חג ראש השנה - יום ב'",
+    "2026-09-14": "צום גדליה",
+    "2026-09-19": "שבת שובה | פרשת וַיֵּלֶךְ",
+    "2026-09-20": "ערב יום כיפור",
+    "2026-09-21": "חג יום כיפור",
+    "2026-09-25": "ערב חג סוכות",
+    "2026-09-26": "שבת | חג סוכות (יום א')",
+    "2026-09-27": "חול המועד סוכות",
+    "2026-09-28": "חול המועד סוכות",
+    "2026-09-29": "חול המועד סוכות",
+    "2026-09-30": "חול המועד סוכות",
+
+    "2026-10-01": "הושענא רבה | ערב שמחת תורה",
+    "2026-10-02": "חג שמיני עצרת / שמחת תורה",
+    "2026-10-03": "שבת | פרשת בְּרֵאשִׁית",
+    "2026-10-10": "שבת | פרשת נֹחַ",
+    "2026-10-17": "שבת | פרשת לֶךְ-לְךָ",
+    "2026-10-24": "שבת | פרשת וַיֵּרָא",
+    "2026-10-31": "שבת | פרשת חַיֵּי שָׂרָה"
+};
+
+const daysHebrew = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "שבת"];
+let currentMonthData = [];
+
+function getSavedShifts() {
+    let saved = localStorage.getItem('shuky_monthly_shifts_v3');
+    return saved ? JSON.parse(saved) : {};
+}
+
+function saveShifts(allData) {
+    localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
+}
+
+// ניהול שעות קבועות לפי יום בשבוע (ראשון עד שבת)
+function getWeeklyPresets() {
+    let saved = localStorage.getItem('shuky_weekly_presets');
+    if (saved) return JSON.parse(saved);
+    let defaults = {};
+    for (let i = 0; i < 7; i++) {
+        // ברירת מחדל לכל ימים: 15:00 עד 07:45 (מלבד שישי שיושאר ריק או לפי בחירה)
+        defaults[i] = { inTime: (i === 5 ? "" : "15:00"), outTime: (i === 5 ? "" : "07:45") };
+    }
+    return defaults;
+}
+
+function saveWeeklyPresets(presets) {
+    localStorage.setItem('shuky_weekly_presets', JSON.stringify(presets));
+}
+
+function openPresetModal() {
+    let container = document.getElementById('weeklyPresetsContainer');
+    container.innerHTML = '';
+    let presets = getWeeklyPresets();
+
+    daysHebrew.forEach((dayName, idx) => {
+        let row = document.createElement('div');
+        row.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: var(--light); border-radius: 6px;";
+        row.innerHTML = `
+            <span style="font-weight: bold; width: 60px;">יום ${dayName}</span>
+            <label style="font-size: 12px;">כניסה: <input type="time" id="preset_in_${idx}" value="${presets[idx].inTime || ''}" style="padding: 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);"></label>
+            <label style="font-size: 12px;">יציאה: <input type="time" id="preset_out_${idx}" value="${presets[idx].outTime || ''}" style="padding: 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);"></label>
+        `;
+        container.appendChild(row);
+    });
+
+    document.getElementById('presetModal').style.display = 'flex';
+}
+
+function closePresetModal() {
+    document.getElementById('presetModal').style.display = 'none';
+}
+
+function applyWeeklyPresetsToMonth() {
+    let presets = {};
+    for (let i = 0; i < 7; i++) {
+        presets[i] = {
+            inTime: document.getElementById(`preset_in_${i}`).value,
+            outTime: document.getElementById(`preset_out_${i}`).value
+        };
+    }
+    saveWeeklyPresets(presets);
+
+    currentMonthData.forEach(item => {
+        let parts = item.date.split('-');
+        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        let dayOfWeek = dateObj.getDay();
+        if (presets[dayOfWeek]) {
+            item.inTime = presets[dayOfWeek].inTime;
+            item.outTime = presets[dayOfWeek].outTime;
+        }
+    });
+
+    saveCurrentMonth();
+    render();
+    closePresetModal();
+    alert("השעות הקבועות הוחלו בהצלחה על החודש!");
+}
+
+function loadMonth() {
+    let monthVal = document.getElementById('monthPicker').value;
+    if (!monthVal) return;
+
+    let [year, month] = monthVal.split('-').map(Number);
+    let monthName = monthNamesHebrew[month - 1];
+    let monthFormattedNum = String(month).padStart(2, '0');
+    document.getElementById('monthNameTag').innerText = `${monthName} | ${monthFormattedNum}`;
+
+    let allShifts = getSavedShifts();
+    
+    if (allShifts[monthVal] && allShifts[monthVal].length > 0) {
+        currentMonthData = allShifts[monthVal];
+    } else {
+        currentMonthData = [];
+        let daysInMonth = new Date(year, month, 0).getDate();
+        
+        for (let d = 1; d <= daysInMonth; d++) {
+            let dayStr = String(d).padStart(2, '0');
+            let monthStr = String(month).padStart(2, '0');
+            let fullDate = `${year}-${monthStr}-${dayStr}`;
+            let dateObj = new Date(year, month - 1, d);
+            let dayOfWeek = dateObj.getDay();
+            let note = events[fullDate] || (dayOfWeek === 6 ? "שבת" : "");
+
+            // התחלה ריקה לגמרי כפי שביקשת (למעט חגים/שבתות בהערות אם צריך)
+            currentMonthData.push({
+                id: 'shift_' + Math.random().toString(36).substr(2, 9),
+                date: fullDate,
+                inTime: '',
+                outTime: '',
+                apartment: 'זבוטינסקי 107',
+                note: note
+            });
+        }
+        allShifts[monthVal] = currentMonthData;
+        saveShifts(allShifts);
+    }
+    render();
+}
+
+// כפתור מהיר בשורה: מזין 15:00 עד 07:45 רק בלחיצה
+function setRowPreset(id) {
+    let item = currentMonthData.find(x => x.id === id);
+    if (item) {
+        item.inTime = "15:00";
+        item.outTime = "07:45";
+        saveCurrentMonth();
+        render();
+    }
+}
+
+// כפתור איפוס (❌) ליום שבו אינך עובד
+function clearRowShift(id) {
+    let item = currentMonthData.find(x => x.id === id);
+    if (item) {
+        item.inTime = '';
+        item.outTime = '';
+        saveCurrentMonth();
+        render();
+    }
+}
+
+function calculatePay(inTime, outTime) {
+    if (!inTime || !outTime) return { hours: 0, pay: 0 };
+    let [inH, inM] = inTime.split(':').map(Number);
+    let [outH, outM] = outTime.split(':').map(Number);
+    let start = inH + inM / 60;
+    let end = outH + outM / 60;
+    
+    let totalHours = end >= start ? (end - start) : ((24 - start) + end);
+    let startM = inH * 60 + inM;
+    let endM = outH * 60 + outM;
+    if (endM <= startM) endM += 24 * 60;
+    
+    let hasNightShift = false;
+    for (let m = startM; m < endM; m++) {
+        let mod = m % (24 * 60);
+        if (mod >= 0 && mod < 6 * 60 + 30) {
+            hasNightShift = true;
+            break;
+        }
+    }
+    
+    let nightMinutes = 0;
+    for (let m = startM; m < endM; m++) {
+        let mod = m % (24 * 60);
+        if (mod >= 0 && mod < 6 * 60 + 30) nightMinutes++;
+    }
+    let nightHours = nightMinutes / 60;
+    let dayHours = Math.max(0, totalHours - nightHours);
+
+    let totalPay = (dayHours * 35.41) + (hasNightShift ? 124.25 : 0);
+
+    return { hours: totalHours, pay: totalPay };
+}
+
+function render() {
+    let tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    
+    let totalMonthHours = 0;
+    let totalMonthPay = 0;
+    let totalWeekHours = 0;
+    let totalWeekPay = 0;
+
+    currentMonthData.sort((a, b) => a.date.localeCompare(b.date));
+
+    currentMonthData.forEach((item, index) => {
+        let parts = item.date.split('-');
+        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        let dayOfWeek = dateObj.getDay();
+        
+        let calc = calculatePay(item.inTime, item.outTime);
+        totalMonthHours += calc.hours;
+        totalMonthPay += calc.pay;
+        totalWeekHours += calc.hours;
+        totalWeekPay += calc.pay;
+
+        let hasAnomaly = calc.hours > 20 || (item.inTime && !item.outTime) || (!item.inTime && item.outTime);
+
+        let tr = document.createElement('tr');
+        if (dayOfWeek === 6) tr.style.backgroundColor = 'rgba(46, 109, 164, 0.08)';
+
+        tr.innerHTML = `
+            <td>
+                ${hasAnomaly ? '<span class="alert-dot" title="שים לב: חוסר בשעת כניסה/יציאה">⚠️</span>' : ''}
+                <input type="date" value="${item.date}" onblur="updateRow('${item.id}', 'date', this.value)">
+            </td>
+            <td><b>${daysHebrew[dayOfWeek]}</b></td>
+            <td><input type="time" value="${item.inTime}" onblur="updateRow('${item.id}', 'inTime', this.value)"></td>
+            <td><input type="time" value="${item.outTime}" onblur="updateRow('${item.id}', 'outTime', this.value)"></td>
+            <td><b>${calc.hours > 0 ? calc.hours.toFixed(2) : ''}</b></td>
+            <td><b>${calc.pay > 0 ? calc.pay.toFixed(2) + ' ₪' : ''}</b></td>
+            <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
+            <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
+            <td class="no-print">
+                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="הזן שעות 15:00-07:45">⚡ שעות</button>
+                <button style="background:#f59e0b; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="clearRowShift('${item.id}')" title="איפוס שעות ליום חופש">❌ איפוס</button>
+                <button style="background:#10b981; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+</button>
+                <button style="background:#ef4444; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+
+        let nextItem = currentMonthData[index + 1];
+        if (dayOfWeek === 6 || !nextItem) {
+            let trW = document.createElement('tr');
+            trW.className = 'week-summary-row';
+            trW.innerHTML = `
+                <td colspan="4" style="text-align:right;">📖 סיכום שבועי:</td>
+                <td>${totalWeekHours > 0 ? totalWeekHours.toFixed(2) : ''}</td>
+                <td>${totalWeekPay > 0 ? totalWeekPay.toFixed(2) + ' ₪' : ''}</td>
+                <td colspan="3"></td>
+            `;
+            tbody.appendChild(trW);
+            totalWeekHours = 0;
+            totalWeekPay = 0;
+        }
+    });
+
+    let trM = document.createElement('tr');
+    trM.className = 'month-summary-row';
+    trM.innerHTML = `
+        <td colspan="4" style="text-align:right;">📅 סה״כ לכל החודש:</td>
+        <td>${totalMonthHours > 0 ? totalMonthHours.toFixed(2) : ''}</td>
+        <td>${totalMonthPay > 0 ? totalMonthPay.toFixed(2) + ' ₪' : ''}</td>
+        <td colspan="3"></td>
+    `;
+    tbody.appendChild(trM);
+
+    updateDashboard(totalMonthHours);
+    renderStockMarketChart();
+    checkYearEndDisplay();
+}
+
+function updateDashboard(currentHours) {
+    document.getElementById('dashMonthHours').innerText = `${currentHours.toFixed(2)} שעות`;
+    let maxTarget = 160; 
+    let percent = Math.min(100, (currentHours / maxTarget) * 100);
+    document.getElementById('hoursProgressBar').style.width = `${percent}%`;
+}
+
+function renderStockMarketChart() {
+    let svgEl = document.getElementById('chartSvgElement');
+    let labelsRow = document.getElementById('chartLabelsRow');
+    svgEl.innerHTML = '';
+    labelsRow.innerHTML = '';
+
+    let allShifts = getSavedShifts();
+    let chartData = [];
+    let maxHoursFound = 50;
+
+    for (let m = 1; m <= 12; m++) {
+        let mStr = String(m).padStart(2, '0');
+        let key = `2026-${mStr}`;
+        let monthShifts = allShifts[key] || [];
+        let sumH = 0;
+        monthShifts.forEach(item => {
+            sumH += calculatePay(item.inTime, item.outTime).hours;
+        });
+        if (sumH > maxHoursFound) maxHoursFound = sumH;
+        chartData.push({ monthNum: m, monthName: monthNamesHebrew[m-1], hours: sumH, monthKey: key });
+    }
+
+    let pointsCoords = [];
+    let svgWidth = svgEl.clientWidth || 500;
+    let svgHeight = 90;
+    let stepX = svgWidth / (chartData.length - 1);
+
+    chartData.forEach((item, index) => {
+        let x = index * stepX;
+        let y = svgHeight - (item.hours / maxHoursFound) * svgHeight;
+        if (isNaN(y)) y = svgHeight;
+        pointsCoords.push({x, y, item});
+
+        let lbl = document.createElement('div');
+        lbl.style.cssText = "flex: 1; text-align: center; font-size: 10px; font-weight: bold; cursor: pointer;";
+        lbl.innerText = item.monthName;
+        lbl.title = `${item.monthName}: ${item.hours.toFixed(2)} שעות (לחץ למעבר)`;
+        lbl.onclick = () => {
+            document.getElementById('monthPicker').value = item.monthKey;
+            loadMonth();
+        };
+        labelsRow.appendChild(lbl);
+    });
+
+    let pointsStr = pointsCoords.map(p => `${p.x},${p.y}`).join(' ');
+    let polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    polyline.setAttribute("points", pointsStr);
+    polyline.setAttribute("fill", "none");
+    polyline.setAttribute("stroke", "var(--secondary)");
+    polyline.setAttribute("stroke-width", "3");
+    svgEl.appendChild(polyline);
+
+    pointsCoords.forEach(p => {
+        let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", p.x);
+        circle.setAttribute("cy", p.y);
+        circle.setAttribute("r", "5");
+        circle.setAttribute("fill", "var(--purple)");
+        circle.style.cursor = "pointer";
+        
+        circle.setAttribute("title", `${p.item.monthName}: ${p.item.hours.toFixed(2)} שעות`);
+        
+        circle.onclick = () => {
+            document.getElementById('monthPicker').value = p.item.monthKey;
+            loadMonth();
+            alert(`חודש ${p.item.monthName}: צברת סה״כ ${p.item.hours.toFixed(2)} שעות.`);
+        };
+        svgEl.appendChild(circle);
+    });
+}
+
+function checkYearEndDisplay() {
+    let monthVal = document.getElementById('monthPicker').value;
+    let [year, month] = monthVal.split('-').map(Number);
+    let box = document.getElementById('yearEndSummary');
+
+    if (month === 12) {
+        box.style.display = 'block';
+        let allShifts = getSavedShifts();
+        let totalYearHours = 0;
+        let totalYearPay = 0;
+
+        for (let m = 1; m <= 12; m++) {
+            let mKey = `${year}-${String(m).padStart(2, '0')}`;
+            let monthShifts = allShifts[mKey] || [];
+            monthShifts.forEach(item => {
+                let calc = calculatePay(item.inTime, item.outTime);
+                totalYearHours += calc.hours;
+                totalYearPay += calc.pay;
+            });
+        }
+
+        document.getElementById('totalYearHours').innerText = `${totalYearHours.toFixed(2)} שעות`;
+        document.getElementById('totalYearPay').innerText = `${totalYearPay.toFixed(2)} ₪`;
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+function exportFullYearExcel() {
+    let monthVal = document.getElementById('monthPicker').value;
+    let year = monthVal.split('-')[0];
+    let allShifts = getSavedShifts();
+
+    let csv = "\uFEFFחודש,תאריך,יום,כניסה,יציאה,סה\"כ שעות,סה\"כ ₪,דירה / מיקום,הערות\n";
+    
+    for (let m = 1; m <= 12; m++) {
+        let mKey = `${year}-${String(m).padStart(2, '0')}`;
+        let monthShifts = allShifts[mKey] || [];
+        monthShifts.forEach(item => {
+            let parts = item.date.split('-');
+            if(parts.length === 3) {
+                let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                let calc = calculatePay(item.inTime, item.outTime);
+                csv += `"${monthNamesHebrew[m-1]}","${item.date}","${daysHebrew[dateObj.getDay()]}","${item.inTime}","${item.outTime}","${calc.hours.toFixed(2)}","${calc.pay.toFixed(2)}","${item.apartment}","${item.note}"\n`;
+            }
+        });
+    }
+
+    let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `דוח_שנתי_מלא_${year}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function updateRow(id, field, value) {
+    let item = currentMonthData.find(x => x.id === id);
+    if (item && item[field] !== value) {
+        item[field] = value;
+        saveCurrentMonth();
+        render();
+    }
+}
+
+function deleteRow(id) {
+    currentMonthData = currentMonthData.filter(x => x.id !== id);
+    saveCurrentMonth();
+    render();
+}
+
+function duplicateRow(dateStr) {
+    currentMonthData.push({
+        id: 'shift_' + Math.random().toString(36).substr(2, 9),
+        date: dateStr,
+        inTime: '',
+        outTime: '',
+        apartment: 'זבוטינסקי 107',
+        note: 'משמרת נוספת'
+    });
+    saveCurrentMonth();
+    render();
+}
+
+function addCustomShiftByDate() {
+    let todayStr = new Date().toISOString().split('T')[0];
+    let selectedDate = prompt("הזן תאריך למשמרת חדשה (בפורמט YYYY-MM-DD):", todayStr);
+    
+    if (!selectedDate) return;
+
+    let parts = selectedDate.split('-');
+    if (parts.length !== 3) {
+        alert("תאריך לא תקין");
+        return;
+    }
+
+    let targetMonth = `${parts[0]}-${parts[1]}`;
+    document.getElementById('monthPicker').value = targetMonth;
+    
+    let allShifts = getSavedShifts();
+    if (!allShifts[targetMonth]) {
+        loadMonth(); 
+        allShifts = getSavedShifts();
+    } else {
+        currentMonthData = allShifts[targetMonth];
+    }
+
+    currentMonthData.push({
+        id: 'shift_' + Math.random().toString(36).substr(2, 9),
+        date: selectedDate,
+        inTime: '',
+        outTime: '',
+        apartment: 'זבוטינסקי 107',
+        note: 'משמרת נוספת'
+    });
+
+    allShifts[targetMonth] = currentMonthData;
+    saveShifts(allShifts);
+    loadMonth();
+}
+
+function exportToExcel() {
+    let csv = "\uFEFFתאריך,יום,כניסה,יציאה,סה\"כ שעות,סה\"כ ₪,דירה / מיקום,הערות\n";
+    currentMonthData.forEach(item => {
+        let parts = item.date.split('-');
+        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        let calc = calculatePay(item.inTime, item.outTime);
+        csv += `"${item.date}","${daysHebrew[dateObj.getDay()]}","${item.inTime}","${item.outTime}","${calc.hours.toFixed(2)}","${calc.pay.toFixed(2)}","${item.apartment}","${item.note}"\n`;
+    });
+
+    let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    let link = document.createElement("a");
+    let monthVal = document.getElementById('monthPicker').value;
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `דוח_שעות_${monthVal}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function saveCurrentMonth() {
+    let monthVal = document.getElementById('monthPicker').value;
+    let allShifts = getSavedShifts();
+    allShifts[monthVal] = currentMonthData;
+    saveShifts(allShifts);
+}
+</script>
+
+</body>
+</html>
