@@ -86,7 +86,6 @@
         .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
         .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
 
-        /* הגרף השנתי המתוקן */
         .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 130px; padding-top: 15px; border-bottom: 2px solid var(--border); gap: 4px; }
         .chart-bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; cursor: pointer; position: relative; height: 100%; justify-content: flex-end; }
         .chart-bar { width: 100%; max-width: 22px; background: var(--secondary); border-radius: 4px 4px 0 0; transition: height 0.4s ease, background 0.2s; min-height: 4px; }
@@ -102,7 +101,6 @@
         .btn-excel { background-color: #15803d; }
         .btn-purple { background-color: var(--purple); }
         .btn-red { background-color: var(--accent); }
-        .btn-orange { background-color: #d97706; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
         th, td { border: 1px solid var(--border); padding: 10px 6px; text-align: center; }
@@ -122,10 +120,6 @@
         .year-end-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
         .year-stat-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center; }
         .year-stat-card .val { font-size: 24px; font-weight: bold; color: #34d399; margin-top: 5px; }
-
-        #presetModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-card { background: var(--bg-card); padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border); }
-        .modal-card h3 { margin-top: 0; color: var(--primary); }
 
         @media print { 
             body { background: #fff; color: #000; padding: 0; } 
@@ -187,19 +181,6 @@
     </div>
 </div>
 
-<!-- מודל הגדרת שעות קבועות לימים בשבוע -->
-<div id="presetModal">
-    <div class="modal-card">
-        <h3>⚙️ הגדרת שעות קבועות לפי יום בשבוע</h3>
-        <p style="font-size: 13px; color: #64748b;">קבע את שעות הכניסה והיציאה לכל יום בנפרד (כולל שבתות וימים מיוחדים), והחל בלחיצה אחת!</p>
-        <div id="weeklyPresetsContainer" style="max-height: 280px; overflow-y: auto; margin-bottom: 15px;"></div>
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button class="btn btn-green" onclick="applyWeeklyPresetsToCurrentMonth()">החל על כל ימי החודש</button>
-            <button class="btn btn-red" onclick="closePresetModal()">סגור</button>
-        </div>
-    </div>
-</div>
-
 <div id="mainApp" class="container-full">
     <header>
         <div class="top-nav-btns no-print">
@@ -231,7 +212,6 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-            <button class="btn btn-orange" onclick="openPresetModal()">⚙️ שעות קבועות לימים</button>
             <button class="btn btn-purple" onclick="downloadBackupFile()">💾 צור קובץ גיבוי מאובטח</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
@@ -249,13 +229,12 @@
                 <th style="width: 100px;">סה״כ יומי ₪</th>
                 <th style="width: 160px;">דירה / מיקום</th>
                 <th>הוראות / הערות / חגים ושבתות</th>
-                <th class="no-print" style="width: 220px;">פעולות</th>
+                <th class="no-print" style="width: 250px;">פעולות</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
 
-    <!-- קופסת סיכום שנתי שמופיעה רק בדצמבר או בסוף השנה -->
     <div id="yearEndSummary" class="year-end-summary-box">
         <h3>🎯 סיכום שנתי מרוכז לרואה חשבון (דצמבר / סוף שנה)</h3>
         <p>להלן הסיכום השנתי המלא הכולל את כל השעות והשכר שנצברו מתחילת השנה ועד סופה:</p>
@@ -320,7 +299,6 @@ function sendResetCode() {
     
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('sendMsg').style.display = 'block';
-    // הדפסת קוד על המסך לשחזור מלא ומיידי ללא תלות במייל חיצוני
     setTimeout(() => {
         alert("קוד האימות שלך לשחזור הסיסמה הוא: " + generatedCode);
         document.getElementById('resetStep1').style.display = 'none';
@@ -342,7 +320,6 @@ function verifyAndResetPassword() {
     }
 }
 
-// גיבוי מקומי בטוח ומובטח שמוריד קובץ טקסט מלא לכל הנתונים
 function downloadBackupFile() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -358,7 +335,6 @@ function downloadBackupFile() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     alert("קובץ הגיבוי נוצר והורד בהצלחה למכשיר שלך!");
 }
 
@@ -436,69 +412,6 @@ function saveShifts(allData) {
     localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
 }
 
-function getWeeklyPresets() {
-    let saved = localStorage.getItem('shuky_weekly_presets');
-    if (saved) return JSON.parse(saved);
-    let defaults = {};
-    for (let i = 0; i < 7; i++) {
-        defaults[i] = { inTime: "15:00", outTime: "07:45" };
-    }
-    return defaults;
-}
-
-function saveWeeklyPresets(presets) {
-    localStorage.setItem('shuky_weekly_presets', JSON.stringify(presets));
-}
-
-function openPresetModal() {
-    let container = document.getElementById('weeklyPresetsContainer');
-    container.innerHTML = '';
-    let presets = getWeeklyPresets();
-
-    daysHebrew.forEach((dayName, idx) => {
-        let row = document.createElement('div');
-        row.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: var(--light); border-radius: 6px;";
-        row.innerHTML = `
-            <span style="font-weight: bold; width: 60px;">יום ${dayName}</span>
-            <label style="font-size: 12px;">כניסה: <input type="time" id="preset_in_${idx}" value="${presets[idx].inTime || ''}" style="padding: 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);"></label>
-            <label style="font-size: 12px;">יציאה: <input type="time" id="preset_out_${idx}" value="${presets[idx].outTime || ''}" style="padding: 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);"></label>
-        `;
-        container.appendChild(row);
-    });
-
-    document.getElementById('presetModal').style.display = 'flex';
-}
-
-function closePresetModal() {
-    document.getElementById('presetModal').style.display = 'none';
-}
-
-function applyWeeklyPresetsToCurrentMonth() {
-    let presets = {};
-    for (let i = 0; i < 7; i++) {
-        presets[i] = {
-            inTime: document.getElementById(`preset_in_${i}`).value,
-            outTime: document.getElementById(`preset_out_${i}`).value
-        };
-    }
-    saveWeeklyPresets(presets);
-
-    currentMonthData.forEach(item => {
-        let parts = item.date.split('-');
-        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        let dayOfWeek = dateObj.getDay();
-        if (presets[dayOfWeek]) {
-            item.inTime = presets[dayOfWeek].inTime;
-            item.outTime = presets[dayOfWeek].outTime;
-        }
-    });
-
-    saveCurrentMonth();
-    render();
-    closePresetModal();
-    alert("השעות הקבועות הוחלו בהצלחה על כל ימי החודש!");
-}
-
 function loadMonth() {
     let monthVal = document.getElementById('monthPicker').value;
     if (!monthVal) return;
@@ -515,7 +428,6 @@ function loadMonth() {
     } else {
         currentMonthData = [];
         let daysInMonth = new Date(year, month, 0).getDate();
-        let presets = getWeeklyPresets();
         
         for (let d = 1; d <= daysInMonth; d++) {
             let dayStr = String(d).padStart(2, '0');
@@ -528,8 +440,8 @@ function loadMonth() {
             currentMonthData.push({
                 id: 'shift_' + Math.random().toString(36).substr(2, 9),
                 date: fullDate,
-                inTime: presets[dayOfWeek] ? presets[dayOfWeek].inTime : '',
-                outTime: presets[dayOfWeek] ? presets[dayOfWeek].outTime : '',
+                inTime: '',
+                outTime: '',
                 apartment: 'זבוטינסקי 107',
                 note: note
             });
@@ -540,10 +452,10 @@ function loadMonth() {
     render();
 }
 
+// כפתור מהיר לעדכון שעות משמרת ספציפית
 function setRowPreset(id) {
     let item = currentMonthData.find(x => x.id === id);
     if (item) {
-        // מעניק אפשרות לשנות או להחיל ישירות מהכפתור שעות מותאמות אישית
         let customIn = prompt("הכנס שעת כניסה (למשל 15:00):", "15:00");
         if (customIn === null) return;
         let customOut = prompt("הכנס שעת יציאה (למשל 07:45):", "07:45");
@@ -551,6 +463,17 @@ function setRowPreset(id) {
 
         item.inTime = customIn;
         item.outTime = customOut;
+        saveCurrentMonth();
+        render();
+    }
+}
+
+// כפתור איפוס/מחיקת שעות ליום שבו אינך עובד (כמו יום שישי)
+function clearRowShift(id) {
+    let item = currentMonthData.find(x => x.id === id);
+    if (item) {
+        item.inTime = '';
+        item.outTime = '';
         saveCurrentMonth();
         render();
     }
@@ -630,7 +553,8 @@ function render() {
             <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
             <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
             <td class="no-print">
-                <button style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="לחץ לשינוי מהיר של שעות משמרת זו">⚡ שדה מהיר</button>
+                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="שנה שעות משמרת זו">⚡ שעות</button>
+                <button style="background:#f59e0b; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="clearRowShift('${item.id}')" title="נקה שעות ליום חופש / ללא עבודה">❌ איפוס</button>
                 <button style="background:#10b981; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+</button>
                 <button style="background:#ef4444; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
             </td>
@@ -675,7 +599,6 @@ function updateDashboard(currentHours) {
     document.getElementById('hoursProgressBar').style.width = `${percent}%`;
 }
 
-// בדיקה האם להציג את קופסת סיכום סוף שנה
 function checkYearEndDisplay() {
     let monthVal = document.getElementById('monthPicker').value;
     let [year, month] = monthVal.split('-').map(Number);
@@ -733,7 +656,6 @@ function exportFullYearExcel() {
     document.body.removeChild(link);
 }
 
-// גרף שנתי מתוקן שמוצג כהלכה עם עמודות מוגדרות היטב
 function renderVisualChart() {
     let chartEl = document.getElementById('monthlyChart');
     chartEl.innerHTML = '';
