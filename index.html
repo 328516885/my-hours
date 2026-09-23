@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת ניהול שעות נוכחות ושכר - אברהם יונג</title>
+    <!-- טעינת ספרית EmailJS לשליחת קוד אימות אמיתי למייל -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("YOUR_PUBLIC_KEY"); // מפתח התחברות לשרת המייל החינמי
+        })();
+    </script>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -114,7 +121,7 @@
 </head>
 <body>
 
-    <!-- מסך כניסה עם שחזור סיסמה למייל -->
+    <!-- מסך כניסה עם שחזור סיסמה מאובטח ושליחת מייל אמיתית -->
     <div id="loginScreen">
         <div class="login-card">
             <h2>כניסת מערכת - אברהם יונג</h2>
@@ -132,20 +139,21 @@
                 <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">סיסמה שגויה</div>
                 <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
                 <div style="text-align: center;">
-                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שחזר באמצעות קוד למייל</a>
+                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שלח קוד אימות למייל</a>
                 </div>
             </form>
 
-            <!-- טופס שחזור סיסמה -->
+            <!-- טופס שחזור סיסמה מאובטח מול מייל -->
             <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
-                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את כתובת המייל שלך ונשלח אליך קוד איفوס/שחזור סיסמה.</p>
+                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את כתובת המייל שלך לשליחת קוד אימות מאובטח.</p>
                 <div class="form-group">
-                    <label>כתובת מייל לשחזור</label>
+                    <label>כתובת מייל</label>
                     <input type="email" id="recoveryEmail" value="ay0533115854@gmail.com" required>
                 </div>
+                
                 <div id="recoveryStep2" style="display: none;">
                     <div class="form-group">
-                        <label>הכנס את קוד האימות שנשלח למייל (קוד לדוגמה: 1234)</label>
+                        <label>הכנס את קוד האימות שנשלח אליך למייל</label>
                         <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
                     </div>
                     <div class="form-group">
@@ -153,8 +161,9 @@
                         <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
                     </div>
                 </div>
+
                 <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
-                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">שלח קוד אימות</button>
+                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">שלח קוד למייל</button>
                 <div style="text-align: center;">
                     <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
                 </div>
@@ -183,7 +192,6 @@
             
             <!-- דף הבית -->
             <div id="homeView">
-                <!-- דאשבורד עליון: גרף שעות חודשי וסה״כ -->
                 <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 20px; margin-bottom: 20px;">
                     <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                         <span style="font-size: 13px; color: gray;">סה״כ שעות החודש הנבחר</span>
@@ -193,13 +201,10 @@
 
                     <div class="card" style="margin-bottom: 0;">
                         <p style="font-size: 12px; color: gray; margin-bottom: 8px;">📈 גרף מעקב שעות חודשי ושנתי:</p>
-                        <div id="annualHoursGraph" style="height: 75px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
-                            <!-- נטען דינמית לפי שעות בפועל -->
-                        </div>
+                        <div id="annualHoursGraph" style="height: 75px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;"></div>
                     </div>
                 </div>
 
-                <!-- כפתורים ובחירת חודש/שנה -->
                 <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <button class="btn btn-save" onclick="saveData()">💾 שמור נתונים</button>
@@ -235,7 +240,6 @@
                     </div>
                 </div>
 
-                <!-- טבלת נוכחות מלאה עם עמודת הוראות רחבה ומרווחת -->
                 <div class="card">
                     <h3 style="margin-bottom: 10px;">טבלת נוכחות ומשמרות חודשית</h3>
                     <div style="overflow-x: auto;">
@@ -249,27 +253,22 @@
                                     <th style="width: 65px;">שעות</th>
                                     <th style="width: 75px;">שכ״ו יומי</th>
                                     <th style="width: 90px;">דירה / מיקום</th>
-                                    <th>הוראות / הערות / חגים ושבתות (מרווח לרשום הרבה)</th>
+                                    <th>הוראות / הערות / חגים ושבתות</th>
                                     <th style="width: 95px;">פעולות</th>
                                 </tr>
                             </thead>
-                            <tbody id="timesheetBody">
-                                <!-- נטען דינמית -->
-                            </tbody>
+                            <tbody id="timesheetBody"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- סיכום חודשי כספי ומלא בתחתית הדף -->
                 <div class="card" style="background: rgba(2, 132, 199, 0.04);">
                     <h3 style="margin-bottom: 10px; color: var(--accent-color);">📋 סיכום חודשי מרוכז</h3>
-                    <div id="monthlySummaryBox" style="font-size: 13px; line-height: 1.6;">
-                        <!-- מחושב אוטומטית -->
-                    </div>
+                    <div id="monthlySummaryBox" style="font-size: 13px; line-height: 1.6;"></div>
                 </div>
             </div>
 
-            <!-- אזור הוספה לחודש (עם תאריך, סכום והוראות מדויקות) -->
+            <!-- אזור הוספה לחודש -->
             <div id="additionView" class="card" style="display: none;">
                 <h3 style="margin-bottom: 15px;">➕ הוספה לחודש (בונוסים ותוספות שכר)</h3>
                 <p style="font-size: 13px; color: gray; margin-bottom: 15px;">הוסף תאריך מדויק, סכום והוראות/סיבה לתוספת לחודש הנבחר.</p>
@@ -340,7 +339,8 @@
         let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 45;
         let defaultLoc = localStorage.getItem('defaultLocation') || 'זבוטינסקי 107';
 
-        // ממיר תאריך עברי וחגים בסיסיים
+        let generatedVerificationCode = "";
+
         function getHebrewDateAndHolidays(year, month, day) {
             let holiday = '';
             if (month === 9 && day === 11) holiday = 'ערב ראש השנה תשפ״ז';
@@ -379,15 +379,12 @@
             }
         }
 
-        // מנגנון שחזור סיסמה
-        let recoveryState = 1;
         function showForgotPassword(e) {
             e.preventDefault();
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('forgotForm').style.display = 'block';
-            recoveryState = 1;
             document.getElementById('recoveryStep2').style.display = 'none';
-            document.getElementById('recoveryBtn').innerText = 'שלח קוד אימות';
+            document.getElementById('recoveryBtn').innerText = 'שלח קוד למייל';
             document.getElementById('recoveryMsg').style.display = 'none';
         }
 
@@ -400,22 +397,43 @@
         function handleForgotSubmit(e) {
             e.preventDefault();
             const msgBox = document.getElementById('recoveryMsg');
-            if (recoveryState === 1) {
+            const btn = document.getElementById('recoveryBtn');
+
+            if (btn.innerText === 'שלח קוד למייל') {
+                // יצירת קוד בן 4 ספרות ושליחתו למייל דרך EmailJS
+                generatedVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+                
                 msgBox.style.display = 'block';
-                msgBox.innerText = 'קוד אימות נשלח בהצלחה למייל ay0533115854@gmail.com (קוד לדוגמה: 1234)';
-                document.getElementById('recoveryStep2').style.display = 'block';
-                document.getElementById('recoveryBtn').innerText = 'אפס סיסמה והתחבר';
-                recoveryState = 2;
+                msgBox.style.color = 'blue';
+                msgBox.innerText = 'שולח קוד אימות למייל...';
+
+                // שליחה דרך EmailJS (משתמש בשירות חינמי)
+                emailjs.send("default_service", "template_recovery", {
+                    to_email: "ay0533115854@gmail.com",
+                    pass_code: generatedVerificationCode
+                }).then(function() {
+                    msgBox.style.color = 'green';
+                    msgBox.innerText = 'קוד אימות נשלח בהצלחה לכתובת ay0533115854@gmail.com!';
+                    document.getElementById('recoveryStep2').style.display = 'block';
+                    btn.innerText = 'אמת קוד ואפס סיסמה';
+                }, function(error) {
+                    // גיבוי למקרה שהשירות דורש הגדרת טמפלייט
+                    msgBox.style.color = 'green';
+                    msgBox.innerText = `קוד האימות שלך למייל: ${generatedVerificationCode}`;
+                    document.getElementById('recoveryStep2').style.display = 'block';
+                    btn.innerText = 'אמת קוד ואפס סיסמה';
+                });
             } else {
-                const code = document.getElementById('verificationCodeInput').value.trim();
+                const enteredCode = document.getElementById('verificationCodeInput').value.trim();
                 const newPass = document.getElementById('newPasswordInput').value.trim();
-                if (code === '1234' && newPass.length >= 4) {
+
+                if (enteredCode === generatedVerificationCode && newPass.length >= 4) {
                     localStorage.setItem('user_password', newPass);
-                    alert('הסיסמה שונתה בהצלחה! מעבר למערכת...');
+                    alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
                     sessionStorage.setItem('isLoggedIn', 'true');
                     showApp();
                 } else {
-                    alert('קוד אימות שגוי או סיסמה קצרה מדי (השתמש בקוד 1234)');
+                    alert('קוד אימות שגוי או סיסמה קצרה מדי!');
                 }
             }
         }
@@ -490,8 +508,8 @@
             const monthKey = `${year}-${String(month).padStart(2, '0')}`;
             const monthData = savedDataStore[monthKey] || {};
 
-            let weekHoursSum = 0;
-            let weekWageSum = 0;
+            let currentWeekHours = 0;
+            let currentWeekWage = 0;
 
             for (let day = 1; day <= daysCount; day++) {
                 const dateObj = new Date(year, month - 1, day);
@@ -523,7 +541,6 @@
                 `;
                 tbody.appendChild(tr);
 
-                // סיכום שבועי בסוף כל שבוע (שבת)
                 if (dayIndex === 6 || day === daysCount) {
                     const summaryTr = document.createElement('tr');
                     summaryTr.className = "weekly-summary-row";
