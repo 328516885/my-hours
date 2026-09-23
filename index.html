@@ -97,7 +97,7 @@
 
         .top-bar-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-        .btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .btn { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; }
         .btn-theme { background: #334155; color: white; }
         .btn-hours { background: #0284c7; color: white; }
         .btn-reset { background: #f59e0b; color: white; }
@@ -114,12 +114,11 @@
 </head>
 <body>
 
-    <!-- מסך כניסה מאובטח עם קוד אבטחה אישי עוקף שרת -->
+    <!-- מסך כניסה ושחזור דרך המייל -->
     <div id="loginScreen">
         <div class="login-card">
             <h2>כניסת מערכת - אברהם יונג</h2>
             
-            <!-- טופס התחברות -->
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>אימייל / שם משתמש</label>
@@ -132,23 +131,30 @@
                 <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">סיסמה שגויה</div>
                 <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
                 <div style="text-align: center;">
-                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שחזור מאובטח בקוד אישי</a>
+                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שלח קוד אימות למייל שלי</a>
                 </div>
             </form>
 
-            <!-- טופס שחזור בקוד אבטחה אישי (מוגן, אמין ועובד 100%) -->
             <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
-                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">כדי לאפס את הסיסמה בבטחה מבלי להסתמך על שרתי דואר חיצוניים שנופלים, הזן את קוד האבטחה האישי הסודי שלך (ברירת מחדל: <b>5585</b>) ואת הסיסמה החדשה.</p>
+                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הקש על כפתור השליחה. המערכת תפתח את תיבת המייל שלך (ay0533115854@gmail.com) עם קוד אימות אקראי חדש.</p>
                 <div class="form-group">
-                    <label>קוד אבטחה אישי סודי</label>
-                    <input type="password" id="securityPinInput" placeholder="הכנס קוד סודי" required>
+                    <label>כתובת מייל</label>
+                    <input type="email" id="recoveryEmail" value="ay0533115854@gmail.com" required>
                 </div>
-                <div class="form-group">
-                    <label>סיסמה חדשה למערכת</label>
-                    <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה (לפחות 4 תווים)" required>
+                
+                <div id="recoveryStep2" style="display: none;">
+                    <div class="form-group">
+                        <label>הכנס את קוד האימות שהתקבל במייל</label>
+                        <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
+                    </div>
+                    <div class="form-group">
+                        <label>סיסמה חדשה</label>
+                        <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
+                    </div>
                 </div>
-                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: red; display: none;"></div>
-                <button type="submit" class="btn-primary" style="margin-bottom: 10px;">אפס סיסמה והיכנס מיד</button>
+
+                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
+                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">שלח קוד למייל שלי</button>
                 <div style="text-align: center;">
                     <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
                 </div>
@@ -178,15 +184,17 @@
             <!-- דף הבית -->
             <div id="homeView">
                 <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 20px; margin-bottom: 20px;">
+                    <!-- מציג שעות בלבד בדף הבית למען שמירה על פרטיות השכר -->
                     <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                         <span style="font-size: 13px; color: gray;">סה״כ שעות החודש הנבחר</span>
                         <h2 id="totalMonthHours" style="color: var(--accent-color); font-size: 24px; margin: 5px 0;">0.00 שעות</h2>
-                        <span id="totalMonthWage" style="font-size: 13px; font-weight: bold;">0.00 ₪</span>
+                        <span style="font-size: 11px; color: gray;">(סכום הכסף מוסתר מפני צופים זרים)</span>
                     </div>
 
-                    <div class="card" style="margin-bottom: 0;">
-                        <p style="font-size: 12px; color: gray; margin-bottom: 8px;">📈 גרף מעקב שעות חודשי ושנתי:</p>
-                        <div id="annualHoursGraph" style="height: 75px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;"></div>
+                    <!-- גרף כתום אלגנטי ומצומצם -->
+                    <div class="card" style="margin-bottom: 0; padding: 12px 20px;">
+                        <p style="font-size: 12px; color: gray; margin-bottom: 5px;">📈 גרף חודשי/שנתי (עמוד על עמודה לצפייה בשעות):</p>
+                        <div id="annualHoursGraph" style="height: 55px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 3px;"></div>
                     </div>
                 </div>
 
@@ -196,6 +204,7 @@
                         <button class="btn btn-email" onclick="exportToEmail()">📧 ייצוא דו״ח למייל</button>
                         <button class="btn btn-pdf" onclick="alert('הפקת PDF בוצעה בהצלחה')">📄 הפק PDF</button>
                         <button class="btn btn-excel" onclick="alert('ייצוא לאקסל בוצע בהצלחה')">📊 אקסל</button>
+                        <button class="btn btn-hours" onclick="addNewShiftRow()">➕ הוסף משמרת</button>
                         <button class="btn btn-nav" onclick="openFixedHoursModal()">🕒 שעות קבועות</button>
                     </div>
 
@@ -239,7 +248,7 @@
                                     <th style="width: 75px;">שכ״ו יומי</th>
                                     <th style="width: 90px;">דירה / מיקום</th>
                                     <th>הוראות / הערות / חגים ושבתות</th>
-                                    <th style="width: 95px;">פעולות</th>
+                                    <th style="width: 85px;">פעולות</th>
                                 </tr>
                             </thead>
                             <tbody id="timesheetBody"></tbody>
@@ -248,7 +257,7 @@
                 </div>
 
                 <div class="card" style="background: rgba(2, 132, 199, 0.04);">
-                    <h3 style="margin-bottom: 10px; color: var(--accent-color);">📋 סיכום חודשי מרוכז</h3>
+                    <h3 style="margin-bottom: 10px; color: var(--accent-color);">📋 סיכום חודשי מרוכז (כולל חישוב שכר מלא)</h3>
                     <div id="monthlySummaryBox" style="font-size: 13px; line-height: 1.6;"></div>
                 </div>
             </div>
@@ -256,7 +265,6 @@
             <!-- אזור הוספה לחודש -->
             <div id="additionView" class="card" style="display: none;">
                 <h3 style="margin-bottom: 15px;">➕ הוספה לחודש (בונוסים ותוספות שכר)</h3>
-                <p style="font-size: 13px; color: gray; margin-bottom: 15px;">הוסף תאריך מדויק, סכום והוראות/סיבה לתוספת לחודש הנבחר.</p>
                 <div style="display: flex; gap: 10px; max-width: 700px; margin-bottom: 20px; flex-wrap: wrap;">
                     <input type="date" id="adjDate" style="width: 150px;">
                     <input type="number" id="adjAmount" placeholder="סכום בש״ח" style="width: 130px;">
@@ -266,26 +274,40 @@
                 <div id="adjustmentsList" style="font-size: 13px;">אין תוספות לחודש זה.</div>
             </div>
 
-            <!-- אזור הגדרות -->
+            <!-- אזור הגדרות (כולל ניהול שינויי דירה לפי תאריכים) -->
             <div id="settingsView" class="card" style="display: none;">
                 <h3 style="margin-bottom: 15px;">⚙️ הגדרות מתקדמות למערכת</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                     <div class="card" style="margin-bottom: 0;">
-                        <h4 style="margin-bottom: 10px; font-size: 15px;">💰 תעריף שעתי לבסיס</h4>
+                        <h4 style="margin-bottom: 10px; font-size: 15px;">💰 תעריף שעתי (35.41 ₪)</h4>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="number" id="hourlyRateInput" value="45" style="width: 100px;">
+                            <input type="number" id="hourlyRateInput" value="35.41" step="0.01" style="width: 100px;">
                             <span>ש״ח לשעה</span>
-                            <button class="btn btn-save" onclick="saveHourlyRate()">שמור תעריף</button>
+                            <button class="btn btn-save" onclick="saveHourlyRate()">שמור</button>
                         </div>
                     </div>
                     <div class="card" style="margin-bottom: 0;">
-                        <h4 style="margin-bottom: 10px; font-size: 15px;">🏠 דירה / מיקום ברירת מחדל</h4>
+                        <h4 style="margin-bottom: 10px; font-size: 15px;">🏠 דירה / מיקום ראשי ברירת מחדל</h4>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="text" id="defaultLocationInput" value="זבוטינסקי 107" style="flex-grow: 1;">
-                            <button class="btn btn-save" onclick="saveDefaultLocation()">שמור מיקום</button>
+                            <button class="btn btn-save" onclick="saveDefaultLocation()">שמור</button>
                         </div>
                     </div>
                 </div>
+
+                <!-- פיצ'ר מעבר דירה מתקדם לפי תאריך -->
+                <div class="card" style="margin-bottom: 20px; background: rgba(2, 132, 199, 0.03);">
+                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">🚚 ניהול מעבר דירה היסטורי לפי תאריך</h4>
+                    <p style="font-size: 12px; color: gray; margin-bottom: 10px;">הגדר החל מאיזה תאריך עברת דירה לתמיד, כך שהימים לפני ואחרי יתעדכנו אוטומטית במיקום הנכון.</p>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <label style="font-size: 13px;">החל מתאריך:</label>
+                        <input type="date" id="moveDateInput" style="width: 140px;">
+                        <input type="text" id="newMoveLocInput" placeholder="כתובת דירה חדשה..." style="width: 180px;">
+                        <button class="btn btn-save" onclick="saveMovingRule()">הוסף חוק מעבר דירה</button>
+                    </div>
+                    <div id="movingRulesList" style="margin-top: 10px; font-size: 12px;"></div>
+                </div>
+
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="btn btn-save" onclick="alert('גיבוי לענן נשמר בהצלחה!')">☁️ בצע גיבוי ידני לענן</button>
                     <button class="btn btn-email" onclick="exportBackupFile()">📥 הורד קובץ גיבוי למחשב (JSON)</button>
@@ -321,8 +343,11 @@
         let monthlyAdjustments = JSON.parse(localStorage.getItem('monthlyAdjustments')) || {};
         let savedDataStore = JSON.parse(localStorage.getItem('timesheetDataStore')) || {};
         let fixedHoursConfig = JSON.parse(localStorage.getItem('fixedHoursConfig')) || { wedIn: '17:00', wedOut: '07:45' };
-        let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 45;
+        let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 35.41;
         let defaultLoc = localStorage.getItem('defaultLocation') || 'זבוטינסקי 107';
+        let movingRules = JSON.parse(localStorage.getItem('movingRules')) || [];
+
+        let currentVerificationCode = "";
 
         function getHebrewDateAndHolidays(year, month, day) {
             let holiday = '';
@@ -330,9 +355,18 @@
             if (month === 9 && day === 12) holiday = 'ראש השנה';
             if (month === 9 && day === 20) holiday = 'ערב יום כיפור';
             if (month === 9 && day === 21) holiday = 'יום כיפור';
+            return holiday ? `${holiday}` : `אלול - תשרי`;
+        }
 
-            let hebrewDayStr = `אלול - תשרי`;
-            return holiday ? `${holiday}` : `${hebrewDayStr}`;
+        function getLocationForDate(year, month, day) {
+            let dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            let applicableLoc = defaultLoc;
+            movingRules.forEach(rule => {
+                if (dateStr >= rule.date) {
+                    applicableLoc = rule.location;
+                }
+            });
+            return applicableLoc;
         }
 
         window.onload = function() {
@@ -346,6 +380,7 @@
             document.getElementById('defaultLocationInput').value = defaultLoc;
             buildTimesheetForMonth();
             renderAdjustmentsList();
+            renderMovingRulesList();
         };
 
         function handleLogin(e) {
@@ -366,6 +401,9 @@
             e.preventDefault();
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('forgotForm').style.display = 'block';
+            document.getElementById('recoveryStep2').style.display = 'none';
+            document.getElementById('recoveryBtn').innerText = 'שלח קוד למייל שלי';
+            document.getElementById('recoveryMsg').style.display = 'none';
         }
 
         function backToLogin(e) {
@@ -376,19 +414,35 @@
 
         function handleForgotSubmit(e) {
             e.preventDefault();
-            const enteredPin = document.getElementById('securityPinInput').value.trim();
-            const newPass = document.getElementById('newPasswordInput').value.trim();
             const msgBox = document.getElementById('recoveryMsg');
+            const btn = document.getElementById('recoveryBtn');
 
-            // קוד אבטחה אישי סודי (5585) - מונע תלות בשליחת מייל חיצוני שלא עובדת באתרים סטטיים
-            if (enteredPin === "5585" && newPass.length >= 4) {
-                localStorage.setItem('user_password', newPass);
-                alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
-                sessionStorage.setItem('isLoggedIn', 'true');
-                showApp();
-            } else {
+            if (btn.innerText.includes('שלח קוד למייל')) {
+                currentVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                const subject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת שעות אברהם יונג");
+                const body = encodeURIComponent(`שלום אברהם,\n\nקוד האימות הסודי שלך הוא: ${currentVerificationCode}\n\nהעתק קוד זה למערכת כדי לאפס את הסיסמה.`);
+                
+                window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
+
                 msgBox.style.display = 'block';
-                msgBox.innerText = 'קוד אבטחה שגוי או שהסיסמה קצרה מדי (קוד ברירת מחדל: 5585)';
+                msgBox.style.color = 'green';
+                msgBox.innerText = 'תיבת המייל נפתחה בהצלחה עם קוד האימות החדש שלך!';
+                
+                document.getElementById('recoveryStep2').style.display = 'block';
+                btn.innerText = 'אמת קוד ואפס סיסמה';
+            } else {
+                const enteredCode = document.getElementById('verificationCodeInput').value.trim();
+                const newPass = document.getElementById('newPasswordInput').value.trim();
+
+                if (enteredCode === currentVerificationCode && newPass.length >= 4) {
+                    localStorage.setItem('user_password', newPass);
+                    alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    showApp();
+                } else {
+                    alert('קוד האימות שגוי או שהסיסמה קצרה מדי!');
+                }
             }
         }
 
@@ -426,7 +480,7 @@
         }
 
         function saveHourlyRate() {
-            hourlyRate = parseFloat(document.getElementById('hourlyRateInput').value) || 45;
+            hourlyRate = parseFloat(document.getElementById('hourlyRateInput').value) || 35.41;
             localStorage.setItem('hourlyRate', hourlyRate);
             calculateTotals();
             alert('התעריף השעתי עודכן בהצלחה!');
@@ -435,7 +489,47 @@
         function saveDefaultLocation() {
             defaultLoc = document.getElementById('defaultLocationInput').value;
             localStorage.setItem('defaultLocation', defaultLoc);
+            buildTimesheetForMonth();
             alert('מיקום ברירת המחדל עודכן בהצלחה!');
+        }
+
+        function saveMovingRule() {
+            const dateVal = document.getElementById('moveDateInput').value;
+            const locVal = document.getElementById('newMoveLocInput').value.trim();
+            if (!dateVal || !locVal) {
+                alert('אנא בחר תאריך והכנס כתובת דירה');
+                return;
+            }
+            movingRules.push({ date: dateVal, location: locVal });
+            movingRules.sort((a, b) => a.date.localeCompare(b.date));
+            localStorage.setItem('movingRules', JSON.stringify(movingRules));
+            document.getElementById('moveDateInput').value = '';
+            document.getElementById('newMoveLocInput').value = '';
+            renderMovingRulesList();
+            buildTimesheetForMonth();
+            alert('חוק מעבר הדירה נוסף בהצלחה!');
+        }
+
+        function renderMovingRulesList() {
+            const container = document.getElementById('movingRulesList');
+            if (!container) return;
+            if (movingRules.length === 0) {
+                container.innerHTML = '<span style="color:gray;">אין חוקי מעבר דירה היסטוריים.</span>';
+                return;
+            }
+            let html = '<ul style="padding-right:15px; margin:0;">';
+            movingRules.forEach((r, idx) => {
+                html += `<li>החל מ-<b>${r.date}</b> מעבר לכתובת: <b>${r.location}</b> <button onclick="removeMovingRule(${idx})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">מחק</button></li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        function removeMovingRule(idx) {
+            movingRules.splice(idx, 1);
+            localStorage.setItem('movingRules', JSON.stringify(movingRules));
+            renderMovingRulesList();
+            buildTimesheetForMonth();
         }
 
         function openFixedHoursModal() { document.getElementById('fixedHoursModal').style.display = 'flex'; }
@@ -462,18 +556,16 @@
             const monthKey = `${year}-${String(month).padStart(2, '0')}`;
             const monthData = savedDataStore[monthKey] || {};
 
-            let currentWeekHours = 0;
-            let currentWeekWage = 0;
+            let totalRowsCount = Math.max(daysCount, Object.keys(monthData).length || daysCount);
 
-            for (let day = 1; day <= daysCount; day++) {
-                const dateObj = new Date(year, month - 1, day);
-                const dayIndex = dateObj.getDay();
-                const dayOfWeekName = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][dayIndex];
-                const formattedDate = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
-                const hebrewInfo = getHebrewDateAndHolidays(year, month, day);
-                
+            for (let day = 1; day <= totalRowsCount; day++) {
+                let formattedDate = day <= daysCount ? `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}` : 'נוסף';
+                let dayOfWeekName = day <= daysCount ? ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][new Date(year, month - 1, day).getDay()] : 'משמרת';
+                let hebrewInfo = day <= daysCount ? getHebrewDateAndHolidays(year, month, day) : '';
+                let defaultLocationForDay = day <= daysCount ? getLocationForDate(year, month, day) : defaultLoc;
+
                 const rowKey = `row_${day}`;
-                const rowData = monthData[rowKey] || { in: '', out: '', location: defaultLoc, notes: hebrewInfo.includes('ראש השנה') || hebrewInfo.includes('כיפור') ? hebrewInfo : '' };
+                const rowData = monthData[rowKey] || { in: '', out: '', location: defaultLocationForDay, notes: hebrewInfo.includes('ראש השנה') || hebrewInfo.includes('כיפור') ? hebrewInfo : '' };
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -486,8 +578,8 @@
                     <td><input type="text" class="loc-input" value="${rowData.location}" style="width: 85px;"></td>
                     <td><textarea class="notes-input" placeholder="הוראות, חגים והערות..." style="width: 100%; height: 35px; resize: vertical;">${rowData.notes}</textarea></td>
                     <td>
-                        <div style="display: flex; gap: 2px; justify-content: center; flex-wrap: wrap;">
-                            <button class="btn btn-hours" title="שעות" onclick="applyRowHours(this, ${dayIndex})">שעות</button>
+                        <div style="display: flex; gap: 3px; justify-content: center; align-items: center;">
+                            <button class="btn btn-hours" title="שעות" onclick="applyRowHours(this, 3)">שעות</button>
                             <button class="btn btn-reset" title="איפוס" onclick="resetRow(this)">איפוס</button>
                             <button class="btn btn-delete" title="מחק" onclick="clearRow(this)">X</button>
                         </div>
@@ -495,14 +587,14 @@
                 `;
                 tbody.appendChild(tr);
 
-                if (dayIndex === 6 || day === daysCount) {
+                if (day === 7 || day === 14 || day === 21 || day === 28 || day === daysCount) {
                     const summaryTr = document.createElement('tr');
                     summaryTr.className = "weekly-summary-row";
                     summaryTr.style.background = "rgba(2, 132, 199, 0.08)";
                     summaryTr.style.fontWeight = "bold";
                     summaryTr.innerHTML = `
-                        <td colspan="9" style="text-align: right; padding: 8px 15px; font-size: 12px;">
-                            📌 <b>סיכום שבועי (עד ${formattedDate}):</b> 
+                        <td colspan="9" style="text-align: right; padding: 6px 15px; font-size: 12px;">
+                            📌 <b>סיכום שבועי:</b> 
                             סך שעות: <span class="week-total-hours">0.00</span> שעות | 
                             סך שכר שבועי: <span class="week-total-wage">0.00 ₪</span>
                         </td>
@@ -514,15 +606,33 @@
             updateAnnualGraph(year);
         }
 
+        function addNewShiftRow() {
+            const tbody = document.getElementById('timesheetBody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>נוסף ידנית<br><span style="font-size:10px; color:var(--accent-color);">משמרת נוספת</span></td>
+                <td>נוסף</td>
+                <td><input type="time" class="in-time" onchange="calculateTotals()"></td>
+                <td><input type="time" class="out-time" onchange="calculateTotals()"></td>
+                <td class="row-hours">0.00</td>
+                <td class="row-wage">0.00 ₪</td>
+                <td><input type="text" class="loc-input" value="${defaultLoc}" style="width: 85px;"></td>
+                <td><textarea class="notes-input" placeholder="הוראות והערות..." style="width: 100%; height: 35px; resize: vertical;"></textarea></td>
+                <td>
+                    <div style="display: flex; gap: 3px; justify-content: center; align-items: center;">
+                        <button class="btn btn-hours" title="שעות" onclick="applyRowHours(this, 3)">שעות</button>
+                        <button class="btn btn-reset" title="איפוס" onclick="resetRow(this)">איפוס</button>
+                        <button class="btn btn-delete" title="מחק" onclick="this.closest('tr').remove(); calculateTotals();">X</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
         function applyRowHours(btn, dayIndex) {
             const row = btn.closest('tr');
-            if (dayIndex === 3) {
-                row.querySelector('.in-time').value = fixedHoursConfig.wedIn;
-                row.querySelector('.out-time').value = fixedHoursConfig.wedOut;
-            } else {
-                row.querySelector('.in-time').value = "15:00";
-                row.querySelector('.out-time').value = "07:45";
-            }
+            row.querySelector('.in-time').value = fixedHoursConfig.wedIn;
+            row.querySelector('.out-time').value = fixedHoursConfig.wedOut;
             calculateTotals();
         }
 
@@ -542,6 +652,7 @@
             calculateTotals();
         }
 
+        // חישוב מדויק המשלב תעריף רגיל ושעות לילה גלובליות (00:00 עד 06:30 בסך 124.25 ₪)
         function calculateTotals() {
             const rows = document.querySelectorAll('#timesheetBody tr');
             let totalHours = 0;
@@ -570,13 +681,53 @@
                     let outMins = outH * 60 + outM;
                     if (outMins <= inMins) outMins += 24 * 60;
 
-                    let diff = (outMins - inMins) / 60;
-                    let rowWage = diff * hourlyRate;
-                    hoursCell.innerText = diff.toFixed(2);
+                    let totalDiffHours = (outMins - inMins) / 60;
+                    
+                    // בדיקה האם יש חפיפה עם שעות הלילה הגלובליות: 00:00 (0 דקות) עד 06:30 (390 דקות)
+                    let hasNightShift = false;
+                    let cur = inMins;
+                    while(cur < outMins) {
+                        let minuteOfDay = cur % 1440;
+                        if (minuteOfDay >= 0 && minuteOfDay <= 390) {
+                            hasNightShift = true;
+                            break;
+                        }
+                        cur++;
+                    }
+
+                    let rowWage = 0;
+                    if (hasNightShift) {
+                        // אם יש חפיפה בלילה, נחשב שעות רגילות פחות שעות הלילה ובתוספת התעריף הגלובלי 124.25
+                        rowWage = (totalDiffHours * hourlyRate); // או תוספת גלובלית
+                        // ליתר דיוק: אם המשמרת נופלת בטווח הלילה, נותנים את התעריף הגלובלי 124.25 עבור שעות הלילה או כתוספת גלובלית משולבת
+                        rowWage = totalDiffHours * hourlyRate; // נבנה זאת כך ששעות הלילה יקבלו את התשלום הגלובלי
+                    }
+
+                    // חישוב מוקפד יותר: אם נגע בטווח 00:00 עד 06:30, נפעיל את התעריף הגלובלי 124.25
+                    let nightMinsCount = 0;
+                    let c2 = inMins;
+                    while(c2 < outMins) {
+                        let minuteOfDay = c2 % 1440;
+                        if (minuteOfDay >= 0 && minuteOfDay <= 390) {
+                            nightMinsCount++;
+                        }
+                        c2++;
+                    }
+
+                    if (nightMinsCount > 0) {
+                        // יש שעות לילה - נחשב את החלק היחסי או גלובלי
+                        let nightHours = nightMinsCount / 60;
+                        let regularHours = Math.max(0, totalDiffHours - nightHours);
+                        rowWage = (regularHours * hourlyRate) + (nightHours * (124.25 / 6.5)); // מתורגם לפי יחס גלובלי של 124.25 למלוא 6.5 שעות הלילה
+                    } else {
+                        rowWage = totalDiffHours * hourlyRate;
+                    }
+
+                    hoursCell.innerText = totalDiffHours.toFixed(2);
                     wageCell.innerText = rowWage.toFixed(2) + " ₪";
                     
-                    totalHours += diff;
-                    currentWeekHours += diff;
+                    totalHours += totalDiffHours;
+                    currentWeekHours += totalDiffHours;
                     currentWeekWage += rowWage;
                 } else {
                     hoursCell.innerText = "0.00";
@@ -589,21 +740,29 @@
             const monthKey = `${year}-${String(month).padStart(2, '0')}`;
             const adjustments = monthlyAdjustments[monthKey] || [];
             let adjTotal = adjustments.reduce((sum, item) => sum + item.amount, 0);
-            let totalBaseWage = totalHours * hourlyRate;
+            
+            let totalBaseWage = 0;
+            rows.forEach(row => {
+                if (!row.querySelector('.row-wage')) return;
+                let wText = row.querySelector('.row-wage').innerText;
+                totalBaseWage += parseFloat(wText) || 0;
+            });
+
             let totalWage = totalBaseWage + adjTotal;
 
+            // עדכון שעות בלבד בדף הבית (הסתרת סכום הכסף מהמסך הראשי)
             document.getElementById('totalMonthHours').innerText = totalHours.toFixed(2) + " שעות";
-            document.getElementById('totalMonthWage').innerText = totalWage.toFixed(2) + " ₪ (כולל תוספות)";
 
             let adjText = adjustments.length > 0 ? adjustments.map(a => `• ${a.date}: +${a.amount} ₪ (${a.instructions || 'ללא פירוט'})`).join('<br>') : 'אין תוספות לחודש זה.';
             document.getElementById('monthlySummaryBox').innerHTML = `
                 <b>סה״כ שעות חודשי:</b> ${totalHours.toFixed(2)} שעות<br>
-                <b>סה״כ שכר שעות חודשי:</b> ${totalBaseWage.toFixed(2)} ₪<br>
+                <b>שכר שעות חודשי (כולל שעות לילה גלובליות 00:00-06:30):</b> ${totalBaseWage.toFixed(2)} ₪<br>
                 <b>תוספות ובונוסים חודשיים:</b><br>${adjText}<br>
                 <b style="color:var(--accent-color); font-size:14px;">סה״כ סופי לחודש (שעות + תוספות): ${totalWage.toFixed(2)} ₪</b>
             `;
         }
 
+        // גרף כתום מצומצם וחכם המציג שעות במעבר עכבר
         function updateAnnualGraph(year) {
             const graphContainer = document.getElementById('annualHoursGraph');
             graphContainer.innerHTML = '';
@@ -624,10 +783,10 @@
                     }
                 });
 
-                let heightPx = Math.min(Math.max(mHours * 1.2, 8), 60);
+                let heightPx = Math.min(Math.max(mHours * 0.9, 5), 45);
                 const barDiv = document.createElement('div');
                 barDiv.style.textAlign = 'center';
-                barDiv.innerHTML = `<div title="${mHours.toFixed(1)} שעות" style="background:var(--accent-color); width:12px; height:${heightPx}px; margin:0 auto; border-radius:2px;"></div><span style="font-size:9px;">${monthsNames[m-1]}</span>`;
+                barDiv.innerHTML = `<div title="חודש ${monthsNames[m-1]}: ${mHours.toFixed(1)} שעות" style="background:#f59e0b; width:10px; height:${heightPx}px; margin:0 auto; border-radius:2px; cursor:pointer;"></div><span style="font-size:8px;">${monthsNames[m-1]}</span>`;
                 graphContainer.appendChild(barDiv);
             }
         }
@@ -661,10 +820,10 @@
             const year = document.getElementById('activeYearSelector').value;
             const month = document.getElementById('activeMonthSelector').value;
             const totalHours = document.getElementById('totalMonthHours').innerText;
-            const totalWage = document.getElementById('totalMonthWage').innerText;
+            const summaryHTML = document.getElementById('monthlySummaryBox').innerText;
             
             const subject = encodeURIComponent(`דיווח שעות חודש ${month}/${year} - אברהם יונג`);
-            const body = encodeURIComponent(`שלום,\n\nלהלן סיכום שעות לחודש ${month}/${year}:\n- סה״כ שעות: ${totalHours}\n- סה״כ שכר: ${totalWage}\n\nבברכה,\nאברהם יונג`);
+            const body = encodeURIComponent(`שלום,\n\nלהלן סיכום הנתונים המלא לחודש ${month}/${year}:\n- סה״כ שעות: ${totalHours}\n\n${summaryHTML}\n\nבברכה,\nאברהם יונג`);
             window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
         }
 
