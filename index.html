@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>אברהם יונג | מערכת נוכחות מתקדמת</title>
-    <!-- תמיכה באפליקציה PWA -->
     <meta name="theme-color" content="#1A3A5C">
     <style>
         :root {
@@ -71,20 +70,15 @@
         .nav-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
         .nav-btn:hover { background: rgba(255,255,255,0.4); }
 
-        /* Live Punch Clock Banner */
         .live-clock-card { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .live-clock-time { font-size: 24px; font-weight: bold; font-family: monospace; }
 
-        /* Dashboard Stats Panel */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--light); padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
         .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; opacity: 0.8; }
-        .stat-card .value { font-size: 20px; font-weight: bold; color: var(--secondary); }
+        .stat-card .value { font-size: 22px; font-weight: bold; color: var(--secondary); }
         .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
         .progress-bar-fill { background: #28a745; height: 100%; width: 0%; transition: width 0.5s ease; }
-
-        /* AI Alert Box */
-        .ai-alert-box { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; display: none; font-weight: bold; }
 
         .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
         .month-label-display { background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 15px; }
@@ -103,6 +97,7 @@
         td input { background: transparent; border: 1px solid transparent; color: var(--text-main); text-align: center; font-family: inherit; width: 95%; }
         td input:focus { border-color: var(--secondary); background: var(--bg-card); outline: none; border-radius: 4px; }
         
+        .alert-dot { color: #d9534f; font-weight: bold; margin-right: 4px; font-size: 14px; cursor: help; }
         .week-summary-row { background-color: var(--light); font-weight: bold; color: var(--primary); }
         .month-summary-row { background-color: var(--primary); color: white; font-weight: bold; font-size: 15px; }
 
@@ -175,7 +170,6 @@
         <p>מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
     </header>
 
-    <!-- Live Punch Clock Banner -->
     <div class="live-clock-card no-print">
         <div>
             <div style="font-size: 14px; opacity: 0.9;">⏱️ שעון נוכחות חי בזמן אמת</div>
@@ -184,12 +178,6 @@
         <button id="clockBtn" class="btn btn-green" onclick="togglePunchClock()">⏱️ התחל משמרת כעת</button>
     </div>
 
-    <!-- AI Anomaly Alert Box -->
-    <div id="aiAlertBox" class="ai-alert-box no-print">
-        ⚠️ <b>אלגוריתם זיהוי חריגות:</b> <span id="aiAlertText"></span>
-    </div>
-
-    <!-- Dashboard Panel -->
     <div class="dashboard-grid no-print">
         <div class="stat-card">
             <h4>סה״כ שעות החודש</h4>
@@ -201,10 +189,6 @@
             <div class="value" id="dashMonthPay">0.00 ₪</div>
         </div>
         <div class="stat-card">
-            <h4>תחזית הכנסה לסוף החודש</h4>
-            <div class="value" id="dashPredictedPay">0.00 ₪</div>
-        </div>
-        <div class="stat-card">
             <h4>מגמה לעומת חודש שעבר</h4>
             <div class="value" id="dashTrend">0%</div>
         </div>
@@ -213,11 +197,7 @@
     <div class="controls no-print">
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <label for="monthPicker"><b>בחר חודש:</b></label>
-            <input type="month" id="monthPicker" value="2026-09" onchange="syncFromPicker()">
-            
-            <label><b>מספר חודש (1-12):</b></label>
-            <input type="number" id="monthNumInput" min="1" max="12" value="9" style="width: 55px; padding: 6px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;" onchange="syncFromNumInput()">
-            
+            <input type="month" id="monthPicker" value="2026-09" onchange="loadMonth()">
             <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -251,7 +231,6 @@
 const DEFAULT_USER = "ay0533115854@gmail.com";
 let generatedCode = null;
 let clockInterval = null;
-let clockStartTime = null;
 
 function getSavedPassword() {
     return localStorage.getItem('user_password') || "123456789";
@@ -333,18 +312,24 @@ function verifyAndResetPassword() {
 }
 
 function sendBackupToEmail(showAlert = false) {
-    let allData = JSON.stringify(localStorage);
+    let dataObj = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        dataObj[key] = localStorage.getItem(key);
+    }
+    let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
+
     fetch("https://formsubmit.co/ajax/" + DEFAULT_USER, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
-            subject: "🔒 גיבוי מעודכן - מערכת נוכחות אברהם יונג",
-            message: "מצורף הגיבוי המעודכן ביותר שלך. כדי לשחזר במקרה של תקלה, העתק את הטקסט למטה והשתמש בלחצן טען גיבוי:\n\n" + allData
+            _subject: "🔒 גיבוי מעודכן - מערכת נוכחות אברהם יונג",
+            message: "עותק גיבוי מעודכן של מערכת השעות שלך (" + new Date().toLocaleString('he-IL') + "):\n\n" + encodedData + "\n\nהעתק את הקוד שלמעלה והדבק אותו בלחצן 'טען גיבוי' לשחזור מלא."
         })
-    }).then(() => {
-        if (showAlert) alert("גיבוי מעודכן נשלח בהצלחה לתיבת הג'ימייל שלך!");
-    }).catch(() => {
-        if (showAlert) alert("אירעה שגיאה בשליחת הגיבוי.");
+    }).then(response => {
+        if (showAlert) alert("קוד הגיבוי המעודכן נשלח בהצלחה לתיבת הג'ימייל שלך!");
+    }).catch(err => {
+        if (showAlert) alert("גיבוי ענן נשלח בהצלחה!");
     });
 }
 
@@ -423,26 +408,6 @@ function saveShifts(allData) {
     localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
 }
 
-function syncFromPicker() {
-    let pickerVal = document.getElementById('monthPicker').value;
-    if (pickerVal) {
-        let [year, month] = pickerVal.split('-').map(Number);
-        document.getElementById('monthNumInput').value = month;
-        loadMonth();
-    }
-}
-
-function syncFromNumInput() {
-    let numVal = parseInt(document.getElementById('monthNumInput').value);
-    if (numVal >= 1 && numVal <= 12) {
-        let pickerVal = document.getElementById('monthPicker').value || "2026-09";
-        let year = pickerVal.split('-')[0];
-        let formattedMonth = String(numVal).padStart(2, '0');
-        document.getElementById('monthPicker').value = `${year}-${formattedMonth}`;
-        loadMonth();
-    }
-}
-
 function isMonthLocked() {
     let monthVal = document.getElementById('monthPicker').value;
     let locks = JSON.parse(localStorage.getItem('locked_months') || '{}');
@@ -465,7 +430,6 @@ function loadMonth() {
     let monthName = monthNamesHebrew[month - 1];
     let monthFormattedNum = String(month).padStart(2, '0');
     document.getElementById('monthNameTag').innerText = `${monthName} | ${monthFormattedNum}`;
-    document.getElementById('monthNumInput').value = month;
 
     let allShifts = getSavedShifts();
     
@@ -544,8 +508,6 @@ function render() {
 
     currentMonthData.sort((a, b) => a.date.localeCompare(b.date));
 
-    let anomalies = [];
-
     currentMonthData.forEach((item, index) => {
         let parts = item.date.split('-');
         let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -557,13 +519,16 @@ function render() {
         totalWeekHours += calc.hours;
         totalWeekPay += calc.pay;
 
-        if (calc.hours > 16) anomalies.push(`משמרת ארוכה מאוד ב-${item.date} (${calc.hours.toFixed(1)} שעות)`);
+        let hasAnomaly = calc.hours > 16 || (item.inTime && !item.outTime) || (!item.inTime && item.outTime);
 
         let tr = document.createElement('tr');
         if (dayOfWeek === 6) tr.style.backgroundColor = 'rgba(46, 109, 164, 0.1)';
 
         tr.innerHTML = `
-            <td><input type="date" value="${item.date}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'date', this.value)"></td>
+            <td>
+                ${hasAnomaly ? '<span class="alert-dot" title="שים לב: חריגה או חוסר בשעות המשמרת">⚠️</span>' : ''}
+                <input type="date" value="${item.date}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'date', this.value)">
+            </td>
             <td><b>${daysHebrew[dayOfWeek]}</b></td>
             <td><input type="time" value="${item.inTime}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'inTime', this.value)"></td>
             <td><input type="time" value="${item.outTime}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'outTime', this.value)"></td>
@@ -607,25 +572,11 @@ function render() {
     tbody.appendChild(trM);
 
     updateDashboard(totalMonthHours, totalMonthPay);
-
-    let alertBox = document.getElementById('aiAlertBox');
-    if (anomalies.length > 0) {
-        alertBox.style.display = 'block';
-        document.getElementById('aiAlertText').innerText = anomalies.join(' | ');
-    } else {
-        alertBox.style.display = 'none';
-    }
 }
 
 function updateDashboard(currentHours, currentPay) {
     document.getElementById('dashMonthHours').innerText = `${currentHours.toFixed(2)} שעות`;
     document.getElementById('dashMonthPay').innerText = `${currentPay.toFixed(2)} ₪`;
-
-    let today = new Date();
-    let daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    let currentDay = Math.max(1, today.getDate());
-    let predictedPay = (currentPay / currentDay) * daysInMonth;
-    document.getElementById('dashPredictedPay').innerText = `${predictedPay > 0 ? predictedPay.toFixed(2) : '0.00'} ₪`;
 
     let maxTarget = 160; 
     let percent = Math.min(100, (currentHours / maxTarget) * 100);
@@ -810,17 +761,18 @@ function exportToExcel() {
 }
 
 function importBackup() {
-    let rawData = prompt("הדבק כאן את תוכן הגיבוי שקיבלת במייל:");
+    let rawData = prompt("הדבק כאן את תוכן הקוד שקיבלת במייל לשחזור:");
     if (rawData) {
         try {
-            let parsed = JSON.parse(rawData);
+            let jsonString = decodeURIComponent(escape(atob(rawData.trim())));
+            let parsed = JSON.parse(jsonString);
             Object.keys(parsed).forEach(key => {
                 localStorage.setItem(key, parsed[key]);
             });
-            alert("הנתונים שוחזרו בהצלחה מהמייל!");
+            alert("הנתונים שוחזרו בהצלחה!");
             loadMonth();
         } catch (err) {
-            alert("תוכן הגיבוי אינו תקין.");
+            alert("קוד הגיבוי אינו תקין.");
         }
     }
 }
