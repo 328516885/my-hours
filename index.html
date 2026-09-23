@@ -78,14 +78,19 @@
         .top-nav-btns { position: absolute; left: 15px; top: 18px; display: flex; gap: 10px; }
         .nav-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .nav-btn:hover { background: rgba(255,255,255,0.3); }
-        .nav-btn-purple { background: var(--purple); border-color: var(--purple); }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--light); padding: 18px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
         .stat-card h4 { margin: 0 0 8px 0; font-size: 14px; opacity: 0.85; }
         .stat-card .value { font-size: 24px; font-weight: bold; color: var(--secondary); }
         .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
         .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
+
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 130px; padding-top: 15px; border-bottom: 2px solid var(--border); gap: 6px; }
+        .chart-bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; cursor: pointer; }
+        .chart-bar { width: 100%; max-width: 26px; background: var(--secondary); border-radius: 4px 4px 0 0; transition: height 0.4s ease, background 0.2s; }
+        .chart-bar:hover { background: var(--purple); }
+        .chart-label { font-size: 11px; margin-top: 6px; color: var(--text-main); font-weight: 600; }
 
         .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
         .month-label-display { background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: bold; font-size: 15px; }
@@ -171,7 +176,6 @@
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-            <button class="nav-btn nav-btn-purple" onclick="sendBackupToEmail(true)">📧 שלח גיבוי למייל</button>
             <button class="nav-btn" onclick="importBackup()">📂 טען גיבוי</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
@@ -181,13 +185,13 @@
 
     <div class="dashboard-grid no-print">
         <div class="stat-card">
-            <h4>סה״כ שעות החודש</h4>
+            <h4>סה״כ שעות החודש הנבחר</h4>
             <div class="value" id="dashMonthHours">0.00 שעות</div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="hoursProgressBar"></div></div>
         </div>
         <div class="stat-card">
-            <h4>מגמת שעות לעומת חודש שעבר</h4>
-            <div class="value" id="dashTrend">0%</div>
+            <h4>📈 גרף מעקב שעות חודשי (לחץ על עמודה לפרטים)</h4>
+            <div class="chart-container" id="monthlyChart"></div>
         </div>
     </div>
 
@@ -199,7 +203,7 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-            <button class="btn btn-purple" onclick="sendBackupToEmail(true)">✉️ שלח גיבוי ענן למייל</button>
+            <button class="btn btn-purple" onclick="downloadBackupFile()">💾 צור קובץ גיבוי ושמור</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -306,30 +310,28 @@ function verifyAndResetPassword() {
     }
 }
 
-function sendBackupToEmail(showAlert = false) {
+// גיבוי מלא ואמין: מוריד קובץ גיבוי וגם נותן להעתיק את הקוד
+function downloadBackupFile() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
         dataObj[key] = localStorage.getItem(key);
     }
     let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
+    
+    let blob = new Blob([encodedData], { type: 'text/plain;charset=utf-8;' });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `shuky_backup_${new Date().toISOString().split('T')[0]}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    fetch("https://formsubmit.co/ajax/" + DEFAULT_USER, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-            _subject: "🔒 גיבוי מעודכן - מערכת נוכחות אברהם יונג",
-            message: "עותק גיבוי מעודכן של מערכת השעות שלך (" + new Date().toLocaleString('he-IL') + "):\n\n" + encodedData + "\n\nהעתק את הקוד שלמעלה והדבק אותו בלחצן 'טען גיבוי' לשחזור מלא."
-        })
-    }).then(response => {
-        if (showAlert) alert("קוד הגיבוי המעודכן נשלח בהצלחה לתיבת הג'ימייל שלך!");
-    }).catch(err => {
-        if (showAlert) alert("גיבוי ענן נשלח בהצלחה!");
-    });
+    alert("קובץ הגיבוי ירד בהצלחה למכשיר שלך! תוכל גם לשמור אותו בדרייב או במייל שלך.");
 }
 
 function handleLogout() {
-    sendBackupToEmail(false);
+    downloadBackupFile();
     sessionStorage.removeItem('isLoggedIn');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
@@ -387,7 +389,7 @@ const events = {
     "2026-10-10": "שבת | פרשת נֹחַ",
     "2026-10-17": "שבת | פרשת לֶךְ-לְךָ",
     "2026-10-24": "שבת | פרשת וַיֵּרָא",
-    "2026-10-31": "שבת | פרשת חַיֵּי שָׂרָה"
+    "2026-10-31": "שבת | פרשת חַיֵּי שָׂרָה"
 };
 
 const daysHebrew = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "שבת"];
@@ -464,15 +466,24 @@ function calculatePay(inTime, outTime) {
     let endM = outH * 60 + outM;
     if (endM <= startM) endM += 24 * 60;
     
-    let nightM = 0;
+    let hasNightShift = false;
     for (let m = startM; m < endM; m++) {
         let mod = m % (24 * 60);
-        if (mod >= 0 && mod < 6 * 60 + 30) nightM++;
+        if (mod >= 0 && mod < 6 * 60 + 30) {
+            hasNightShift = true;
+            break;
+        }
     }
     
-    let nightHours = nightM / 60;
+    let nightMinutes = 0;
+    for (let m = startM; m < endM; m++) {
+        let mod = m % (24 * 60);
+        if (mod >= 0 && mod < 6 * 60 + 30) nightMinutes++;
+    }
+    let nightHours = nightMinutes / 60;
     let dayHours = Math.max(0, totalHours - nightHours);
-    let totalPay = (dayHours * 35.41) + (nightHours * 124.25);
+
+    let totalPay = (dayHours * 35.41) + (hasNightShift ? 124.25 : 0);
 
     return { hours: totalHours, pay: totalPay };
 }
@@ -550,38 +561,54 @@ function render() {
     `;
     tbody.appendChild(trM);
 
-    updateDashboard(totalMonthHours, totalMonthPay);
+    updateDashboard(totalMonthHours);
+    renderVisualChart();
 }
 
-function updateDashboard(currentHours, currentPay) {
+function updateDashboard(currentHours) {
     document.getElementById('dashMonthHours').innerText = `${currentHours.toFixed(2)} שעות`;
-
     let maxTarget = 160; 
     let percent = Math.min(100, (currentHours / maxTarget) * 100);
     document.getElementById('hoursProgressBar').style.width = `${percent}%`;
+}
 
-    let monthVal = document.getElementById('monthPicker').value;
-    let [y, m] = monthVal.split('-').map(Number);
-    let prevMonthNum = m === 1 ? 12 : m - 1;
-    let prevYear = m === 1 ? y - 1 : y;
-    let prevMonthKey = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}`;
-
+function renderVisualChart() {
+    let chartEl = document.getElementById('monthlyChart');
+    chartEl.innerHTML = '';
     let allShifts = getSavedShifts();
-    let prevData = allShifts[prevMonthKey] || [];
-    let prevHours = 0;
-    prevData.forEach(item => {
-        prevHours += calculatePay(item.inTime, item.outTime).hours;
-    });
+    
+    let chartData = [];
+    let maxHoursFound = 50;
 
-    let trendEl = document.getElementById('dashTrend');
-    if (prevHours > 0) {
-        let diff = ((currentHours - prevHours) / prevHours) * 100;
-        trendEl.innerText = `${diff >= 0 ? '📈 +' : '📉 '}${diff.toFixed(1)}%`;
-        trendEl.style.color = diff >= 0 ? '#10b981' : '#ef4444';
-    } else {
-        trendEl.innerText = 'אין נתונים חודשיים קודמים';
-        trendEl.style.color = 'inherit';
+    for (let m = 1; m <= 12; m++) {
+        let mStr = String(m).padStart(2, '0');
+        let key = `2026-${mStr}`;
+        let monthShifts = allShifts[key] || [];
+        let sumH = 0;
+        monthShifts.forEach(item => {
+            sumH += calculatePay(item.inTime, item.outTime).hours;
+        });
+        if (sumH > maxHoursFound) maxHoursFound = sumH;
+        chartData.push({ monthNum: m, monthName: monthNamesHebrew[m-1], hours: sumH, monthKey: key });
     }
+
+    chartData.forEach(item => {
+        let heightPercent = Math.max(8, (item.hours / maxHoursFound) * 100);
+        let wrapper = document.createElement('div');
+        wrapper.className = 'chart-bar-wrapper';
+        wrapper.title = `${item.monthName}: ${item.hours.toFixed(2)} שעות (לחץ למעבר לחודש זה)`;
+        
+        wrapper.onclick = () => {
+            document.getElementById('monthPicker').value = item.monthKey;
+            loadMonth();
+        };
+
+        wrapper.innerHTML = `
+            <div class="chart-bar" style="height: ${heightPercent}%;"></div>
+            <div class="chart-label">${item.monthName.substring(0, 2)}</div>
+        `;
+        chartEl.appendChild(wrapper);
+    });
 }
 
 function updateRow(id, field, value) {
@@ -669,7 +696,7 @@ function exportToExcel() {
 }
 
 function importBackup() {
-    let rawData = prompt("הדבק כאן את תוכן הקוד שקיבלת במייל לשחזור:");
+    let rawData = prompt("הדבק כאן את תוכן קוד הגיבוי ששמרת לשחזור מלא:");
     if (rawData) {
         try {
             let jsonString = decodeURIComponent(escape(atob(rawData.trim())));
@@ -680,7 +707,7 @@ function importBackup() {
             alert("הנתונים שוחזרו בהצלחה!");
             loadMonth();
         } catch (err) {
-            alert("קוד הגיבוי אינו תקין.");
+            alert("קוד הגיבוי שגוי או אינו תקין.");
         }
     }
 }
