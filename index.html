@@ -101,6 +101,16 @@
         .btn-email { background: #7c3aed; color: white; }
         .btn-nav { background: #0f766e; color: white; }
 
+        /* מודל */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-card {
+            background: var(--card-bg); padding: 25px; border-radius: 8px; width: 420px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
         .stock-chart-container {
             height: 90px;
             display: flex;
@@ -200,7 +210,7 @@
                 <button class="btn btn-nav" onclick="switchSection('home')">🏠 בית</button>
                 <button class="btn btn-nav" onclick="switchSection('addition')">➕ הוספה לחודש</button>
                 <button class="btn btn-nav" onclick="switchSection('settings')">⚙️ הגדרות</button>
-                <button class="btn btn-email" onclick="exportBackupFile()">💾 גיבוי למחשב (JSON)</button>
+                <button class="btn btn-email" onclick="exportBackupFile()">💾 גיבוי מלא למחשב (JSON)</button>
                 <button class="btn btn-theme" onclick="toggleTheme()">🌓 מצב תצוגה</button>
                 <button class="btn btn-delete" onclick="handleLogout()">יציאה</button>
             </div>
@@ -228,7 +238,7 @@
                         <button class="btn btn-email" onclick="exportToEmail()">📧 ייצוא דו״ח למייל</button>
                         <button class="btn btn-pdf" onclick="exportToPDFFile()" style="background: #dc2626; color: white;">📄 הפק PDF (הורדה)</button>
                         <button class="btn btn-excel" onclick="exportToExcelFile()" style="background: #059669; color: white;">📊 ייצוא לאקסל (הורדה)</button>
-                        <button class="btn btn-nav" onclick="openFixedHoursModal()">🕒 שעות קבועות</button>
+                        <button class="btn btn-hours" onclick="openFixedHoursModal()" style="background: #10b981; font-size: 12px; padding: 6px 12px;">🕒 שעות קבועות (ימים)</button>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -342,8 +352,9 @@
     <!-- מודל שעות קבועות לכל ימי השבוע -->
     <div id="fixedHoursModal" class="modal-overlay">
         <div class="modal-card">
-            <h3 style="margin-bottom: 15px;">🕒 הגדרת שעות קבועות לימי השבוע</h3>
-            <div id="fixedDaysContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 13px;"></div>
+            <h3 style="margin-bottom: 15px; color: var(--accent-color);">🕒 הגדרת שעות קבועות לימי השבוע</h3>
+            <p style="font-size: 12px; color: gray; margin-bottom: 15px;">קבע את שעות הכניסה והיציאה לכל יום בשבוע. בלחיצה על כפתור "שעות" בשורה בטבלה, השעות האלו יתמלאו אוטומטית.</p>
+            <div id="fixedDaysContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; font-size: 13px; max-height: 300px; overflow-y: auto;"></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn btn-theme" onclick="closeFixedHoursModal()">ביטול</button>
                 <button class="btn btn-save" onclick="saveFixedHoursAll()">שמור שעות קבועות</button>
@@ -580,11 +591,13 @@
             for (let i = 0; i < 7; i++) {
                 let cfg = fixedHoursDays[i] || {in: '', out: ''};
                 html += `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>יום ${dayNames[i]}:</span>
-                        <div style="display: flex; gap: 5px;">
-                            <input type="time" id="fixed_in_${i}" value="${cfg.in}">
-                            <input type="time" id="fixed_out_${i}" value="${cfg.out}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="font-weight: bold;">יום ${dayNames[i]}:</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span>כניסה:</span>
+                            <input type="time" id="fixed_in_${i}" value="${cfg.in}" style="padding: 4px;">
+                            <span>יציאה:</span>
+                            <input type="time" id="fixed_out_${i}" value="${cfg.out}" style="padding: 4px;">
                         </div>
                     </div>
                 `;
@@ -651,15 +664,20 @@
                 tbody.appendChild(tr);
 
                 if (day === 7 || day === 14 || day === 21 || day === 28 || day === daysCount) {
+                    const weekSummaryKey = `week_summary_${day}`;
+                    const weekNotesVal = (monthData[weekSummaryKey] && monthData[weekSummaryKey].notes) ? monthData[weekSummaryKey].notes : '';
+                    
                     const summaryTr = document.createElement('tr');
                     summaryTr.className = "weekly-summary-row";
                     summaryTr.style.background = "rgba(2, 132, 199, 0.08)";
-                    summaryTr.style.fontWeight = "bold";
                     summaryTr.innerHTML = `
-                        <td colspan="9" style="text-align: right; padding: 6px 15px; font-size: 12px;">
+                        <td colspan="6" style="text-align: right; padding: 6px 15px; font-size: 12px; font-weight: bold;">
                             📌 <b>סיכום שבועי:</b> 
                             סך שעות: <span class="week-total-hours">0.00</span> שעות | 
                             סך שכר שבועי: <span class="week-total-wage">0.00 ₪</span>
+                        </td>
+                        <td colspan="3" style="padding: 4px;">
+                            <input type="text" class="week-notes-input" placeholder="הוראות והערות לשבוע זה..." value="${weekNotesVal}" onchange="autoSaveAndCalc()" style="width: 100%; font-size: 12px; padding: 4px;">
                         </td>
                     `;
                     tbody.appendChild(summaryTr);
@@ -669,7 +687,6 @@
             updateAnnualGraph(year);
         }
 
-        // שמירה אוטומטית ברקע בכל שינוי
         function autoSaveAndCalc() {
             saveData(true);
             calculateTotals();
@@ -848,8 +865,15 @@
             const rows = document.querySelectorAll('#timesheetBody tr');
             let monthData = {};
             let index = 1;
+            let weekIndex = 1;
 
             rows.forEach(row => {
+                if (row.classList.contains('weekly-summary-row')) {
+                    const wNotes = row.querySelector('.week-notes-input') ? row.querySelector('.week-notes-input').value : '';
+                    monthData[`week_summary_${weekIndex}`] = { notes: wNotes };
+                    weekIndex++;
+                    return;
+                }
                 if (!row.querySelector('.in-time')) return;
                 monthData[`row_${index}`] = {
                     in: row.querySelector('.in-time').value,
@@ -912,17 +936,17 @@
             document.body.removeChild(link);
         }
 
-        // ייצוא והורדת קובץ PDF אמיתי
+        // הורדת PDF אמיתי כקובץ למחשב
         function exportToPDFFile() {
             const year = document.getElementById('activeYearSelector').value;
             const month = document.getElementById('activeMonthSelector').value;
             const totalHours = document.getElementById('totalMonthHours').innerText;
             const summaryHTML = document.getElementById('monthlySummaryBox').innerText.replace(/<br>/g, '\n').replace(/<\/?[^>]+(>|$)/g, "");
 
-            let printWindow = window.open('', '_blank');
-            printWindow.document.write(`
+            let htmlContent = `
                 <html lang="he" dir="rtl">
                 <head>
+                    <meta charset="UTF-8">
                     <title>דו״ח שעות חודש ${month}/${year} - אברהם יונג</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
@@ -951,14 +975,14 @@
                             </tr>
                         </thead>
                         <tbody>
-            `);
+            `;
 
             const rows = document.querySelectorAll('#timesheetBody tr');
             rows.forEach(row => {
                 if (row.classList.contains('weekly-summary-row')) return;
                 const cols = row.querySelectorAll('td');
                 if (cols.length >= 8) {
-                    let dateText = cols[0].innerText;
+                    let dateText = cols[0].innerText.split('\n')[0];
                     let dayText = cols[1].innerText;
                     let inVal = row.querySelector('.in-time') ? row.querySelector('.in-time').value : '';
                     let outVal = row.querySelector('.out-time') ? row.querySelector('.out-time').value : '';
@@ -967,7 +991,7 @@
                     let locVal = row.querySelector('.loc-input') ? row.querySelector('.loc-input').value : '';
                     let notesVal = row.querySelector('.notes-input') ? row.querySelector('.notes-input').value : '';
 
-                    printWindow.document.write(`
+                    htmlContent += `
                         <tr>
                             <td>${dateText}</td>
                             <td>${dayText}</td>
@@ -978,11 +1002,11 @@
                             <td>${locVal}</td>
                             <td>${notesVal}</td>
                         </tr>
-                    `);
+                    `;
                 }
             });
 
-            printWindow.document.write(`
+            htmlContent += `
                         </tbody>
                     </table>
                     <div class="summary">
@@ -991,12 +1015,15 @@
                     </div>
                 </body>
                 </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => {
-                printWindow.print();
-            }, 500);
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `timesheet_${month}_${year}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function addSalaryAdjustment() {
