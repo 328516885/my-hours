@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>אברהם יונג - חזון דב | מערכת נוכחות</title>
+    <!-- חיבור שירות שליחת מיילים בזמן אמת -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("YOUR_PUBLIC_KEY"); 
+       })();
+    </script>
     <style>
         :root {
             --primary: #1A3A5C;
@@ -20,7 +27,6 @@
             padding: 20px;
             color: #333;
         }
-
         .login-wrapper {
             display: flex;
             justify-content: center;
@@ -37,205 +43,84 @@
             text-align: center;
             border: 1px solid #e1e8ed;
         }
-        .login-card h2 {
-            margin-top: 0;
-            color: var(--primary);
-            font-size: 24px;
-        }
-        .login-card p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-        .form-group {
-            margin-bottom: 18px;
-            text-align: right;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-            font-size: 13px;
-            color: #444;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        .btn-login {
-            width: 100%;
-            background-color: var(--btn-blue);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+        .login-card h2 { margin-top: 0; color: var(--primary); font-size: 24px; }
+        .login-card p { color: #666; font-size: 14px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 18px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #444; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .btn-login { width: 100%; background-color: var(--btn-blue); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-login:hover { background-color: #0056b3; }
-        
-        .forgot-link {
-            display: inline-block;
-            margin-top: 15px;
-            color: var(--secondary);
-            text-decoration: none;
-            font-size: 13px;
-            cursor: pointer;
-        }
+        .forgot-link { display: inline-block; margin-top: 15px; color: var(--secondary); text-decoration: none; font-size: 13px; cursor: pointer; }
         .forgot-link:hover { text-decoration: underline; }
-
-        .error-msg {
-            color: var(--accent);
-            font-size: 13px;
-            margin-top: 12px;
-            display: none;
-            font-weight: bold;
-        }
-
+        .error-msg { color: var(--accent); font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
+        .success-msg { color: #5cb85c; font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
         #mainApp, #resetStep1, #resetStep2 { display: none; }
-
-        .container {
-            max-width: 1350px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        header {
-            background-color: var(--primary);
-            color: white;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-        }
+        .container { max-width: 1350px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        header { background-color: var(--primary); color: white; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; position: relative; }
         header h1 { margin: 0 0 5px 0; font-size: 26px; }
         header p { margin: 0; font-size: 13px; opacity: 0.9; }
-        
-        .logout-btn {
-            position: absolute;
-            left: 15px;
-            top: 15px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid white;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--light);
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .btn {
-            background-color: var(--secondary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-        }
+        .logout-btn { position: absolute; left: 15px; top: 15px; background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px; border-radius: 6px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .btn { background-color: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
         .btn-green { background-color: #5cb85c; }
         .btn-red { background-color: var(--accent); }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 13px;
-        }
-        th, td {
-            border: 1px solid var(--border);
-            padding: 8px;
-            text-align: center;
-        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
         th { background-color: var(--primary); color: white; }
-
         .week-summary-row { background-color: #e8eef5; font-weight: bold; color: var(--primary); }
         .month-summary-row { background-color: #1A3A5C; color: white; font-weight: bold; font-size: 15px; }
-        
-        @media print {
-            body { background: #fff; padding: 0; }
-            .container { box-shadow: none; padding: 0; }
-            .no-print { display: none !important; }
-        }
+        @media print { body { background: #fff; padding: 0; } .container { box-shadow: none; padding: 0; } .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
-<!-- מסך התחברות -->
 <div id="loginScreen" class="login-wrapper">
-    <!-- טופס התחברות רגיל -->
     <div id="loginFormCard" class="login-card">
         <h2>שלום אברהם, טוב לראות אותך!</h2>
         <p>כניסה למערכת דיווח שעות נוכחות</p>
-        
         <form onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label for="username">שם משתמש (דוא"ל):</label>
                 <input type="text" id="username" value="ay0533115854@gmail.com" required>
             </div>
-            
             <div class="form-group">
                 <label for="password">סיסמה:</label>
                 <input type="password" id="password" placeholder="הכנס סיסמה" required>
             </div>
-
             <button type="submit" class="btn-login">התחברות</button>
             <div id="loginError" class="error-msg">שם המשתמש או הסיסמה אינם נכונים</div>
             <a class="forgot-link" onclick="showResetStep1()">שכחת סיסמה? לחץ כאן לשחזור</a>
         </form>
     </div>
 
-    <!-- שלב 1: אימות דוא"ל ושליחת קוד -->
     <div id="resetStep1" class="login-card">
         <h2>שחזור סיסמה</h2>
-        <p>הזן את כתובת הדוא"ל שלך לקבלת קוד אימות</p>
+        <p>הזן את כתובת הדוא"ל שלך לקבלת קוד אימות ישירות למייל</p>
         <div class="form-group">
             <label for="resetEmail">דוא"ל:</label>
             <input type="email" id="resetEmail" value="ay0533115854@gmail.com">
         </div>
-        <button class="btn-login" onclick="sendResetCode()">שלח קוד אימות למייל</button>
+        <button id="sendBtn" class="btn-login" onclick="sendResetCode()">שלח קוד אימות למייל</button>
+        <div id="sendMsg" class="success-msg">שולח קוד למייל... אנא המתן.</div>
         <a class="forgot-link" onclick="showLoginForm()">חזרה להתחברות</a>
     </div>
 
-    <!-- שלב 2: הזנת קוד וקביעת סיסמה חדשה (מספרים/פשוטה) -->
     <div id="resetStep2" class="login-card">
         <h2>איפוס סיסמה</h2>
-        <p>הזן את קוד האימות שנשלח והגדר סיסמה חדשה (אפשר מספרים בלבד)</p>
+        <p>הזן את קוד האימות שנשלח למייל שלך והגדר סיסמה חדשה</p>
         <div class="form-group">
-            <label for="inputCode">קוד אימות שנשלח:</label>
+            <label for="inputCode">קוד אימות שנשלח למייל:</label>
             <input type="text" id="inputCode" placeholder="הכנס קוד בן 4 ספרות">
         </div>
         <div class="form-group">
             <label for="newPass">סיסמה חדשה:</label>
-            <input type="text" id="newPass" placeholder="הכנס סיסמה חדשה (מספרים בלבד)">
+            <input type="text" id="newPass" placeholder="הכנס סיסמה חדשה">
         </div>
         <button class="btn-login" onclick="verifyAndResetPassword()">עדכן סיסמה והתחבר</button>
         <div id="resetError" class="error-msg">קוד האימות שגוי או שלא הוגדרה סיסמה</div>
     </div>
 </div>
 
-<!-- המערכת הראשית -->
 <div id="mainApp" class="container">
     <header>
         <button class="logout-btn no-print" onclick="handleLogout()">יציאה 🚪</button>
@@ -246,8 +131,8 @@
     <div class="controls no-print">
         <div style="display: flex; gap: 12px; align-items: center;">
             <label for="monthPicker"><b>בחר חודש ושנה:</b></label>
-            <input type="month" id="monthPicker" value="2026-08" onchange="loadMonth()">
-            <div id="monthNameTag" class="month-label-display">אוגוסט | 08</div>
+            <input type="month" id="monthPicker" value="2026-09" onchange="loadMonth()">
+            <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
         </div>
         <div>
             <button class="btn btn-green" onclick="addCustomShift()">+ הוסף משמרת נוספת בחודש זה</button>
@@ -269,8 +154,7 @@
                 <th class="no-print">פעולות</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-        </tbody>
+        <tbody id="tableBody"></tbody>
     </table>
 </div>
 
@@ -278,7 +162,6 @@
 const DEFAULT_USER = "ay0533115854@gmail.com";
 let generatedCode = null;
 
-// טעינת סיסמה קיימת או הגדרת ברירת מחדל ראשונית
 function getSavedPassword() {
     return localStorage.getItem('user_password') || "123456789";
 }
@@ -315,19 +198,27 @@ function sendResetCode() {
         return;
     }
     
-    // יצירת קוד אימות רנדומלי בן 4 ספרות
+    // יצירת קוד רנדומלי בן 4 ספרות
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    // פתיחת תוכנת המייל של המשתמש מוגדרת מראש עם הקוד
-    let subject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת נוכחות");
-    let body = encodeURIComponent(`שלום אברהם,\n\nקוד האימות שלך לשחזור הסיסמה במערכת הוא: ${generatedCode}\n\nהזן קוד זה במערכת כדי לקבוע סיסמה חדשה.`);
-    
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-    
-    alert(`קוד אימות נשלח! הקוד שלך לשחזור הוא: ${generatedCode}`);
-    
-    document.getElementById('resetStep1').style.display = 'none';
-    document.getElementById('resetStep2').style.display = 'block';
+    document.getElementById('sendMsg').style.display = 'block';
+
+    let templateParams = {
+        to_email: email,
+        pass_code: generatedCode
+    };
+
+    // שליחת הקוד למייל
+    emailjs.send('default_service', 'template_reset', templateParams)
+        .then(function() {
+            alert(`קוד אימות נשלח בהצלחה למייל ${email}!`);
+            document.getElementById('resetStep1').style.display = 'none';
+            document.getElementById('resetStep2').style.display = 'block';
+        }, function(error) {
+            // גיבוי להצגת הקוד על המסך במידה ואין חיבור אינטרנט תקין לשירות המייל
+            alert(`קוד האימות לשחזור הסיסמה שלך הוא: ${generatedCode}`);
+            document.getElementById('resetStep1').style.display = 'none';
+            document.getElementById('resetStep2').style.display = 'block';
+        });
 }
 
 function verifyAndResetPassword() {
@@ -335,7 +226,6 @@ function verifyAndResetPassword() {
     let newPass = document.getElementById('newPass').value.trim();
     let resetErr = document.getElementById('resetError');
 
-    // מאפשר כל סיסמה (מספרים, אותיות, קצרה או ארוכה) ללא הגבלה
     if (inputCode === generatedCode && newPass.length > 0) {
         localStorage.setItem('user_password', newPass);
         alert('הסיסמה עודכנה בהצלחה! כעת תוכל להתחבר.');
@@ -366,32 +256,51 @@ const monthNamesHebrew = [
     "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
 ];
 
+// לוח חגים ושבתות מדויק לשנת 2026
 const events = {
-    "2026-08-08": "שבת | פרשת עֵקֶב",
-    "2026-08-15": "שבת | פרשת רְאֵה",
-    "2026-08-22": "שבת | פרשת שֹׁפְטִים",
-    "2026-08-29": "שבת | פרשת כִּי תֵצֵא",
-    "2026-09-05": "שבת | פרשת כִּי תָבוֹא",
-    "2026-09-12": "שבת | פרשת נִצָּבִים-וַיֵּלֶךְ",
-    "2026-09-19": "שבת | ערב ראש השנה",
-    "2026-09-21": "חג | ראש השנה",
-    "2026-09-22": "חג | ראש השנה יום ב'",
-    "2026-09-30": "ערב יום כיפור",
-    "2026-10-01": "חג | יום כיפור",
-    "2026-10-06": "חג | סוכות",
-    "2026-10-13": "חג | שמחת תורה"
+    // אוגוסט 2026
+    "2026-08-01": "שבת | פרשת עֵקֶב",
+    "2026-08-08": "שבת | פרשת רְאֵה",
+    "2026-08-15": "שבת | פרשת שֹׁפְטִים",
+    "2026-08-22": "שבת | פרשת כִּי תֵצֵא",
+    "2026-08-29": "שבת | פרשת כִּי תָבוֹא",
+
+    // ספטמבר 2026 - מדויק
+    "2026-09-05": "שבת | פרשת נִצָּבִים",
+    "2026-09-11": "ערב ראש השנה תשפ"ז",
+    "2026-09-12": "שבת | חג ראש השנה - יום א'",
+    "2026-09-13": "חג ראש השנה - יום ב'",
+    "2026-09-14": "צום גדליה",
+    "2026-09-19": "שבת שובה | פרשת וַיֵּלֶךְ",
+    "2026-09-20": "ערב יום כיפור",
+    "2026-09-21": "חג יום כיפור",
+    "2026-09-25": "ערב חג סוכות",
+    "2026-09-26": "שבת | חג סוכות (יום א')",
+    "2026-09-27": "חול המועד סוכות",
+    "2026-09-28": "חול המועד סוכות",
+    "2026-09-29": "חול המועד סוכות",
+    "2026-09-30": "חול המועד סוכות",
+
+    // אוקטובר 2026
+    "2026-10-01": "הושענא רבה | ערב שמחת תורה",
+    "2026-10-02": "חג שמיני עצרת / שמחת תורה",
+    "2026-10-03": "שבת | פרשת בְּרֵאשִׁית",
+    "2026-10-10": "שבת | פרשת נֹחַ",
+    "2026-10-17": "שבת | פרשת לֶךְ-לְךָ",
+    "2026-10-24": "שבת | פרשת וַיֵּרָא",
+    "2026-10-31": "שבת | פרשת חַיֵּי שָׂרָה"
 };
 
 const daysHebrew = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "שבת"];
 let currentMonthData = [];
 
 function getSavedShifts() {
-    let saved = localStorage.getItem('shuky_monthly_shifts_v2');
+    let saved = localStorage.getItem('shuky_monthly_shifts_v3');
     return saved ? JSON.parse(saved) : {};
 }
 
 function saveShifts(allData) {
-    localStorage.setItem('shuky_monthly_shifts_v2', JSON.stringify(allData));
+    localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
 }
 
 function loadMonth() {
@@ -399,7 +308,6 @@ function loadMonth() {
     if (!monthVal) return;
 
     let [year, month] = monthVal.split('-').map(Number);
-    
     let monthName = monthNamesHebrew[month - 1];
     let monthFormattedNum = String(month).padStart(2, '0');
     document.getElementById('monthNameTag').innerText = `${monthName} | ${monthFormattedNum}`;
@@ -418,7 +326,6 @@ function loadMonth() {
             let fullDate = `${year}-${monthStr}-${dayStr}`;
             let dateObj = new Date(year, month - 1, d);
             let dayOfWeek = dateObj.getDay();
-            
             let note = events[fullDate] || (dayOfWeek === 6 ? "שבת" : "");
 
             currentMonthData.push({
@@ -433,7 +340,6 @@ function loadMonth() {
         allShifts[monthVal] = currentMonthData;
         saveShifts(allShifts);
     }
-
     render();
 }
 
@@ -445,7 +351,6 @@ function calculatePay(inTime, outTime) {
     let end = outH + outM / 60;
     
     let totalHours = end >= start ? (end - start) : ((24 - start) + end);
-    
     let startM = inH * 60 + inM;
     let endM = outH * 60 + outM;
     if (endM <= startM) endM += 24 * 60;
