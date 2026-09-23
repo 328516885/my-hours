@@ -198,7 +198,6 @@ function sendResetCode() {
         return;
     }
     
-    // יצירת קוד רנדומלי בן 4 ספרות
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('sendMsg').style.display = 'block';
 
@@ -207,14 +206,12 @@ function sendResetCode() {
         pass_code: generatedCode
     };
 
-    // שליחת הקוד למייל
     emailjs.send('default_service', 'template_reset', templateParams)
         .then(function() {
             alert(`קוד אימות נשלח בהצלחה למייל ${email}!`);
             document.getElementById('resetStep1').style.display = 'none';
             document.getElementById('resetStep2').style.display = 'block';
         }, function(error) {
-            // גיבוי להצגת הקוד על המסך במידה ואין חיבור אינטרנט תקין לשירות המייל
             alert(`קוד האימות לשחזור הסיסמה שלך הוא: ${generatedCode}`);
             document.getElementById('resetStep1').style.display = 'none';
             document.getElementById('resetStep2').style.display = 'block';
@@ -267,7 +264,7 @@ const events = {
 
     // ספטמבר 2026 - מדויק
     "2026-09-05": "שבת | פרשת נִצָּבִים",
-    "2026-09-11": "ערב ראש השנה תשפ"ז",
+    "2026-09-11": "ערב ראש השנה תשפ\"ז",
     "2026-09-12": "שבת | חג ראש השנה - יום א'",
     "2026-09-13": "חג ראש השנה - יום ב'",
     "2026-09-14": "צום גדליה",
