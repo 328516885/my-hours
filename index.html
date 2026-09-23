@@ -61,7 +61,6 @@
 
         #mainApp, #resetStep1, #resetStep2 { display: none; }
         
-        /* פריסה מלאה 100% על כל רוחב המסך והמחשב */
         .container-full { 
             width: 100%; 
             box-sizing: border-box; 
@@ -79,9 +78,7 @@
         .top-nav-btns { position: absolute; left: 15px; top: 18px; display: flex; gap: 10px; }
         .nav-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .nav-btn:hover { background: rgba(255,255,255,0.3); }
-
-        .live-clock-card { background: linear-gradient(135deg, #1e3a5f, var(--secondary)); color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .live-clock-time { font-size: 26px; font-weight: bold; font-family: monospace; }
+        .nav-btn-purple { background: var(--purple); border-color: var(--purple); }
 
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--light); padding: 18px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
@@ -96,7 +93,6 @@
         .btn { background-color: var(--secondary); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-green { background-color: #10b981; }
-        .btn-preset { background-color: #0284c7; }
         .btn-excel { background-color: #15803d; }
         .btn-purple { background-color: var(--purple); }
         .btn-red { background-color: var(--accent); }
@@ -105,7 +101,6 @@
         th, td { border: 1px solid var(--border); padding: 10px 6px; text-align: center; }
         th { background-color: var(--primary); color: white; font-weight: 600; }
         
-        /* הרחבת שדה ההערות למקסימום נוחות */
         .note-input { width: 98% !important; text-align: right !important; padding: 4px 6px; }
         
         td input { background: transparent; border: 1px solid transparent; color: var(--text-main); text-align: center; font-family: inherit; font-size: 13px; }
@@ -176,21 +171,13 @@
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-
+            <button class="nav-btn nav-btn-purple" onclick="sendBackupToEmail(true)">📧 שלח גיבוי למייל</button>
             <button class="nav-btn" onclick="importBackup()">📂 טען גיבוי</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
         <h1>אברהם יונג</h1>
         <p>מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
     </header>
-
-    <div class="live-clock-card no-print">
-        <div>
-            <div style="font-size: 14px; opacity: 0.9;">⏱️ שעון נוכחות חי בזמן אמת</div>
-            <div class="live-clock-time" id="clockTimerDisplay">00:00:00</div>
-        </div>
-        <button id="clockBtn" class="btn btn-green" onclick="togglePunchClock()">⏱️ התחל משמרת כעת</button>
-    </div>
 
     <div class="dashboard-grid no-print">
         <div class="stat-card">
@@ -199,8 +186,8 @@
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="hoursProgressBar"></div></div>
         </div>
         <div class="stat-card">
-            <h4>סה״כ שכר משוער</h4>
-            <div class="value" id="dashMonthPay">0.00 ₪</div>
+            <h4>מגמת שעות לעומת חודש שעבר</h4>
+            <div class="value" id="dashTrend">0%</div>
         </div>
     </div>
 
@@ -211,9 +198,8 @@
             <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-preset" onclick="fillShiftPreset()">⚡ מילוי משמרת קבועה (15:00-07:45)</button>
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-
+            <button class="btn btn-purple" onclick="sendBackupToEmail(true)">✉️ שלח גיבוי ענן למייל</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -230,7 +216,7 @@
                 <th style="width: 100px;">סה״כ יומי ₪</th>
                 <th style="width: 160px;">דירה / מיקום</th>
                 <th>הוראות / הערות / חגים ושבתות</th>
-                <th class="no-print" style="width: 130px;">פעולות</th>
+                <th class="no-print" style="width: 220px;">פעולות</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -240,7 +226,6 @@
 <script>
 const DEFAULT_USER = "ay0533115854@gmail.com";
 let generatedCode = null;
-let clockInterval = null;
 
 function getSavedPassword() {
     return localStorage.getItem('user_password') || "123456789";
@@ -363,7 +348,6 @@ function showApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     loadMonth();
-    checkActiveClock();
 }
 
 if (sessionStorage.getItem('isLoggedIn') === 'true') {
@@ -458,26 +442,14 @@ function loadMonth() {
     render();
 }
 
-function fillShiftPreset() {
-    let targetDate = prompt("הזן תאריך למילוי משמרת קבועה 15:00-07:45 (בפורמט YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
-    if (!targetDate) return;
-
-    let item = currentMonthData.find(x => x.date === targetDate);
+function setRowPreset(id) {
+    let item = currentMonthData.find(x => x.id === id);
     if (item) {
         item.inTime = "15:00";
         item.outTime = "07:45";
-    } else {
-        currentMonthData.push({
-            id: 'shift_' + Math.random().toString(36).substr(2, 9),
-            date: targetDate,
-            inTime: '15:00',
-            outTime: '07:45',
-            apartment: 'זבוטינסקי 107',
-            note: 'משמרת קבועה'
-        });
+        saveCurrentMonth();
+        render();
     }
-    saveCurrentMonth();
-    render();
 }
 
 function calculatePay(inTime, outTime) {
@@ -545,8 +517,9 @@ function render() {
             <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
             <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
             <td class="no-print">
-                <button style="background:#10b981; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+ משמרת</button>
-                <button style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
+                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')">⚡ 15:00-07:45</button>
+                <button style="background:#10b981; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+</button>
+                <button style="background:#ef4444; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -582,77 +555,33 @@ function render() {
 
 function updateDashboard(currentHours, currentPay) {
     document.getElementById('dashMonthHours').innerText = `${currentHours.toFixed(2)} שעות`;
-    document.getElementById('dashMonthPay').innerText = `${currentPay.toFixed(2)} ₪`;
 
     let maxTarget = 160; 
     let percent = Math.min(100, (currentHours / maxTarget) * 100);
     document.getElementById('hoursProgressBar').style.width = `${percent}%`;
-}
 
-function togglePunchClock() {
-    let activeClock = localStorage.getItem('active_punch_clock');
-    let btn = document.getElementById('clockBtn');
+    let monthVal = document.getElementById('monthPicker').value;
+    let [y, m] = monthVal.split('-').map(Number);
+    let prevMonthNum = m === 1 ? 12 : m - 1;
+    let prevYear = m === 1 ? y - 1 : y;
+    let prevMonthKey = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}`;
 
-    if (!activeClock) {
-        let now = new Date();
-        localStorage.setItem('active_punch_clock', now.toISOString());
-        startClockTimer(now);
-        btn.innerText = "⏹️ סיים משמרת כעת";
-        btn.style.backgroundColor = "#ef4444";
+    let allShifts = getSavedShifts();
+    let prevData = allShifts[prevMonthKey] || [];
+    let prevHours = 0;
+    prevData.forEach(item => {
+        prevHours += calculatePay(item.inTime, item.outTime).hours;
+    });
+
+    let trendEl = document.getElementById('dashTrend');
+    if (prevHours > 0) {
+        let diff = ((currentHours - prevHours) / prevHours) * 100;
+        trendEl.innerText = `${diff >= 0 ? '📈 +' : '📉 '}${diff.toFixed(1)}%`;
+        trendEl.style.color = diff >= 0 ? '#10b981' : '#ef4444';
     } else {
-        let start = new Date(activeClock);
-        let now = new Date();
-        localStorage.removeItem('active_punch_clock');
-        clearInterval(clockInterval);
-        document.getElementById('clockTimerDisplay').innerText = "00:00:00";
-        btn.innerText = "⏱️ התחל משמרת כעת";
-        btn.style.backgroundColor = "#10b981";
-
-        let dateStr = now.toISOString().split('T')[0];
-        let inTimeStr = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
-        let outTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-        let item = currentMonthData.find(x => x.date === dateStr);
-        if (item) {
-            item.inTime = inTimeStr;
-            item.outTime = outTimeStr;
-        } else {
-            currentMonthData.push({
-                id: 'shift_' + Math.random().toString(36).substr(2, 9),
-                date: dateStr,
-                inTime: inTimeStr,
-                outTime: outTimeStr,
-                apartment: 'זבוטינסקי 107',
-                note: 'משמרת מוקלטת'
-            });
-        }
-        saveCurrentMonth();
-        render();
-        alert(`המשמרת נרשמה בהצלחה! כניסה: ${inTimeStr} | יציאה: ${outTimeStr}`);
+        trendEl.innerText = 'אין נתונים חודשיים קודמים';
+        trendEl.style.color = 'inherit';
     }
-}
-
-function checkActiveClock() {
-    let activeClock = localStorage.getItem('active_punch_clock');
-    if (activeClock) {
-        let start = new Date(activeClock);
-        let btn = document.getElementById('clockBtn');
-        btn.innerText = "⏹️ סיים משמרת כעת";
-        btn.style.backgroundColor = "#ef4444";
-        startClockTimer(start);
-    }
-}
-
-function startClockTimer(startTime) {
-    clearInterval(clockInterval);
-    clockInterval = setInterval(() => {
-        let diff = new Date() - startTime;
-        let hours = Math.floor(diff / 3600000);
-        let minutes = Math.floor((diff % 3600000) / 60000);
-        let seconds = Math.floor((diff % 60000) / 1000);
-        document.getElementById('clockTimerDisplay').innerText = 
-            `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-    }, 1000);
 }
 
 function updateRow(id, field, value) {
