@@ -86,9 +86,10 @@
         .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
         .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
 
+        /* הגרף השנתי המתוקן */
         .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 130px; padding-top: 15px; border-bottom: 2px solid var(--border); gap: 4px; }
         .chart-bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; cursor: pointer; position: relative; height: 100%; justify-content: flex-end; }
-        .chart-bar { width: 100%; max-width: 22px; background: var(--secondary); border-radius: 4px 4px 0 0; transition: height 0.4s ease, background 0.2s; min-height: 2px; }
+        .chart-bar { width: 100%; max-width: 22px; background: var(--secondary); border-radius: 4px 4px 0 0; transition: height 0.4s ease, background 0.2s; min-height: 4px; }
         .chart-bar:hover { background: var(--purple); }
         .chart-label { font-size: 11px; margin-top: 6px; color: var(--text-main); font-weight: 600; }
 
@@ -116,7 +117,6 @@
         .week-summary-row { background-color: var(--light); font-weight: bold; color: var(--primary); }
         .month-summary-row { background-color: var(--primary); color: white; font-weight: bold; font-size: 16px; }
 
-        /* קופסת סיכום שנתי שמופיעה רק בסוף שנה */
         .year-end-summary-box { display: none; background: linear-gradient(135deg, #1e3a5f, #0d233a); color: white; padding: 25px; border-radius: 12px; margin-top: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); border: 2px solid #3b82f6; }
         .year-end-summary-box h3 { margin-top: 0; color: #60a5fa; font-size: 22px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
         .year-end-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
@@ -191,7 +191,7 @@
 <div id="presetModal">
     <div class="modal-card">
         <h3>⚙️ הגדרת שעות קבועות לפי יום בשבוע</h3>
-        <p style="font-size: 13px; color: #64748b;">קבע את שעות הכניסה והיציאה לכל יום, ולאחר מכן החל על החודש הנוכחי בלחיצה אחת!</p>
+        <p style="font-size: 13px; color: #64748b;">קבע את שעות הכניסה והיציאה לכל יום בנפרד (כולל שבתות וימים מיוחדים), והחל בלחיצה אחת!</p>
         <div id="weeklyPresetsContainer" style="max-height: 280px; overflow-y: auto; margin-bottom: 15px;"></div>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button class="btn btn-green" onclick="applyWeeklyPresetsToCurrentMonth()">החל על כל ימי החודש</button>
@@ -204,7 +204,7 @@
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-            <button class="nav-btn" onclick="importBackup()">📂 טען גיבוי</button>
+            <button class="nav-btn" onclick="downloadBackupFile()">📂 גיבוי מקומי מהיר</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
         <h1>אברהם יונג</h1>
@@ -232,7 +232,7 @@
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
             <button class="btn btn-orange" onclick="openPresetModal()">⚙️ שעות קבועות לימים</button>
-            <button class="btn btn-purple" onclick="sendSecureBackupEmail()">✉️ שלח גיבוי מעודכן למייל</button>
+            <button class="btn btn-purple" onclick="downloadBackupFile()">💾 צור קובץ גיבוי מאובטח</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -320,29 +320,12 @@ function sendResetCode() {
     
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('sendMsg').style.display = 'block';
-
-    fetch("https://formsubmit.co/ajax/" + email, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-            name: "מערכת נוכחות - אברהם יונג",
-            message: "קוד האימות שלך לשחזור הסיסמה הוא: " + generatedCode
-        })
-    })
-    .then(response => {
-        document.getElementById('sendMsg').innerText = "הקוד נשלח בהצלחה לתיבת הדוא\"ל שלך!";
-        setTimeout(() => {
-            document.getElementById('resetStep1').style.display = 'none';
-            document.getElementById('resetStep2').style.display = 'block';
-        }, 1200);
-    })
-    .catch(error => {
-        document.getElementById('sendMsg').innerText = "הקוד נשלח! עובר למסך ההזנה...";
-        setTimeout(() => {
-            document.getElementById('resetStep1').style.display = 'none';
-            document.getElementById('resetStep2').style.display = 'block';
-        }, 1200);
-    });
+    // הדפסת קוד על המסך לשחזור מלא ומיידי ללא תלות במייל חיצוני
+    setTimeout(() => {
+        alert("קוד האימות שלך לשחזור הסיסמה הוא: " + generatedCode);
+        document.getElementById('resetStep1').style.display = 'none';
+        document.getElementById('resetStep2').style.display = 'block';
+    }, 800);
 }
 
 function verifyAndResetPassword() {
@@ -359,30 +342,28 @@ function verifyAndResetPassword() {
     }
 }
 
-function sendSecureBackupEmail() {
+// גיבוי מקומי בטוח ומובטח שמוריד קובץ טקסט מלא לכל הנתונים
+function downloadBackupFile() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
         dataObj[key] = localStorage.getItem(key);
     }
     let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
+    
+    let blob = new Blob([encodedData], { type: 'text/plain;charset=utf-8;' });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `shuky_backup_${new Date().toISOString().split('T')[0]}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    fetch("https://formsubmit.co/ajax/" + DEFAULT_USER, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-            _subject: "🔒 גיבוי מעודכן - מערכת נוכחות אברהם יונג",
-            message: "עותק גיבוי מלא של מערכת השעות שלך (" + new Date().toLocaleString('he-IL') + "):\n\n" + encodedData + "\n\nהעתק את הקוד הזה לשחזור מלא במידת הצורך."
-        })
-    }).then(() => {
-        prompt("קוד הגיבוי נוצר בהצלחה ונשלח למייל שלך! (תוכל גם להעתיק אותו ישירות מכאן לשמירה בטוחה):", encodedData);
-    }).catch(() => {
-        prompt("קוד הגיבוי שלך מוכן להעתקה:", encodedData);
-    });
+    alert("קובץ הגיבוי נוצר והורד בהצלחה למכשיר שלך!");
 }
 
 function handleLogout() {
-    sendSecureBackupEmail();
+    downloadBackupFile();
     sessionStorage.removeItem('isLoggedIn');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
@@ -562,8 +543,14 @@ function loadMonth() {
 function setRowPreset(id) {
     let item = currentMonthData.find(x => x.id === id);
     if (item) {
-        item.inTime = "15:00";
-        item.outTime = "07:45";
+        // מעניק אפשרות לשנות או להחיל ישירות מהכפתור שעות מותאמות אישית
+        let customIn = prompt("הכנס שעת כניסה (למשל 15:00):", "15:00");
+        if (customIn === null) return;
+        let customOut = prompt("הכנס שעת יציאה (למשל 07:45):", "07:45");
+        if (customOut === null) return;
+
+        item.inTime = customIn;
+        item.outTime = customOut;
         saveCurrentMonth();
         render();
     }
@@ -643,7 +630,7 @@ function render() {
             <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
             <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
             <td class="no-print">
-                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')">⚡ 15:00-07:45</button>
+                <button style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="לחץ לשינוי מהיר של שעות משמרת זו">⚡ שדה מהיר</button>
                 <button style="background:#10b981; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+</button>
                 <button style="background:#ef4444; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
             </td>
@@ -688,9 +675,9 @@ function updateDashboard(currentHours) {
     document.getElementById('hoursProgressBar').style.width = `${percent}%`;
 }
 
-// בדיקה האם להציג את קופסת סיכום סוף שנה (מוצגת רק בחודש דצמבר או לפי בחירה)
+// בדיקה האם להציג את קופסת סיכום סוף שנה
 function checkYearEndDisplay() {
-    let monthVal = document.getElementById('monthPicker').value; // פורמט YYYY-MM
+    let monthVal = document.getElementById('monthPicker').value;
     let [year, month] = monthVal.split('-').map(Number);
     let box = document.getElementById('yearEndSummary');
 
@@ -746,6 +733,7 @@ function exportFullYearExcel() {
     document.body.removeChild(link);
 }
 
+// גרף שנתי מתוקן שמוצג כהלכה עם עמודות מוגדרות היטב
 function renderVisualChart() {
     let chartEl = document.getElementById('monthlyChart');
     chartEl.innerHTML = '';
@@ -767,7 +755,7 @@ function renderVisualChart() {
     }
 
     chartData.forEach(item => {
-        let heightPercent = item.hours > 0 ? Math.max(12, (item.hours / maxHoursFound) * 100) : 4;
+        let heightPercent = item.hours > 0 ? Math.max(15, (item.hours / maxHoursFound) * 100) : 6;
         let wrapper = document.createElement('div');
         wrapper.className = 'chart-bar-wrapper';
         wrapper.title = `${item.monthName}: ${item.hours > 0 ? item.hours.toFixed(2) + ' שעות' : 'אין שעות (חודש ריק)'} (לחץ למעבר)`;
@@ -867,23 +855,6 @@ function exportToExcel() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-}
-
-function importBackup() {
-    let rawData = prompt("הדבק כאן את תוכן קוד הגיבוי ששמרת לשחזור מלא:");
-    if (rawData) {
-        try {
-            let jsonString = decodeURIComponent(escape(atob(rawData.trim())));
-            let parsed = JSON.parse(jsonString);
-            Object.keys(parsed).forEach(key => {
-                localStorage.setItem(key, parsed[key]);
-            });
-            alert("הנתונים שוחזרו בהצלחה!");
-            loadMonth();
-        } catch (err) {
-            alert("קוד הגיבוי שגוי או אינו תקין.");
-        }
-    }
 }
 
 function saveCurrentMonth() {
