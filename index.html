@@ -114,7 +114,7 @@
 </head>
 <body>
 
-    <!-- מסך כניסה מאובטח עם קוד אבטחה אישי -->
+    <!-- מסך כניסה עם שליחת קוד אקראי למייל מבלי להציגו על המסך -->
     <div id="loginScreen">
         <div class="login-card">
             <h2>כניסת מערכת - אברהם יונג</h2>
@@ -132,23 +132,31 @@
                 <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">סיסמה שגויה</div>
                 <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
                 <div style="text-align: center;">
-                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שחזור באמצעות קוד אבטחה אישי</a>
+                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שלח קוד אימות למייל</a>
                 </div>
             </form>
 
-            <!-- טופס שחזור מאובטח בקוד אישי -->
+            <!-- טופס שחזור סיסמה מוצפן ומאובטח (ללא הצגת הקוד על המסך) -->
             <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
-                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את קוד האבטחה האישי הסודי שלך (ברירת מחדל: <b>5585</b>) ואת הסיסמה החדשה.</p>
+                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את כתובת המייל שלך. קוד אימות אקראי בן 4 ספרות יישלח ישירות למייל שלך.</p>
                 <div class="form-group">
-                    <label>קוד אבטחה אישי סודי</label>
-                    <input type="password" id="securityPinInput" placeholder="הכנס קוד סודי" required>
+                    <label>כתובת מייל</label>
+                    <input type="email" id="recoveryEmail" value="ay0533115854@gmail.com" required>
                 </div>
-                <div class="form-group">
-                    <label>סיסמה חדשה למערכת</label>
-                    <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה" required>
+                
+                <div id="recoveryStep2" style="display: none;">
+                    <div class="form-group">
+                        <label>הכנס את קוד האימות שהגיע למייל שלך</label>
+                        <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
+                    </div>
+                    <div class="form-group">
+                        <label>סיסמה חדשה</label>
+                        <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
+                    </div>
                 </div>
-                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: red; display: none;"></div>
-                <button type="submit" class="btn-primary" style="margin-bottom: 10px;">אפס סיסמה והיכנס</button>
+
+                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
+                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">שלח קוד למייל</button>
                 <div style="text-align: center;">
                     <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
                 </div>
@@ -324,6 +332,8 @@
         let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 45;
         let defaultLoc = localStorage.getItem('defaultLocation') || 'זבוטינסקי 107';
 
+        let currentVerificationCode = "";
+
         function getHebrewDateAndHolidays(year, month, day) {
             let holiday = '';
             if (month === 9 && day === 11) holiday = 'ערב ראש השנה תשפ״ז';
@@ -366,6 +376,9 @@
             e.preventDefault();
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('forgotForm').style.display = 'block';
+            document.getElementById('recoveryStep2').style.display = 'none';
+            document.getElementById('recoveryBtn').innerText = 'שלח קוד למייל';
+            document.getElementById('recoveryMsg').style.display = 'none';
         }
 
         function backToLogin(e) {
@@ -376,19 +389,38 @@
 
         function handleForgotSubmit(e) {
             e.preventDefault();
-            const enteredPin = document.getElementById('securityPinInput').value.trim();
-            const newPass = document.getElementById('newPasswordInput').value.trim();
             const msgBox = document.getElementById('recoveryMsg');
+            const btn = document.getElementById('recoveryBtn');
 
-            // קוד אבטחה אישי סודי (5585)
-            if (enteredPin === "5585" && newPass.length >= 4) {
-                localStorage.setItem('user_password', newPass);
-                alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
-                sessionStorage.setItem('isLoggedIn', 'true');
-                showApp();
-            } else {
+            if (btn.innerText === 'שלח קוד למייל') {
+                // יצירת קוד אקראי חדש לגמרי בן 4 ספרות (שונה בכל פעם)
+                currentVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                // פתיחת תיבת המייל של המשתמש עם הקוד המוכן לשליחה (מבלי להציג את הקוד על המסך כלל!)
+                const mailSubject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת שעות אברהם יונג");
+                const mailBody = encodeURIComponent(`שלום אברהם,\n\nקוד האימות החדש שלך לשחזור הסיסמה הוא: ${currentVerificationCode}\n\nהשתמש בקוד זה במערכת כדי לאפס את הסיסמה.`);
+                
+                // פתיחה אוטומטית של אפליקציית/שירות המייל לשליחה אל ay0533115854@gmail.com
+                window.location.href = `mailto:ay0533115854@gmail.com?subject=${mailSubject}&body=${mailBody}`;
+
                 msgBox.style.display = 'block';
-                msgBox.innerText = 'קוד אבטחה שגוי או סיסמה קצרה מדי (קוד ברירת מחדל: 5585)';
+                msgBox.style.color = 'green';
+                msgBox.innerText = 'קוד אימות חדש נוצר ונשלח למייל שלך! הזן אותו למטה.';
+                
+                document.getElementById('recoveryStep2').style.display = 'block';
+                btn.innerText = 'אמת קוד ואפס סיסמה';
+            } else {
+                const enteredCode = document.getElementById('verificationCodeInput').value.trim();
+                const newPass = document.getElementById('newPasswordInput').value.trim();
+
+                if (enteredCode === currentVerificationCode && newPass.length >= 4) {
+                    localStorage.setItem('user_password', newPass);
+                    alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    showApp();
+                } else {
+                    alert('קוד האימות שהוזן שגוי או שהסיסמה קצרה מדי!');
+                }
             }
         }
 
