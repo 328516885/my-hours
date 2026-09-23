@@ -56,7 +56,7 @@
             background: var(--card-bg);
             padding: 30px; border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 350px; border: 1px solid var(--border-color);
+            width: 380px; border: 1px solid var(--border-color);
         }
 
         .login-card h2 { margin-bottom: 20px; text-align: center; }
@@ -114,11 +114,13 @@
 </head>
 <body>
 
-    <!-- מסך כניסה -->
+    <!-- מסך כניסה עם שחזור סיסמה למייל -->
     <div id="loginScreen">
         <div class="login-card">
             <h2>כניסת מערכת - אברהם יונג</h2>
-            <form onsubmit="handleLogin(event)">
+            
+            <!-- טופס התחברות רגיל -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>אימייל / שם משתמש</label>
                     <input type="text" id="username" value="ay0533115854@gmail.com" required>
@@ -128,7 +130,34 @@
                     <input type="password" id="password" required>
                 </div>
                 <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">סיסמה שגויה</div>
-                <button type="submit" class="btn-primary">התחבר</button>
+                <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
+                <div style="text-align: center;">
+                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שחזר באמצעות קוד למייל</a>
+                </div>
+            </form>
+
+            <!-- טופס שחזור סיסמה -->
+            <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
+                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את כתובת המייל שלך ונשלח אליך קוד איفوס/שחזור סיסמה.</p>
+                <div class="form-group">
+                    <label>כתובת מייל לשחזור</label>
+                    <input type="email" id="recoveryEmail" value="ay0533115854@gmail.com" required>
+                </div>
+                <div id="recoveryStep2" style="display: none;">
+                    <div class="form-group">
+                        <label>הכנס את קוד האימות שנשלח למייל (קוד לדוגמה: 1234)</label>
+                        <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
+                    </div>
+                    <div class="form-group">
+                        <label>סיסמה חדשה</label>
+                        <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
+                    </div>
+                </div>
+                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
+                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">שלח קוד אימות</button>
+                <div style="text-align: center;">
+                    <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
+                </div>
             </form>
         </div>
     </div>
@@ -206,22 +235,22 @@
                     </div>
                 </div>
 
-                <!-- טבלת נוכחות מלאה עם עמודת הוראות רחבה -->
+                <!-- טבלת נוכחות מלאה עם עמודת הוראות רחבה ומרווחת -->
                 <div class="card">
                     <h3 style="margin-bottom: 10px;">טבלת נוכחות ומשמרות חודשית</h3>
                     <div style="overflow-x: auto;">
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 100px;">תאריך (לועזי / עברי)</th>
-                                    <th style="width: 70px;">יום</th>
-                                    <th style="width: 80px;">כניסה</th>
-                                    <th style="width: 80px;">יציאה</th>
-                                    <th style="width: 70px;">שעות</th>
-                                    <th style="width: 80px;">שכ״ו יומי</th>
-                                    <th style="width: 110px;">דירה / מיקום</th>
-                                    <th>הוראות / הערות / חגים ושבתות</th>
-                                    <th style="width: 115px;">פעולות</th>
+                                    <th style="width: 105px;">תאריך (לועזי / עברי)</th>
+                                    <th style="width: 65px;">יום</th>
+                                    <th style="width: 75px;">כניסה</th>
+                                    <th style="width: 75px;">יציאה</th>
+                                    <th style="width: 65px;">שעות</th>
+                                    <th style="width: 75px;">שכ״ו יומי</th>
+                                    <th style="width: 90px;">דירה / מיקום</th>
+                                    <th>הוראות / הערות / חגים ושבתות (מרווח לרשום הרבה)</th>
+                                    <th style="width: 95px;">פעולות</th>
                                 </tr>
                             </thead>
                             <tbody id="timesheetBody">
@@ -243,7 +272,7 @@
             <!-- אזור הוספה לחודש (עם תאריך, סכום והוראות מדויקות) -->
             <div id="additionView" class="card" style="display: none;">
                 <h3 style="margin-bottom: 15px;">➕ הוספה לחודש (בונוסים ותוספות שכר)</h3>
-                <p style="font-size: 13px; color: gray; margin-bottom: 15px;">הוסף סכום והוראות/סיבה לתוספת לחודש הנבחר.</p>
+                <p style="font-size: 13px; color: gray; margin-bottom: 15px;">הוסף תאריך מדויק, סכום והוראות/סיבה לתוספת לחודש הנבחר.</p>
                 <div style="display: flex; gap: 10px; max-width: 700px; margin-bottom: 20px; flex-wrap: wrap;">
                     <input type="date" id="adjDate" style="width: 150px;">
                     <input type="number" id="adjAmount" placeholder="סכום בש״ח" style="width: 130px;">
@@ -253,7 +282,7 @@
                 <div id="adjustmentsList" style="font-size: 13px;">אין תוספות לחודש זה.</div>
             </div>
 
-            <!-- אזור הגדרות (עם כל הפיצ'רים החכמים הנוספים) -->
+            <!-- אזור הגדרות -->
             <div id="settingsView" class="card" style="display: none;">
                 <h3 style="margin-bottom: 15px;">⚙️ הגדרות מתקדמות למערכת</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -310,20 +339,16 @@
         let fixedHoursConfig = JSON.parse(localStorage.getItem('fixedHoursConfig')) || { wedIn: '17:00', wedOut: '07:45' };
         let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 45;
         let defaultLoc = localStorage.getItem('defaultLocation') || 'זבוטינסקי 107';
-        const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רעיעי', 'חמישי', 'שישי', 'שבת'];
 
-        // ממיר פשוט לתאריך עברי וחגים בסיסיים לשנת 2026/תאריכים
+        // ממיר תאריך עברי וחגים בסיסיים
         function getHebrewDateAndHolidays(year, month, day) {
             let holiday = '';
-            // דוגמאות לחגים מרכזיים בספטמבר 2026 וכדומה
             if (month === 9 && day === 11) holiday = 'ערב ראש השנה תשפ״ז';
             if (month === 9 && day === 12) holiday = 'ראש השנה';
             if (month === 9 && day === 20) holiday = 'ערב יום כיפור';
             if (month === 9 && day === 21) holiday = 'יום כיפור';
 
-            let hebrewDayStr = `כ״ט באלול`; // דוגמה עברית מוערכת
-            if (month === 9) hebrewDayStr = `אלול - תשרי`;
-            
+            let hebrewDayStr = `אלול - תשרי`;
             return holiday ? `${holiday}` : `${hebrewDayStr}`;
         }
 
@@ -351,6 +376,47 @@
                 showApp();
             } else {
                 document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // מנגנון שחזור סיסמה
+        let recoveryState = 1;
+        function showForgotPassword(e) {
+            e.preventDefault();
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('forgotForm').style.display = 'block';
+            recoveryState = 1;
+            document.getElementById('recoveryStep2').style.display = 'none';
+            document.getElementById('recoveryBtn').innerText = 'שלח קוד אימות';
+            document.getElementById('recoveryMsg').style.display = 'none';
+        }
+
+        function backToLogin(e) {
+            e.preventDefault();
+            document.getElementById('forgotForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+        }
+
+        function handleForgotSubmit(e) {
+            e.preventDefault();
+            const msgBox = document.getElementById('recoveryMsg');
+            if (recoveryState === 1) {
+                msgBox.style.display = 'block';
+                msgBox.innerText = 'קוד אימות נשלח בהצלחה למייל ay0533115854@gmail.com (קוד לדוגמה: 1234)';
+                document.getElementById('recoveryStep2').style.display = 'block';
+                document.getElementById('recoveryBtn').innerText = 'אפס סיסמה והתחבר';
+                recoveryState = 2;
+            } else {
+                const code = document.getElementById('verificationCodeInput').value.trim();
+                const newPass = document.getElementById('newPasswordInput').value.trim();
+                if (code === '1234' && newPass.length >= 4) {
+                    localStorage.setItem('user_password', newPass);
+                    alert('הסיסמה שונתה בהצלחה! מעבר למערכת...');
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    showApp();
+                } else {
+                    alert('קוד אימות שגוי או סיסמה קצרה מדי (השתמש בקוד 1234)');
+                }
             }
         }
 
@@ -424,6 +490,9 @@
             const monthKey = `${year}-${String(month).padStart(2, '0')}`;
             const monthData = savedDataStore[monthKey] || {};
 
+            let weekHoursSum = 0;
+            let weekWageSum = 0;
+
             for (let day = 1; day <= daysCount; day++) {
                 const dateObj = new Date(year, month - 1, day);
                 const dayIndex = dateObj.getDay();
@@ -435,13 +504,6 @@
                 const rowData = monthData[rowKey] || { in: '', out: '', location: defaultLoc, notes: hebrewInfo.includes('ראש השנה') || hebrewInfo.includes('כיפור') ? hebrewInfo : '' };
 
                 const tr = document.createElement('tr');
-                
-                // סיכום שבועי בסוף כל שבוע (שבת)
-                let weeklySummaryHTML = '';
-                if (dayIndex === 6) {
-                    weeklySummaryHTML = `<tr class="weekly-summary-row" style="background: rgba(2, 132, 199, 0.08); font-weight: bold;"><td colspan="9" style="text-align: right; padding: 6px 15px;">📌 סיכום שבועי לשבוע שנגמר ב-${formattedDate}: שעות השבוע, סכום ופקודות ירוכזו כאן.</td></tr>`;
-                }
-
                 tr.innerHTML = `
                     <td>${formattedDate}<br><span style="font-size:10px; color:var(--accent-color);">${hebrewInfo}</span></td>
                     <td>${dayOfWeekName}</td>
@@ -449,10 +511,10 @@
                     <td><input type="time" class="out-time" value="${rowData.out}" onchange="calculateTotals()"></td>
                     <td class="row-hours">0.00</td>
                     <td class="row-wage">0.00 ₪</td>
-                    <td><input type="text" class="loc-input" value="${rowData.location}" style="width: 105px;"></td>
-                    <td><input type="text" class="notes-input" value="${rowData.notes}" placeholder="הוראות, חגים והערות..." style="width: 100%;"></td>
+                    <td><input type="text" class="loc-input" value="${rowData.location}" style="width: 85px;"></td>
+                    <td><textarea class="notes-input" placeholder="הוראות, חגים והערות..." style="width: 100%; height: 35px; resize: vertical;">${rowData.notes}</textarea></td>
                     <td>
-                        <div style="display: flex; gap: 3px; justify-content: center;">
+                        <div style="display: flex; gap: 2px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn btn-hours" title="שעות" onclick="applyRowHours(this, ${dayIndex})">שעות</button>
                             <button class="btn btn-reset" title="איפוס" onclick="resetRow(this)">איפוס</button>
                             <button class="btn btn-delete" title="מחק" onclick="clearRow(this)">X</button>
@@ -460,8 +522,21 @@
                     </td>
                 `;
                 tbody.appendChild(tr);
-                if (weeklySummaryHTML) {
-                    tbody.insertAdjacentHTML('beforeend', weeklySummaryHTML);
+
+                // סיכום שבועי בסוף כל שבוע (שבת)
+                if (dayIndex === 6 || day === daysCount) {
+                    const summaryTr = document.createElement('tr');
+                    summaryTr.className = "weekly-summary-row";
+                    summaryTr.style.background = "rgba(2, 132, 199, 0.08)";
+                    summaryTr.style.fontWeight = "bold";
+                    summaryTr.innerHTML = `
+                        <td colspan="9" style="text-align: right; padding: 8px 15px; font-size: 12px;">
+                            📌 <b>סיכום שבועי (עד ${formattedDate}):</b> 
+                            סך שעות: <span class="week-total-hours">0.00</span> שעות | 
+                            סך שכר שבועי: <span class="week-total-wage">0.00 ₪</span>
+                        </td>
+                    `;
+                    tbody.appendChild(summaryTr);
                 }
             }
             calculateTotals();
@@ -499,9 +574,19 @@
         function calculateTotals() {
             const rows = document.querySelectorAll('#timesheetBody tr');
             let totalHours = 0;
+            let currentWeekHours = 0;
+            let currentWeekWage = 0;
 
             rows.forEach(row => {
+                if (row.classList.contains('weekly-summary-row')) {
+                    row.querySelector('.week-total-hours').innerText = currentWeekHours.toFixed(2);
+                    row.querySelector('.week-total-wage').innerText = currentWeekWage.toFixed(2) + " ₪";
+                    currentWeekHours = 0;
+                    currentWeekWage = 0;
+                    return;
+                }
                 if (!row.querySelector('.in-time')) return;
+
                 const inVal = row.querySelector('.in-time').value;
                 const outVal = row.querySelector('.out-time').value;
                 const hoursCell = row.querySelector('.row-hours');
@@ -515,9 +600,13 @@
                     if (outMins <= inMins) outMins += 24 * 60;
 
                     let diff = (outMins - inMins) / 60;
+                    let rowWage = diff * hourlyRate;
                     hoursCell.innerText = diff.toFixed(2);
-                    wageCell.innerText = (diff * hourlyRate).toFixed(2) + " ₪";
+                    wageCell.innerText = rowWage.toFixed(2) + " ₪";
+                    
                     totalHours += diff;
+                    currentWeekHours += diff;
+                    currentWeekWage += rowWage;
                 } else {
                     hoursCell.innerText = "0.00";
                     wageCell.innerText = "0.00 ₪";
@@ -529,18 +618,18 @@
             const monthKey = `${year}-${String(month).padStart(2, '0')}`;
             const adjustments = monthlyAdjustments[monthKey] || [];
             let adjTotal = adjustments.reduce((sum, item) => sum + item.amount, 0);
-            let totalWage = (totalHours * hourlyRate) + adjTotal;
+            let totalBaseWage = totalHours * hourlyRate;
+            let totalWage = totalBaseWage + adjTotal;
 
             document.getElementById('totalMonthHours').innerText = totalHours.toFixed(2) + " שעות";
             document.getElementById('totalMonthWage').innerText = totalWage.toFixed(2) + " ₪ (כולל תוספות)";
 
-            // עדכון תיבת סיכום חודשי מרוכז
-            let adjText = adjustments.length > 0 ? adjustments.map(a => `• ${a.amount} ₪ (${a.instructions || 'ללא פירוט'})`).join('<br>') : 'אין תוספות לחודש זה.';
+            let adjText = adjustments.length > 0 ? adjustments.map(a => `• ${a.date}: +${a.amount} ₪ (${a.instructions || 'ללא פירוט'})`).join('<br>') : 'אין תוספות לחודש זה.';
             document.getElementById('monthlySummaryBox').innerHTML = `
                 <b>סה״כ שעות חודשי:</b> ${totalHours.toFixed(2)} שעות<br>
-                <b>סה״כ שכר שעות:</b> ${(totalHours * hourlyRate).toFixed(2)} ₪<br>
+                <b>סה״כ שכר שעות חודשי:</b> ${totalBaseWage.toFixed(2)} ₪<br>
                 <b>תוספות ובונוסים חודשיים:</b><br>${adjText}<br>
-                <b style="color:var(--accent-color); font-size:14px;">סה״כ סופי לחודש: ${totalWage.toFixed(2)} ₪</b>
+                <b style="color:var(--accent-color); font-size:14px;">סה״כ סופי לחודש (שעות + תוספות): ${totalWage.toFixed(2)} ₪</b>
             `;
         }
 
@@ -554,13 +643,13 @@
                 const mData = savedDataStore[mKey] || {};
                 let mHours = 0;
                 Object.values(mData).forEach(r => {
-                    if (r.in && r.out) {
+                    if (r && r.in && r.out) {
                         let [inH, inM] = r.in.split(':').map(Number);
                         let [outH, outM] = r.out.split(':').map(Number);
-                        let inM = inH * 60 + inM;
-                        let outM = outH * 60 + outM;
-                        if (outM <= inM) outM += 1440;
-                        mHours += (outM - inM) / 60;
+                        let inMins = inH * 60 + inM;
+                        let outMins = outH * 60 + outM;
+                        if (outMins <= inMins) outMins += 1440;
+                        mHours += (outMins - inMins) / 60;
                     }
                 });
 
@@ -676,5 +765,3 @@
     </script>
 </body>
 </html>
-Update clean code with views and adjustments
-
