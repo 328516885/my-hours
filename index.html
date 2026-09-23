@@ -184,9 +184,9 @@
 
         th, td {
             border: 1px solid var(--border-color);
-            padding: 10px;
+            padding: 8px;
             text-align: center;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         th {
@@ -200,38 +200,6 @@
             border-radius: 4px;
             background: var(--input-bg);
             color: var(--text-color);
-        }
-
-        /* אזור תוספות ותיקונים */
-        .adjustments-container {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-        }
-        .adjustment-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .adjustment-row textarea {
-            flex-grow: 1;
-            min-width: 250px;
-            height: 40px;
-        }
-        .btn-add-adj {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .btn-add-adj:hover {
-            background: #218838;
         }
 
         .notes-section {
@@ -256,6 +224,7 @@
         }
         .btn-theme { background: #475569; color: white; }
         .btn-preset { background: #f59e0b; color: white; }
+        .btn-action { background: #10b981; color: white; }
     </style>
 </head>
 <body>
@@ -289,7 +258,7 @@
             </div>
         </header>
 
-        <!-- תפריט ניווט בין חלונות -->
+        <!-- תפריט ניווט עליון -->
         <div class="nav-tabs">
             <button class="nav-tab-btn active" onclick="switchView('homeView')">🏠 בית - טבלת שעות ודאשבורד</button>
             <button class="nav-tab-btn" onclick="switchView('adjustmentsView')">📌 תוספות משכורת ותיקונים</button>
@@ -301,44 +270,49 @@
             <!-- חלון 1: בית - טבלת שעות וסיכום -->
             <div id="homeView" class="view-section active">
                 <div class="card">
-                    <h3>לוח בקרה חודשי - אוגוסט 2026</h3>
-                    <div style="margin-top: 10px; display: flex; gap: 20px; font-weight: bold; flex-wrap: wrap;">
-                        <div>סה״כ שעות חודשי: <span id="totalMonthHours">9.0</span></div>
-                        <div>סה״כ שכר בסיס + לילה: <span id="totalMonthWage">3200.00 ₪</span></div>
-                        <div>סה״כ כולל תוספות: <span id="grandTotalMonth" style="color: #10b981;">3200.00 ₪</span></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <label style="font-weight: bold; margin-left: 10px;">בחר חודש לציפייה:</label>
+                            <select id="activeMonthSelector" onchange="changeActiveMonth()" style="padding: 8px; font-weight: bold;">
+                                <option value="2026-08">אוגוסט 2026</option>
+                                <option value="2026-09">ספטמבר 2026</option>
+                                <option value="2026-10">אוקטובר 2026</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-action" onclick="saveData()">💾 שמור נתונים</button>
+                            <button class="btn btn-action" onclick="exportToEmail()">📧 שלח דיווח למייל</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; display: flex; gap: 20px; font-weight: bold; flex-wrap: wrap; font-size: 15px;">
+                        <div>סה״כ שעות חודשי: <span id="totalMonthHours" style="color: var(--accent-color);">0.0</span></div>
+                        <div>שכר בסיס + לילה: <span id="totalMonthWage">0.00 ₪</span></div>
+                        <div>סה״כ כולל תוספות: <span id="grandTotalMonth" style="color: #10b981;">0.00 ₪</span></div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>טבלת נוכחות ומשמרות</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>תאריך</th>
-                                <th>יום</th>
-                                <th>כניסה</th>
-                                <th>יציאה</th>
-                                <th>סה״כ שעות</th>
-                                <th>דירה / מיקום</th>
-                                <th>הוראות / הערות / חגים</th>
-                                <th>פעולות</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>02/08/2026</td>
-                                <td>א'</td>
-                                <td><input type="time" value="04:00"></td>
-                                <td><input type="time" value="16:00"></td>
-                                <td>9.0</td>
-                                <td><input type="text" value="זבוטינסקי 107"></td>
-                                <td><input type="text" placeholder="הערות ליום זה..."></td>
-                                <td>
-                                    <button class="btn btn-preset" onclick="applyPreset(this)">⚡ שעות</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <h3>טבלת נוכחות ומשמרות חודשית</h3>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>יום</th>
+                                    <th>כניסה</th>
+                                    <th>יציאה</th>
+                                    <th>סה״כ שעות</th>
+                                    <th>דירה / מיקום</th>
+                                    <th>הוראות / הערות / חגים</th>
+                                    <th>פעולות מהירות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timesheetBody">
+                                <!-- נטענים דינמית דרך JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -348,16 +322,16 @@
                     <h3>ניהול תוספות משכורת, בונוסים ותיקונים בדיעבד</h3>
                     <p style="font-size: 14px; color: gray; margin-bottom: 15px;">כאן תוכל להוסיף סכום כספי לכל חודש נבחר יחד עם הוראות והסבר מפורט.</p>
                     
-                    <div class="adjustments-container">
-                        <div class="adjustment-row">
+                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
                             <select id="targetMonthSelect" style="padding: 8px;">
                                 <option value="2026-08">אוגוסט 2026</option>
                                 <option value="2026-09">ספטמבר 2026</option>
                                 <option value="2026-10">אוקטובר 2026</option>
                             </select>
-                            <input type="number" id="adjAmount" placeholder="סכום בש״ח (למשל 400)" style="width: 150px;">
-                            <textarea id="adjInstructions" placeholder="הוראות / סיבה לתוספת (למשל: תשלום נוסף בגין שעות חסרות מחודש קודם לפי סיכום עם העובד)"></textarea>
-                            <button class="btn-add-adj" onclick="addSalaryAdjustment()">הוסף לחודש</button>
+                            <input type="number" id="adjAmount" placeholder="סכום בש״ח" style="width: 130px;">
+                            <textarea id="adjInstructions" placeholder="הוראות / סיבה לתוספת המשכורת..." style="flex-grow: 1; height: 40px;"></textarea>
+                            <button class="btn btn-action" onclick="addSalaryAdjustment()">הוסף לחודש</button>
                         </div>
                         <div id="adjustmentsList" style="margin-top: 15px; font-size: 14px;">
                             <span style="color: gray;">אין תוספות מיוחדות לחודש זה עדיין.</span>
@@ -382,7 +356,7 @@
                             <textarea class="notes-section" id="monthlyNotes" placeholder="רשום כאן את סיכום החודש המלא, תיאום ציפיות ותיקונים כספיים..."></textarea>
                         </div>
                     </div>
-                    <button class="btn-primary" style="margin-top: 15px; width: auto; padding: 8px 20px;" onclick="saveNotes()">שמור הוראות</button>
+                    <button class="btn btn-primary" style="margin-top: 15px; width: auto; padding: 8px 20px;" onclick="saveNotes()">שמור הוראות</button>
                 </div>
             </div>
 
@@ -392,6 +366,9 @@
     <script>
         const DEFAULT_USER = "ay0533115854@gmail.com";
         let monthlyAdjustments = JSON.parse(localStorage.getItem('monthlyAdjustments')) || {};
+        let savedDataStore = JSON.parse(localStorage.getItem('timesheetDataStore')) || {};
+
+        const daysOfWeek = ['א\'', 'ב\'', 'ג\'', 'ד\'', 'ה\'', 'ו\'', 'שבת'];
 
         window.onload = function() {
             if (sessionStorage.getItem('isLoggedIn') === 'true') {
@@ -400,6 +377,7 @@
             if (localStorage.getItem('darkTheme') === 'true') {
                 document.body.classList.add('dark-theme');
             }
+            buildTimesheetForMonth();
             renderAdjustmentsList();
             loadNotes();
         };
@@ -445,11 +423,127 @@
             event.currentTarget.classList.add('active');
         }
 
-        function applyPreset(btn) {
+        function changeActiveMonth() {
+            buildTimesheetForMonth();
+        }
+
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        function buildTimesheetForMonth() {
+            const monthSelectVal = document.getElementById('activeMonthSelector').value; // e.g. "2026-08"
+            const [yearStr, monthStr] = monthSelectVal.split('-');
+            const year = parseInt(yearStr);
+            const month = parseInt(monthStr);
+            const daysCount = getDaysInMonth(year, month);
+
+            const tbody = document.getElementById('timesheetBody');
+            tbody.innerHTML = '';
+
+            const monthData = savedDataStore[monthSelectVal] || {};
+
+            for (let day = 1; day <= daysCount; day++) {
+                const dateObj = new Date(year, month - 1, day);
+                const dayOfWeekName = daysOfWeek[dateObj.getDay()];
+                const formattedDate = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                const rowKey = `row_${day}`;
+                const rowData = monthData[rowKey] || { in: '15:00', out: '07:45', location: 'זבוטינסקי 107', notes: '' };
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${dayOfWeekName}</td>
+                    <td><input type="time" class="in-time" value="${rowData.in}" onchange="calculateTotals()"></td>
+                    <td><input type="time" class="out-time" value="${rowData.out}" onchange="calculateTotals()"></td>
+                    <td class="row-hours">9.0</td>
+                    <td><input type="text" class="loc-input" value="${rowData.location}"></td>
+                    <td><input type="text" class="notes-input" value="${rowData.notes}" placeholder="הערות ליום זה..."></td>
+                    <td>
+                        <button class="btn btn-preset" onclick="applyPresetRow(this)">⚡ שעות</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+            calculateTotals();
+        }
+
+        function applyPresetRow(btn) {
             const row = btn.closest('tr');
-            const inputs = row.querySelectorAll('input[type="time"]');
-            inputs[0].value = "15:00";
-            inputs[1].value = "07:45";
+            row.querySelector('.in-time').value = "15:00";
+            row.querySelector('.out-time').value = "07:45";
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const rows = document.querySelectorAll('#timesheetBody tr');
+            let totalHours = 0;
+
+            rows.forEach(row => {
+                const inVal = row.querySelector('.in-time').value;
+                const outVal = row.querySelector('.out-time').value;
+                const hoursCell = row.querySelector('.row-hours');
+
+                if (inVal && outVal) {
+                    let [inH, inM] = inVal.split(':').map(Number);
+                    let [outH, outM] = outVal.split(':').map(Number);
+                    
+                    let inMinutes = inH * 60 + inM;
+                    let outMinutes = outH * 60 + outM;
+
+                    if (outMinutes <= inMinutes) {
+                        outMinutes += 24 * 60; // מעבר חצות
+                    }
+
+                    let diffHours = (outMinutes - inMinutes) / 60;
+                    hoursCell.innerText = diffHours.toFixed(1);
+                    totalHours += diffHours;
+                } else {
+                    hoursCell.innerText = "0.0";
+                }
+            });
+
+            document.getElementById('totalMonthHours').innerText = totalHours.toFixed(1);
+            
+            // חישוב שכר (לדוגמה לפי 350 ש"ח למשמרת או בסיס גלובלי משוערך לפי שעות)
+            let baseWage = totalHours > 0 ? totalHours * 45 : 3200; 
+            document.getElementById('totalMonthWage').innerText = baseWage.toFixed(2) + " ₪";
+
+            const monthSelectVal = document.getElementById('activeMonthSelector').value;
+            const adjustments = monthlyAdjustments[monthSelectVal] || [];
+            let adjTotal = adjustments.reduce((sum, item) => sum + item.amount, 0);
+
+            document.getElementById('grandTotalMonth').innerText = (baseWage + adjTotal).toFixed(2) + " ₪";
+        }
+
+        function saveData() {
+            const monthSelectVal = document.getElementById('activeMonthSelector').value;
+            const rows = document.querySelectorAll('#timesheetBody tr');
+            let monthData = {};
+
+            rows.forEach((row, index) => {
+                monthData[`row_${index + 1}`] = {
+                    in: row.querySelector('.in-time').value,
+                    out: row.querySelector('.out-time').value,
+                    location: row.querySelector('.loc-input').value,
+                    notes: row.querySelector('.notes-input').value
+                };
+            });
+
+            savedDataStore[monthSelectVal] = monthData;
+            localStorage.setItem('timesheetDataStore', JSON.stringify(savedDataStore));
+            alert('הנתונים נשמרו בהצלחה במערכת!');
+        }
+
+        function exportToEmail() {
+            const monthSelectVal = document.getElementById('activeMonthSelector').value;
+            const totalHours = document.getElementById('totalMonthHours').innerText;
+            const grandTotal = document.getElementById('grandTotalMonth').innerText;
+            
+            const subject = encodeURIComponent(`דיווח שעות חודש ${monthSelectVal} - אברהם יונג`);
+            const body = encodeURIComponent(`שלום,\n\nלהלן סיכוח שעות לחודש ${monthSelectVal}:\n- סה״כ שעות: ${totalHours}\n- סה״כ לתשלום (כולל תוספות): ${grandTotal}\n\nבברכה,\nאברהם יונג`);
+            
+            window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
         }
 
         function addSalaryAdjustment() {
@@ -464,7 +558,6 @@
                 alert('אנא הכנס סכום תקין לתוספת');
                 return;
             }
-            
             if (!instructions) {
                 alert('חובה להזין הוראות / הסבר לתוספת המשכורת');
                 return;
@@ -481,12 +574,11 @@
             });
 
             localStorage.setItem('monthlyAdjustments', JSON.stringify(monthlyAdjustments));
-
             amountInput.value = '';
             instructionsInput.value = '';
             renderAdjustmentsList();
-            updateGrandTotals();
-            alert('התוספת נוספה בהצלחה לחודש הנבחר!');
+            calculateTotals();
+            alert('התוספת נוספה בהצלחה!');
         }
 
         function renderAdjustmentsList() {
@@ -499,12 +591,11 @@
             for (const [month, items] of Object.entries(monthlyAdjustments)) {
                 if (items.length > 0) {
                     hasAny = true;
-                    allHtml += `<div style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">`;
+                    allHtml += `<div style="margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">`;
                     allHtml += `<b>חודש: ${month}</b><ul style="padding-right: 20px; margin-top: 5px;">`;
                     items.forEach((item, index) => {
                         allHtml += `<li style="margin-bottom: 4px;">
                             <b>+${item.amount} ₪</b> — ${item.instructions} 
-                            <span style="color: gray; font-size: 12px;">(${item.dateAdded})</span>
                             <button onclick="removeAdjustment('${month}', ${index})" style="background:none; border:none; color:red; cursor:pointer; margin-right:10px; font-weight:bold;">מחק</button>
                         </li>`;
                     });
@@ -512,11 +603,7 @@
                 }
             }
 
-            if (!hasAny) {
-                listContainer.innerHTML = '<span style="color: gray;">אין תוספות מיוחדות רשומות כרגע.</span>';
-            } else {
-                listContainer.innerHTML = allHtml;
-            }
+            listContainer.innerHTML = hasAny ? allHtml : '<span style="color: gray;">אין תוספות מיוחדות רשומות כרגע.</span>';
         }
 
         function removeAdjustment(monthKey, index) {
@@ -524,18 +611,8 @@
                 monthlyAdjustments[monthKey].splice(index, 1);
                 localStorage.setItem('monthlyAdjustments', JSON.stringify(monthlyAdjustments));
                 renderAdjustmentsList();
-                updateGrandTotals();
+                calculateTotals();
             }
-        }
-
-        function updateGrandTotals() {
-            let baseWage = 3200; 
-            const currentMonthKey = '2026-08';
-            const adjustments = monthlyAdjustments[currentMonthKey] || [];
-            let adjTotal = adjustments.reduce((sum, item) => sum + item.amount, 0);
-
-            document.getElementById('totalMonthWage').innerText = baseWage.toFixed(2) + " ₪";
-            document.getElementById('grandTotalMonth').innerText = (baseWage + adjTotal).toFixed(2) + " ₪";
         }
 
         function saveNotes() {
@@ -545,14 +622,9 @@
         }
 
         function loadNotes() {
-            if(localStorage.getItem('weeklyNotes')) {
-                document.getElementById('weeklyNotes').value = localStorage.getItem('weeklyNotes');
-            }
-            if(localStorage.getItem('monthlyNotes')) {
-                document.getElementById('monthlyNotes').value = localStorage.getItem('monthlyNotes');
-            }
+            if(localStorage.getItem('weeklyNotes')) document.getElementById('weeklyNotes').value = localStorage.getItem('weeklyNotes');
+            if(localStorage.getItem('monthlyNotes')) document.getElementById('monthlyNotes').value = localStorage.getItem('monthlyNotes');
         }
     </script>
 </body>
 </html>
-Update clean code with views and adjustments
