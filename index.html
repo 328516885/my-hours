@@ -2,1113 +2,246 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת ניהול שעות נוכחות ושכר - אברהם יונג</title>
+    <title>מערכת ניהול מתקדמת</title>
     <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-color: #222222;
-            --border-color: #d1d5db;
-            --header-bg: #0f172a;
-            --header-text: #ffffff;
-            --input-bg: #ffffff;
-            --accent-color: #0284c7;
-        }
-
-        body.dark-theme {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --border-color: #333333;
-            --header-bg: #000000;
-            --header-text: #ffffff;
-            --input-bg: #2a2a2a;
-            --accent-color: #38bdf8;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            width: 100vw;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #loginScreen {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: var(--bg-color);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-
-        .login-card {
-            background: var(--card-bg);
-            padding: 30px; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 380px; border: 1px solid var(--border-color);
-        }
-
-        .login-card h2 { margin-bottom: 20px; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-color); }
-        .btn-primary { width: 100%; padding: 10px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-
-        #appContainer { display: none; flex-direction: column; min-height: 100vh; width: 100%; }
-
-        header {
-            background: var(--header-bg);
-            color: var(--header-text);
-            padding: 12px 25px;
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%;
-        }
-
-        .main-content { padding: 20px; flex-grow: 1; width: 100%; }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            width: 100%;
-        }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid var(--border-color); padding: 8px; text-align: center; font-size: 13px; }
-        th { background: var(--header-bg); color: var(--header-text); }
-
-        input[type="time"], input[type="text"], textarea, select, input[type="number"], input[type="date"], input[type="password"], input[type="email"] {
-            padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-color);
-        }
-
-        .top-bar-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-
-        .btn { padding: 4px 8px; border-radius: 3px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; }
-        .btn-theme { background: #334155; color: white; }
-        .btn-hours { background: #0284c7; color: white; }
-        .btn-reset { background: #f59e0b; color: white; }
-        .btn-delete { background: #ef4444; color: white; }
-        .btn-add-shift { background: #10b981; color: white; }
-        .btn-save { background: #10b981; color: white; }
-        .btn-email { background: #7c3aed; color: white; }
-        .btn-nav { background: #0f766e; color: white; }
-
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000;
-        }
-        .modal-card {
-            background: var(--card-bg); padding: 25px; border-radius: 8px; width: 420px;
-            border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-
-        .stock-chart-container {
-            height: 90px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            border-bottom: 2px solid var(--border-color);
-            border-left: 2px solid var(--border-color);
-            padding: 5px 10px 0 10px;
-            background: rgba(245, 158, 11, 0.02);
-            position: relative;
-        }
-        .stock-bar {
-            width: 6%;
-            background: linear-gradient(to top, #d97706, #f59e0b);
-            border-radius: 3px 3px 0 0;
-            cursor: pointer;
-            transition: height 0.3s;
-            position: relative;
-        }
-        .stock-bar:hover { background: #ef4444; }
-        .stock-bar::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 105%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #0f172a;
-            color: white;
-            padding: 3px 6px;
-            font-size: 10px;
-            border-radius: 3px;
-            white-space: nowrap;
-            display: none;
-            z-index: 10;
-        }
-        .stock-bar:hover::after { display: block; }
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; direction: rtl; text-align: right; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
+        input, button { padding: 8px 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-danger:hover { background-color: #a71d2a; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; margin: 5px 0; border: 1px solid #eee; border-radius: 4px; }
+        #login-screen { max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; }
+        #login-screen input { width: 90%; margin-bottom: 15px; }
+        #login-screen button { width: 95%; }
     </style>
 </head>
 <body>
 
-    <!-- מסך כניסה -->
-    <div id="loginScreen">
-        <div class="login-card">
-            <h2>כניסת מערכת - אברהם יונג</h2>
+    <!-- מסך התחברות -->
+    <div id="login-screen">
+        <h2>התחברות למערכת</h2>
+        <input type="email" id="login-email" placeholder="הכנס מייל / שם משתמש...">
+        <input type="password" id="login-password" placeholder="הכנס סיסמה...">
+        <button onclick="login()">התחבר</button>
+        <p id="login-error" style="color: red; font-size: 13px;"></p>
+    </div>
+
+    <!-- מסך ראשי של המערכת -->
+    <div id="main-app" class="container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>הגדרות מתקדמות למערכת</h2>
+            <button onclick="logout()" class="btn-danger">התנתק</button>
+        </div>
+        <p>מחובר כ: <span id="current-user-display" style="font-weight: bold; color: #007bff;"></span></p>
+
+        <!-- ניהול משתמשים (מוצג רק למנהל הראשי) -->
+        <div id="admin-management-section" class="section" style="display: none;">
+            <h3>👥 ניהול משתמשים וגישה למערכת</h3>
+            <p style="font-size: 13px; color: #666;">הוסף משתמשים חדשים באמצעות מייל וסיסמה.</p>
             
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>אימייל / שם משתמש</label>
-                    <input type="text" id="username" placeholder="הכנס מייל..." required>
-                </div>
-                <div class="form-group">
-                    <label>סיסמה</label>
-                    <input type="password" id="password" placeholder="הכנס סיסמה..." required>
-                </div>
-                <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">שם משתמש או סיסמה שגויים</div>
-                <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
-            </form>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="email" id="new-user-email" placeholder="מייל משתמש חדש..." style="flex: 2;">
+                <input type="password" id="new-user-pass" placeholder="סיסמה חדשה..." style="flex: 1;">
+                <button onclick="addNewUser()">+ הוסף משתמש</button>
+            </div>
+
+            <div id="users-list-container" style="margin-top: 15px;">
+                <!-- רשימת משתמשים תופיע כאן -->
+            </div>
+        </div>
+
+        <!-- שינוי סיסמה אישי (לכל משתמש) -->
+        <div class="section">
+            <h3>🔒 שינוי סיסמה אישית</h3>
+            <input type="password" id="current-password-input" placeholder="הכנס סיסמה נוכחית...">
+            <input type="password" id="new-password-input" placeholder="הכנס סיסמה אישית חדשה...">
+            <button onclick="changeMyPassword()">שמור סיסמה חדשה</button>
+            <p id="password-msg" style="font-size: 13px; margin-top: 5px;"></p>
+        </div>
+
+        <!-- אזור הנתונים האישיים של המשתמש -->
+        <div class="section">
+            <h3>📂 הנתונים האישיים שלי במערכת</h3>
+            <p>כאן מוצגים הנתונים השייכים אך ורק למשתמש הנוכחי שמוצג למעלה.</p>
+            <textarea id="user-data-input" rows="4" style="width: 100%;" placeholder="הקלד כאן הערות או נתונים אישיים לשמירה..."></textarea>
+            <button onclick="saveUserData()">שמור נתונים</button>
         </div>
     </div>
 
-    <!-- מערכת ראשית -->
-    <div id="appContainer">
-        <header>
-            <div style="text-align: right;">
-                <h2 style="margin-bottom: 2px; font-size: 18px;">אברהם יונג</h2>
-                <p style="font-size: 11px; opacity: 0.8;">מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
-            </div>
-            <div class="top-bar-controls">
-                <button class="btn btn-nav" onclick="switchSection('home')">🏠 בית</button>
-                <button class="btn btn-nav" onclick="switchSection('addition')">➕ הוספה לחודש</button>
-                <button class="btn btn-nav" onclick="switchSection('settings')">⚙️ הגדרות</button>
-                <button class="btn btn-email" onclick="exportBackupFile()">💾 גיבוי מלא למחשב (JSON)</button>
-                <button class="btn btn-theme" onclick="toggleTheme()">🌓 מצב תצוגה</button>
-                <button class="btn btn-delete" onclick="handleLogout()">יציאה</button>
-            </div>
-        </header>
+<script>
+    // משתמש מנהל ראשי קבוע במערכת
+    const MASTER_ADMIN = "ay0533115854@gmail.com";
 
-        <div class="main-content">
-            
-            <div id="homeView">
-                <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 20px; margin-bottom: 20px;">
-                    <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                        <span style="font-size: 13px; color: gray;">סה״כ שעות החודש הנבחר</span>
-                        <h2 id="totalMonthHours" style="color: var(--accent-color); font-size: 24px; margin: 5px 0;">0.00 שעות</h2>
-                        <span style="font-size: 11px; color: gray;">(סכום הכסף מוסתר במסך הראשי)</span>
-                    </div>
+    // אתחול נתונים ב-LocalStorage במידה ואינם קיימים
+    function initStorage() {
+        if (!localStorage.getItem('system_users')) {
+            const defaultUsers = {
+                "ay0533115854@gmail.com": "123456",
+                "sb0534149238@gmail.com": "123456"
+            };
+            localStorage.setItem('system_users', JSON.stringify(defaultUsers));
+        }
+    }
 
-                    <div class="card" style="margin-bottom: 0; padding: 10px 15px;">
-                        <p style="font-size: 12px; color: gray; margin-bottom: 5px;">📈 גרף שוק ההון השנתי (עבור עם העכבר על עמודה לצפייה בשעות):</p>
-                        <div id="annualHoursGraph" class="stock-chart-container"></div>
-                    </div>
-                </div>
+    function login() {
+        initStorage();
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-password').value.trim();
+        const users = JSON.parse(localStorage.getItem('system_users'));
 
-                <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-save" onclick="saveData()">💾 שמור נתונים</button>
-                        <button class="btn btn-email" onclick="exportToEmail()">📧 ייצוא דו״ח למייל</button>
-                        <button class="btn btn-pdf" onclick="exportToPDFFile()" style="background: #dc2626; color: white;">📄 הפק PDF (הורדה)</button>
-                        <button class="btn btn-excel" onclick="exportToExcelFile()" style="background: #059669; color: white;">📊 ייצוא לאקסל (הורדה)</button>
-                        <button class="btn btn-hours" onclick="openFixedHoursModal()" style="background: #10b981; font-size: 12px; padding: 6px 12px;">🕒 שעות קבועות (ימים)</button>
-                    </div>
+        if (users[email] && users[email] === pass) {
+            localStorage.setItem('logged_in_user', email);
+            document.getElementById('login-error').innerText = '';
+            loadApp();
+        } else {
+            document.getElementById('login-error').innerText = 'שם משתמש או סיסמה שגויים.';
+        }
+    }
 
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <select id="activeYearSelector" onchange="buildTimesheetForMonth()" style="padding: 6px; font-weight: bold;">
-                            <option value="2028">2028</option>
-                            <option value="2027">2027</option>
-                            <option value="2026" selected>2026</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
-                        </select>
-                        <select id="activeMonthSelector" onchange="buildTimesheetForMonth()" style="padding: 6px; font-weight: bold;">
-                            <option value="1">ינואר | 01</option>
-                            <option value="2">פברואר | 02</option>
-                            <option value="3">מרץ | 03</option>
-                            <option value="4">אפריל | 04</option>
-                            <option value="5">מאי | 05</option>
-                            <option value="6">יוני | 06</option>
-                            <option value="7">יולי | 07</option>
-                            <option value="8">אוגוסט | 08</option>
-                            <option value="9" selected>ספטמבר | 09</option>
-                            <option value="10">אוקטובר | 10</option>
-                            <option value="11">נובמבר | 11</option>
-                            <option value="12">דצמבר | 12</option>
-                        </select>
-                        <label style="font-weight: bold;">:בחר שנה וחודש</label>
-                    </div>
-                </div>
+    function logout() {
+        localStorage.removeItem('logged_in_user');
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'block';
+        document.getElementById('login-email').value = '';
+        document.getElementById('login-password').value = '';
+    }
 
-                <div class="card">
-                    <h3 style="margin-bottom: 10px;">טבלת נוכחות ומשמרות חודשית</h3>
-                    <div style="overflow-x: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width: 115px;">תאריך (לועזי / עברי)</th>
-                                    <th style="width: 65px;">יום</th>
-                                    <th style="width: 75px;">כניסה</th>
-                                    <th style="width: 75px;">יציאה</th>
-                                    <th style="width: 65px;">שעות</th>
-                                    <th style="width: 75px;">שכ״ו יומי</th>
-                                    <th style="width: 90px;">דירה / מיקום</th>
-                                    <th>הוראות / הערות / חגים ושבתות</th>
-                                    <th style="width: 110px;">פעולות</th>
-                                </tr>
-                            </thead>
-                            <tbody id="timesheetBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card" style="background: rgba(2, 132, 199, 0.04);">
-                    <h3 style="margin-bottom: 10px; color: var(--accent-color);">📋 סיכום חודשי וכללי מרכזי</h3>
-                    <div id="monthlySummaryBox" style="font-size: 13px; line-height: 1.6;"></div>
-                </div>
-            </div>
-
-            <!-- אזור הוספה לחודש -->
-            <div id="additionView" class="card" style="display: none;">
-                <h3 style="margin-bottom: 15px;">➕ הוספה לחודש (בונוסים ותוספות שכר)</h3>
-                <div style="display: flex; gap: 10px; max-width: 700px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <input type="date" id="adjDate" style="width: 150px;">
-                    <input type="number" id="adjAmount" placeholder="סכום בש״ח" style="width: 130px;">
-                    <input type="text" id="adjInstructions" placeholder="הוראות / סיבה לתוספת..." style="flex-grow: 1;">
-                    <button class="btn btn-save" onclick="addSalaryAdjustment()">הוסף לחודש</button>
-                </div>
-                <div id="adjustmentsList" style="font-size: 13px;">אין תוספות לחודש זה.</div>
-            </div>
-
-            <!-- אזור הגדרות מתקדם -->
-            <div id="settingsView" class="card" style="display: none;">
-                <h3 style="margin-bottom: 15px;">⚙️ הגדרות מתקדמות למערכת</h3>
-                
-                <!-- ניהול משתמשים וסיסמאות -->
-                <div class="card" style="margin-bottom: 20px; background: rgba(2, 132, 199, 0.03);">
-                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">👥 ניהול משתמשים וגישה למערכת</h4>
-                    <p style="font-size: 12px; color: gray; margin-bottom: 10px;">הוסף משתמשים חדשים באמצעות מייל וסיסמה, או עדכן את הסיסמה שלך.</p>
-                    
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                        <input type="email" id="newUserEmail" placeholder="מייל משתמש חדש..." style="flex-grow: 1; min-width: 180px;">
-                        <input type="password" id="newUserPass" placeholder="סיסמה חדשה..." style="width: 150px;">
-                        <button class="btn btn-save" onclick="addNewUser()">➕ הוסף משתמש</button>
-                    </div>
-
-                    <div id="usersListContainer" style="font-size: 12px; background: var(--card-bg); padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 15px;">
-                        <!-- רשימת המשתמשים תיטען לכאן -->
-                    </div>
-
-                    <div style="border-top: 1px solid var(--border-color); padding-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <label style="font-size: 13px; font-weight: bold;">שנה סיסמה אישית:</label>
-                        <input type="password" id="changeMyPassInput" placeholder="הכנס סיסמה אישית חדשה..." style="width: 180px;">
-                        <button class="btn btn-save" onclick="updateMyPassword()">שמור סיסמה חדשה</button>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div class="card" style="margin-bottom: 0;">
-                        <h4 style="margin-bottom: 10px; font-size: 15px;">💰 תעריף שעתי רגיל</h4>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="number" id="hourlyRateInput" value="35.41" step="0.01" style="width: 100px;">
-                            <span>ש״ח</span>
-                            <button class="btn btn-save" onclick="saveHourlyRate()">שמור</button>
-                        </div>
-                    </div>
-                    <div class="card" style="margin-bottom: 0;">
-                        <h4 style="margin-bottom: 10px; font-size: 15px;">🌙 תעריף לילה גלובלי (00:00-06:30)</h4>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="number" id="nightGlobalInput" value="124.25" step="0.01" style="width: 100px;">
-                            <span>ש״ח</span>
-                            <button class="btn btn-save" onclick="saveNightGlobal()">שמור</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card" style="margin-bottom: 20px; background: rgba(2, 132, 199, 0.03);">
-                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">🏠 ניהול והוספת דירות לפי תאריכים</h4>
-                    <p style="font-size: 12px; color: gray; margin-bottom: 10px;">הוסף חוקי דירה לפי תאריך. הנתונים הקודמים שלך יישארו שמורים.</p>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
-                        <input type="date" id="newApartmentDate" style="width: 140px;" title="בחר תאריך תחילה">
-                        <input type="text" id="newApartmentName" placeholder="שם הדירה / כתובת (למשל: זבוטינסקי 50)" style="flex-grow: 1; min-width: 200px;">
-                        <button class="btn btn-save" onclick="addNewApartmentRule()">➕ הוספה</button>
-                    </div>
-                    <div id="apartmentsRulesList" style="font-size: 12px; background: var(--card-bg); padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;"></div>
-                </div>
-
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-save" onclick="exportBackupFile()">💾 גיבוי מלא למחשב (JSON)</button>
-                    <button class="btn btn-delete" onclick="if(confirm('האם לאפס את כל נתוני המערכת?')) { localStorage.clear(); location.reload(); }">⚠️ איפוס מלא של המערכת</button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- מודל שעות קבועות לכל ימי השבוע -->
-    <div id="fixedHoursModal" class="modal-overlay">
-        <div class="modal-card">
-            <h3 style="margin-bottom: 15px; color: var(--accent-color);">🕒 הגדרת שעות קבועות לימי השבוע</h3>
-            <p style="font-size: 12px; color: gray; margin-bottom: 15px;">קבע את שעות הכניסה והיציאה לכל יום בשבוע. בלחיצה על כפתור "שעות" בשורה בטבלה, השעות האלו יתמלאו אוטומטית.</p>
-            <div id="fixedDaysContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; font-size: 13px; max-height: 300px; overflow-y: auto;"></div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="btn btn-theme" onclick="closeFixedHoursModal()">ביטול</button>
-                <button class="btn btn-save" onclick="saveFixedHoursAll()">שמור שעות קבועות</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [
-            { email: 'ay0533115854@gmail.com', pass: '12345678' }
-        ];
-        let monthlyAdjustments = JSON.parse(localStorage.getItem('monthlyAdjustments')) || {};
-        let savedDataStore = JSON.parse(localStorage.getItem('timesheetDataStore')) || {};
-        let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 35.41;
-        let nightGlobalRate = parseFloat(localStorage.getItem('nightGlobalRate')) || 124.25;
-        let apartmentRules = JSON.parse(localStorage.getItem('apartmentRules')) || [
-            { date: '2026-01-01', location: 'זבוטינסקי 107' }
-        ];
-        let fixedHoursDays = JSON.parse(localStorage.getItem('fixedHoursDays')) || {
-            0: {in: '15:00', out: '07:45'},
-            1: {in: '15:00', out: '07:45'},
-            2: {in: '15:00', out: '07:45'},
-            3: {in: '17:00', out: '07:45'},
-            4: {in: '15:00', out: '07:45'},
-            5: {in: '', out: ''},
-            6: {in: '', out: ''}
-        };
-
-        function getHebrewDateAndHolidays(year, month, day) {
-            let holiday = '';
-            let hebrewDay = 'אלול - תשרי';
-
-            if (year === 2026 && month === 9) {
-                if (day >= 1 && day <= 10) hebrewDay = `${day + 21} באלול תשפ״ז`;
-                if (day === 11) { holiday = 'ערב ראש השנה תשפ״ז'; hebrewDay = 'כ״ט באלול תשפ״ז'; }
-                if (day === 12) { holiday = 'ראש השנה א׳'; hebrewDay = 'א׳ בתשרי תשפ״ז'; }
-                if (day === 13) { holiday = 'ראש השנה ב׳'; hebrewDay = 'ב׳ בתשרי תשפ״ז'; }
-                if (day === 20) { holiday = 'ערב יום כיפור'; hebrewDay = 'ט׳ בתשרי תשפ״ז'; }
-                if (day === 21) { holiday = 'יום כיפור'; hebrewDay = 'י׳ בתשרי תשפ״ז'; }
-                if (day >= 22) hebrewDay = `${day - 21} בתשרי תשפ״ז`;
-            }
-            return holiday ? `${holiday} (${hebrewDay})` : hebrewDay;
+    function loadApp() {
+        const currentUser = localStorage.getItem('logged_in_user');
+        if (!currentUser) {
+            logout();
+            return;
         }
 
-        function getLocationForDate(year, month, day) {
-            let dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            let applicableLoc = 'זבוטינסקי 107';
-            let sortedRules = [...apartmentRules].sort((a, b) => a.date.localeCompare(b.date));
-            sortedRules.forEach(rule => {
-                if (dateStr >= rule.date) {
-                    applicableLoc = rule.location;
-                }
-            });
-            return applicableLoc;
-        }
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('current-user-display').innerText = currentUser;
 
-        window.onload = function() {
-            if (sessionStorage.getItem('isLoggedIn') === 'true') {
-                showApp();
-            }
-            if (localStorage.getItem('darkTheme') === 'true') {
-                document.body.classList.add('dark-theme');
-            }
-            document.getElementById('hourlyRateInput').value = hourlyRate;
-            document.getElementById('nightGlobalInput').value = nightGlobalRate;
+        // בדיקה האם המשתמש הוא המנהל הראשי (אברהם יונג)
+        if (currentUser === MASTER_ADMIN) {
+            document.getElementById('admin-management-section').style.display = 'block';
             renderUsersList();
-            renderApartmentRulesList();
-            buildFixedDaysModalUI();
-            buildTimesheetForMonth();
-            renderAdjustmentsList();
-        };
+        } else {
+            document.getElementById('admin-management-section').style.display = 'none';
+        }
 
-        function handleLogin(e) {
-            e.preventDefault();
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value.trim();
+        // טעינת נתונים אישיים של המשתמש הספציפי
+        const userData = localStorage.getItem('data_' + currentUser) || '';
+        document.getElementById('user-data-input').value = userData;
+    }
 
-            let found = registeredUsers.find(u => u.email === user && u.pass === pass);
-            if (found) {
-                sessionStorage.setItem('isLoggedIn', 'true');
-                sessionStorage.setItem('currentUser', user);
-                showApp();
+    function renderUsersList() {
+        const users = JSON.parse(localStorage.getItem('system_users'));
+        const container = document.getElementById('users-list-container');
+        container.innerHTML = '';
+
+        for (let email in users) {
+            let row = document.createElement('div');
+            row.className = 'user-row';
+            
+            let textSpan = document.createElement('span');
+            textSpan.innerHTML = `מייל: <b>${email}</b>`;
+            row.appendChild(textSpan);
+
+            if (email !== MASTER_ADMIN) {
+                let deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-danger';
+                deleteBtn.innerText = 'מחק משתמש';
+                deleteBtn.onclick = function() { deleteUser(email); };
+                row.appendChild(deleteBtn);
             } else {
-                document.getElementById('loginError').style.display = 'block';
+                let adminBadge = document.createElement('span');
+                adminBadge.style.color = '#28a745';
+                adminBadge.style.fontWeight = 'bold';
+                adminBadge.innerText = '(מנהל ראשי)';
+                row.appendChild(adminBadge);
             }
+            container.appendChild(row);
+        }
+    }
+
+    function addNewUser() {
+        const email = document.getElementById('new-user-email').value.trim();
+        const pass = document.getElementById('new-user-pass').value.trim();
+
+        if (!email || !pass) {
+            alert('אנא הזן מייל וסיסמה תקינים.');
+            return;
         }
 
-        function showApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'flex';
+        let users = JSON.parse(localStorage.getItem('system_users'));
+        if (users[email]) {
+            alert('המשתמש כבר קיים במערכת!');
+            return;
         }
 
-        function handleLogout() {
-            sessionStorage.removeItem('isLoggedIn');
-            sessionStorage.removeItem('currentUser');
-            location.reload();
-        }
+        users[email] = pass;
+        localStorage.setItem('system_users', JSON.stringify(users));
+        
+        document.getElementById('new-user-email').value = '';
+        document.getElementById('new-user-pass').value = '';
+        renderUsersList();
+        alert('המשתמש נוסף בהצלחה!');
+    }
 
-        // ניהול משתמשים דרך ההגדרות
-        function addNewUser() {
-            const email = document.getElementById('newUserEmail').value.trim();
-            const pass = document.getElementById('newUserPass').value.trim();
-
-            if (!email || !pass) {
-                alert('אנא הכנס מייל וסיסמה תקינים למשתמש החדש');
-                return;
-            }
-
-            if (registeredUsers.some(u => u.email === email)) {
-                alert('משתמש עם כתובת מייל זו כבר קיים במערכת!');
-                return;
-            }
-
-            registeredUsers.push({ email: email, pass: pass });
-            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserPass').value = '';
-            renderUsersList();
-            alert('המשתמש נוסף בהצלחה למערכת!');
-        }
-
-        function renderUsersList() {
-            const container = document.getElementById('usersListContainer');
-            if (!container) return;
-
-            if (registeredUsers.length === 0) {
-                container.innerHTML = '<span style="color:gray;">אין משתמשים רשומים.</span>';
-                return;
-            }
-
-            let html = '<ul style="padding-right: 15px; margin: 0;">';
-            registeredUsers.forEach((u, index) => {
-                html += `<li style="margin-bottom: 4px;">מייל: <b>${u.email}</b> <button onclick="removeUser(${index})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-right:10px;">מחק משתמש</button></li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
-        }
-
-        function removeUser(index) {
-            if (registeredUsers.length <= 1) {
-                alert('חייב להישאר לפחות משתמש אחד פעיל במערכת.');
-                return;
-            }
-            registeredUsers.splice(index, 1);
-            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    function deleteUser(email) {
+        if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${email}?`)) {
+            let users = JSON.parse(localStorage.getItem('system_users'));
+            delete users[email];
+            localStorage.setItem('system_users', JSON.stringify(users));
+            localStorage.removeItem('data_' + email);
             renderUsersList();
         }
+    }
 
-        function updateMyPassword() {
-            const newPass = document.getElementById('changeMyPassInput').value.trim();
-            if (!newPass || newPass.length < 4) {
-                alert('אנא הכנס סיסמה באורך של לפחות 4 תווים');
-                return;
-            }
-            let activeEmail = sessionStorage.getItem('currentUser') || registeredUsers[0].email;
-            let userObj = registeredUsers.find(u => u.email === activeEmail);
-            if (userObj) {
-                userObj.pass = newPass;
-            } else {
-                registeredUsers[0].pass = newPass;
-            }
-            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-            document.getElementById('changeMyPassInput').value = '';
-            alert('הסיסמה האישית שלך עודכנה בהצלחה!');
+    function changeMyPassword() {
+        const currentUser = localStorage.getItem('logged_in_user');
+        const currentPassInput = document.getElementById('current-password-input').value.trim();
+        const newPassInput = document.getElementById('new-password-input').value.trim();
+        let users = JSON.parse(localStorage.getItem('system_users'));
+
+        const msgEl = document.getElementById('password-msg');
+
+        if (users[currentUser] !== currentPassInput) {
+            msgEl.style.color = 'red';
+            msgEl.innerText = 'הסיסמה הנוכחית שהקשת שגויה.';
+            return;
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-            localStorage.setItem('darkTheme', document.body.classList.contains('dark-theme'));
+        if (!newPassInput || newPassInput.length < 4) {
+            msgEl.style.color = 'red';
+            msgEl.innerText = 'אנא הזן סיסמה חדשה תקינה (לפחות 4 תווים).';
+            return;
         }
 
-        function switchSection(section) {
-            document.getElementById('homeView').style.display = section === 'home' ? 'block' : 'none';
-            document.getElementById('additionView').style.display = section === 'addition' ? 'block' : 'none';
-            document.getElementById('settingsView').style.display = section === 'settings' ? 'block' : 'none';
+        users[currentUser] = newPassInput;
+        localStorage.setItem('system_users', JSON.stringify(users));
+        
+        document.getElementById('current-password-input').value = '';
+        document.getElementById('new-password-input').value = '';
+        msgEl.style.color = 'green';
+        msgEl.innerText = 'הסיסמה שונתה בהצלחה!';
+    }
+
+    function saveUserData() {
+        const currentUser = localStorage.getItem('logged_in_user');
+        const data = document.getElementById('user-data-input').value;
+        localStorage.setItem('data_' + currentUser, data);
+        alert('הנתונים האישיים נשמרו בהצלחה עבור ' + currentUser);
+    }
+
+    // בדיקה בעלייה האם המשתמש כבר מחובר
+    window.onload = function() {
+        initStorage();
+        if (localStorage.getItem('logged_in_user')) {
+            loadApp();
         }
+    };
+</script>
 
-        function exportBackupFile() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-                savedDataStore, monthlyAdjustments, apartmentRules, fixedHoursDays, hourlyRate, nightGlobalRate, registeredUsers
-            }));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", "timesheet_backup_full.json");
-            dlAnchorElem.click();
-        }
-
-        function saveHourlyRate() {
-            hourlyRate = parseFloat(document.getElementById('hourlyRateInput').value) || 35.41;
-            localStorage.setItem('hourlyRate', hourlyRate);
-            calculateTotals();
-            alert('התעריף השעתי עודכן בהצלחה!');
-        }
-
-        function saveNightGlobal() {
-            nightGlobalRate = parseFloat(document.getElementById('nightGlobalInput').value) || 124.25;
-            localStorage.setItem('nightGlobalRate', nightGlobalRate);
-            calculateTotals();
-            alert('תעריף הלילה הגלובלי עודכן בהצלחה!');
-        }
-
-        function addNewApartmentRule() {
-            const dateVal = document.getElementById('newApartmentDate').value;
-            const nameVal = document.getElementById('newApartmentName').value.trim();
-
-            if (!dateVal || !nameVal) {
-                alert('אנא בחר תאריך והכנס שם דירה / כתובת');
-                return;
-            }
-
-            apartmentRules.push({ date: dateVal, location: nameVal });
-            apartmentRules.sort((a, b) => a.date.localeCompare(b.date));
-            localStorage.setItem('apartmentRules', JSON.stringify(apartmentRules));
-
-            document.getElementById('newApartmentDate').value = '';
-            document.getElementById('newApartmentName').value = '';
-            renderApartmentRulesList();
-            buildTimesheetForMonth();
-            alert('הדירה נוספה בהצלחה!');
-        }
-
-        function renderApartmentRulesList() {
-            const container = document.getElementById('apartmentsRulesList');
-            if (!container) return;
-
-            if (apartmentRules.length === 0) {
-                container.innerHTML = '<span style="color:gray;">אין דירות מוגדרות.</span>';
-                return;
-            }
-
-            let html = '<ul style="padding-right: 15px; margin: 0;">';
-            apartmentRules.forEach((rule, index) => {
-                html += `<li style="margin-bottom: 4px;">החל מתאריך <b>${rule.date}</b> ➔ דירה: <b>${rule.location}</b> <button onclick="removeApartmentRule(${index})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-right:10px;">מחק</button></li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
-        }
-
-        function removeApartmentRule(index) {
-            if (apartmentRules.length <= 1) {
-                alert('חייבת להישאר לפחות דירה אחת פעילה במערכת.');
-                return;
-            }
-            apartmentRules.splice(index, 1);
-            localStorage.setItem('apartmentRules', JSON.stringify(apartmentRules));
-            renderApartmentRulesList();
-            buildTimesheetForMonth();
-        }
-
-        function openFixedHoursModal() { document.getElementById('fixedHoursModal').style.display = 'flex'; }
-        function closeFixedHoursModal() { document.getElementById('fixedHoursModal').style.display = 'none'; }
-
-        function buildFixedDaysModalUI() {
-            const container = document.getElementById('fixedDaysContainer');
-            const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-            let html = '';
-            for (let i = 0; i < 7; i++) {
-                let cfg = fixedHoursDays[i] || {in: '', out: ''};
-                html += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border-color);">
-                        <span style="font-weight: bold;">יום ${dayNames[i]}:</span>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <span>כניסה:</span>
-                            <input type="time" id="fixed_in_${i}" value="${cfg.in}" style="padding: 4px;">
-                            <span>יציאה:</span>
-                            <input type="time" id="fixed_out_${i}" value="${cfg.out}" style="padding: 4px;">
-                        </div>
-                    </div>
-                `;
-            }
-            container.innerHTML = html;
-        }
-
-        function saveFixedHoursAll() {
-            for (let i = 0; i < 7; i++) {
-                let inVal = document.getElementById(`fixed_in_${i}`).value;
-                let outVal = document.getElementById(`fixed_out_${i}`).value;
-                fixedHoursDays[i] = { in: inVal, out: outVal };
-            }
-            localStorage.setItem('fixedHoursDays', JSON.stringify(fixedHoursDays));
-            closeFixedHoursModal();
-            alert('השעות הקבועות לכל ימי השבוע נשמרו בהצלחה!');
-        }
-
-        function getDaysInMonth(year, month) {
-            return new Date(year, month, 0).getDate();
-        }
-
-        function buildTimesheetForMonth() {
-            const year = parseInt(document.getElementById('activeYearSelector').value);
-            const month = parseInt(document.getElementById('activeMonthSelector').value);
-            const daysCount = getDaysInMonth(year, month);
-            const tbody = document.getElementById('timesheetBody');
-            tbody.innerHTML = '';
-
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            const monthData = savedDataStore[monthKey] || {};
-            let totalRowsCount = Math.max(daysCount, Object.keys(monthData).length || daysCount);
-
-            for (let day = 1; day <= totalRowsCount; day++) {
-                let dateObj = day <= daysCount ? new Date(year, month - 1, day) : null;
-                let dayIndex = dateObj ? dateObj.getDay() : 0;
-                let formattedDate = day <= daysCount ? `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}` : 'נוסף';
-                let dayOfWeekName = day <= daysCount ? ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][dayIndex] : 'משמרת';
-                let hebrewInfo = day <= daysCount ? getHebrewDateAndHolidays(year, month, day) : '';
-                let defaultLocationForDay = day <= daysCount ? getLocationForDate(year, month, day) : (apartmentRules.length > 0 ? apartmentRules[apartmentRules.length-1].location : 'זבוטינסקי 107');
-
-                const rowKey = `row_${day}`;
-                const rowData = monthData[rowKey] || { in: '', out: '', location: defaultLocationForDay, notes: hebrewInfo.includes('ראש השנה') || hebrewInfo.includes('כיפור') ? hebrewInfo : '' };
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${formattedDate}<br><span style="font-size:10px; color:var(--accent-color);">${hebrewInfo}</span></td>
-                    <td>${dayOfWeekName}</td>
-                    <td><input type="time" class="in-time" value="${rowData.in}" onchange="autoSaveAndCalc()"></td>
-                    <td><input type="time" class="out-time" value="${rowData.out}" onchange="autoSaveAndCalc()"></td>
-                    <td class="row-hours">0.00</td>
-                    <td class="row-wage">0.00 ₪</td>
-                    <td><input type="text" class="loc-input" value="${rowData.location}" onchange="autoSaveAndCalc()" style="width: 85px;"></td>
-                    <td><textarea class="notes-input" placeholder="הוראות, חגים והערות..." onchange="autoSaveAndCalc()" style="width: 100%; height: 35px; resize: vertical;">${rowData.notes}</textarea></td>
-                    <td>
-                        <div style="display: flex; gap: 2px; justify-content: center; align-items: center; flex-wrap: nowrap;">
-                            <button class="btn btn-hours" title="שעות קבועות ליום זה" onclick="applyDayFixedHours(this, ${dayIndex})">שעות</button>
-                            <button class="btn btn-reset" title="איפוס" onclick="resetRow(this)">איפוס</button>
-                            <button class="btn btn-add-shift" title="הוסף משמרת" onclick="addNewShiftRowBelow(this)">+</button>
-                            <button class="btn btn-delete" title="מחק" onclick="clearRow(this)">X</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-
-                if (day === 7 || day === 14 || day === 21 || day === 28 || day === daysCount) {
-                    const weekSummaryKey = `week_summary_${day}`;
-                    const weekNotesVal = (monthData[weekSummaryKey] && monthData[weekSummaryKey].notes) ? monthData[weekSummaryKey].notes : '';
-                    
-                    const summaryTr = document.createElement('tr');
-                    summaryTr.className = "weekly-summary-row";
-                    summaryTr.style.background = "rgba(2, 132, 199, 0.08)";
-                    summaryTr.innerHTML = `
-                        <td colspan="6" style="text-align: right; padding: 6px 15px; font-size: 12px; font-weight: bold;">
-                            📌 <b>סיכום שבועי:</b> 
-                            סך שעות: <span class="week-total-hours">0.00</span> שעות | 
-                            סך שכר שבועי: <span class="week-total-wage">0.00 ₪</span>
-                        </td>
-                        <td colspan="3" style="padding: 4px;">
-                            <input type="text" class="week-notes-input" placeholder="הוראות והערות לשבוע זה..." value="${weekNotesVal}" onchange="autoSaveAndCalc()" style="width: 100%; font-size: 12px; padding: 4px;">
-                        </td>
-                    `;
-                    tbody.appendChild(summaryTr);
-                }
-            }
-            calculateTotals();
-            updateAnnualGraph(year);
-        }
-
-        function autoSaveAndCalc() {
-            saveData(true);
-            calculateTotals();
-        }
-
-        function addNewShiftRowBelow(btn) {
-            const currentRow = btn.closest('tr');
-            const defaultLocForNew = apartmentRules.length > 0 ? apartmentRules[apartmentRules.length-1].location : 'זבוטינסקי 107';
-            const newTr = document.createElement('tr');
-            newTr.innerHTML = `
-                <td>משמרת נוספת<br><span style="font-size:10px; color:var(--accent-color);">נוסף</span></td>
-                <td>נוסף</td>
-                <td><input type="time" class="in-time" onchange="autoSaveAndCalc()"></td>
-                <td><input type="time" class="out-time" onchange="autoSaveAndCalc()"></td>
-                <td class="row-hours">0.00</td>
-                <td class="row-wage">0.00 ₪</td>
-                <td><input type="text" class="loc-input" value="${defaultLocForNew}" onchange="autoSaveAndCalc()" style="width: 85px;"></td>
-                <td><textarea class="notes-input" placeholder="הוראות והערות..." onchange="autoSaveAndCalc()" style="width: 100%; height: 35px; resize: vertical;"></textarea></td>
-                <td>
-                    <div style="display: flex; gap: 2px; justify-content: center; align-items: center; flex-wrap: nowrap;">
-                        <button class="btn btn-hours" title="שעות קבועות" onclick="applyDayFixedHours(this, 0)">שעות</button>
-                        <button class="btn btn-reset" title="איפוס" onclick="resetRow(this)">איפוס</button>
-                        <button class="btn btn-add-shift" title="הוסף משמרת" onclick="addNewShiftRowBelow(this)">+</button>
-                        <button class="btn btn-delete" title="מחק" onclick="this.closest('tr').remove(); autoSaveAndCalc();">X</button>
-                    </div>
-                </td>
-            `;
-            currentRow.parentNode.insertBefore(newTr, currentRow.nextSibling);
-            autoSaveAndCalc();
-        }
-
-        function applyDayFixedHours(btn, dayIndex) {
-            const row = btn.closest('tr');
-            let cfg = fixedHoursDays[dayIndex] || {in: '15:00', out: '07:45'};
-            row.querySelector('.in-time').value = cfg.in;
-            row.querySelector('.out-time').value = cfg.out;
-            autoSaveAndCalc();
-        }
-
-        function resetRow(btn) {
-            const row = btn.closest('tr');
-            row.querySelector('.in-time').value = '';
-            row.querySelector('.out-time').value = '';
-            autoSaveAndCalc();
-        }
-
-        function clearRow(btn) {
-            const row = btn.closest('tr');
-            row.querySelector('.in-time').value = '';
-            row.querySelector('.out-time').value = '';
-            row.querySelector('.loc-input').value = '';
-            row.querySelector('.notes-input').value = '';
-            autoSaveAndCalc();
-        }
-
-        function calculateTotals() {
-            const rows = document.querySelectorAll('#timesheetBody tr');
-            let totalHours = 0;
-            let currentWeekHours = 0;
-            let currentWeekWage = 0;
-
-            rows.forEach(row => {
-                if (row.classList.contains('weekly-summary-row')) {
-                    row.querySelector('.week-total-hours').innerText = currentWeekHours.toFixed(2);
-                    row.querySelector('.week-total-wage').innerText = currentWeekWage.toFixed(2) + " ₪";
-                    currentWeekHours = 0;
-                    currentWeekWage = 0;
-                    return;
-                }
-                if (!row.querySelector('.in-time')) return;
-
-                const inVal = row.querySelector('.in-time').value;
-                const outVal = row.querySelector('.out-time').value;
-                const hoursCell = row.querySelector('.row-hours');
-                const wageCell = row.querySelector('.row-wage');
-
-                if (inVal && outVal) {
-                    let [inH, inM] = inVal.split(':').map(Number);
-                    let [outH, outM] = outVal.split(':').map(Number);
-                    let inMins = inH * 60 + inM;
-                    let outMins = outH * 60 + outM;
-                    if (outMins <= inMins) outMins += 24 * 60;
-
-                    let totalDiffHours = (outMins - inMins) / 60;
-                    
-                    let nightMinsCount = 0;
-                    let c2 = inMins;
-                    while(c2 < outMins) {
-                        let minuteOfDay = c2 % 1440;
-                        if (minuteOfDay >= 0 && minuteOfDay <= 390) { // 00:00 עד 06:30
-                            nightMinsCount++;
-                        }
-                        c2++;
-                    }
-
-                    let rowWage = 0;
-                    if (nightMinsCount > 0) {
-                        let nightHours = nightMinsCount / 60;
-                        let regularHours = Math.max(0, totalDiffHours - nightHours);
-                        rowWage = (regularHours * hourlyRate) + (nightHours * (nightGlobalRate / 6.5));
-                    } else {
-                        rowWage = totalDiffHours * hourlyRate;
-                    }
-
-                    hoursCell.innerText = totalDiffHours.toFixed(2);
-                    wageCell.innerText = rowWage.toFixed(2) + " ₪";
-                    
-                    totalHours += totalDiffHours;
-                    currentWeekHours += totalDiffHours;
-                    currentWeekWage += rowWage;
-                } else {
-                    hoursCell.innerText = "0.00";
-                    wageCell.innerText = "0.00 ₪";
-                }
-            });
-
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            const adjustments = monthlyAdjustments[monthKey] || [];
-            let adjTotal = adjustments.reduce((sum, item) => sum + item.amount, 0);
-            
-            let totalBaseWage = 0;
-            rows.forEach(row => {
-                if (!row.querySelector('.row-wage')) return;
-                let wText = row.querySelector('.row-wage').innerText;
-                totalBaseWage += parseFloat(wText) || 0;
-            });
-
-            let totalWage = totalBaseWage + adjTotal;
-
-            document.getElementById('totalMonthHours').innerText = totalHours.toFixed(2) + " שעות";
-
-            let adjText = adjustments.length > 0 ? adjustments.map(a => `• ${a.date}: +${a.amount} ₪ (סיבה: ${a.instructions || 'תוספת מהחודש האחרון'})`).join('<br>') : 'אין תוספות לחודש זה.';
-            document.getElementById('monthlySummaryBox').innerHTML = `
-                <b>סה״כ שעות חודשי:</b> ${totalHours.toFixed(2)} שעות<br>
-                <b>שכר שעות חודשי:</b> ${totalBaseWage.toFixed(2)} ₪<br>
-                <b>תוספות ובונוסים חודשיים:</b><br>${adjText}<br>
-                <b style="color:var(--accent-color); font-size:14px;">סה״כ כללי משולב לחודש (שעות + תוספות): ${totalWage.toFixed(2)} ₪</b>
-            `;
-        }
-
-        function updateAnnualGraph(year) {
-            const graphContainer = document.getElementById('annualHoursGraph');
-            graphContainer.innerHTML = '';
-            const monthsNames = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
-
-            for (let m = 1; m <= 12; m++) {
-                const mKey = `${year}-${String(m).padStart(2, '0')}`;
-                const mData = savedDataStore[mKey] || {};
-                let mHours = 0;
-                Object.values(mData).forEach(r => {
-                    if (r && r.in && r.out) {
-                        let [inH, inM] = r.in.split(':').map(Number);
-                        let [outH, outM] = r.out.split(':').map(Number);
-                        let inMins = inH * 60 + inM;
-                        let outMins = outH * 60 + outM;
-                        if (outMins <= inMins) outMins += 1440;
-                        mHours += (outMins - inMins) / 60;
-                    }
-                });
-
-                let heightPercent = Math.min(Math.max((mHours / 250) * 100, 8), 100);
-                const barDiv = document.createElement('div');
-                barDiv.className = 'stock-bar';
-                barDiv.style.height = heightPercent + '%';
-                barDiv.setAttribute('data-tooltip', `${monthsNames[m-1]}: ${mHours.toFixed(1)} שעות`);
-                graphContainer.appendChild(barDiv);
-            }
-        }
-
-        function saveData(silent = false) {
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            const rows = document.querySelectorAll('#timesheetBody tr');
-            let monthData = {};
-            let index = 1;
-            let weekIndex = 1;
-
-            rows.forEach(row => {
-                if (row.classList.contains('weekly-summary-row')) {
-                    const wNotes = row.querySelector('.week-notes-input') ? row.querySelector('.week-notes-input').value : '';
-                    monthData[`week_summary_${weekIndex}`] = { notes: wNotes };
-                    weekIndex++;
-                    return;
-                }
-                if (!row.querySelector('.in-time')) return;
-                monthData[`row_${index}`] = {
-                    in: row.querySelector('.in-time').value,
-                    out: row.querySelector('.out-time').value,
-                    location: row.querySelector('.loc-input').value,
-                    notes: row.querySelector('.notes-input').value
-                };
-                index++;
-            });
-
-            savedDataStore[monthKey] = monthData;
-            localStorage.setItem('timesheetDataStore', JSON.stringify(savedDataStore));
-            updateAnnualGraph(year);
-            if (!silent) {
-                alert('הנתונים נשמרו בהצלחה!');
-            }
-        }
-
-        function exportToEmail() {
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            const totalHours = document.getElementById('totalMonthHours').innerText;
-            const summaryHTML = document.getElementById('monthlySummaryBox').innerText;
-            
-            let activeUser = sessionStorage.getItem('currentUser') || 'ay0533115854@gmail.com';
-            const subject = encodeURIComponent(`דיווח שעות חודש ${month}/${year} - אברהם יונג`);
-            const body = encodeURIComponent(`שלום,\n\nלהלן סיכום הנתונים המלא לחודש ${month}/${year}:\n- סה״כ שעות: ${totalHours}\n\n${summaryHTML}\n\nבברכה,\nאברהם יונג`);
-            window.location.href = `mailto:${activeUser}?subject=${subject}&body=${body}`;
-        }
-
-        function exportToExcelFile() {
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            let csvContent = "\uFEFF"; 
-            csvContent += "תאריך,יום,כניסה,יציאה,שעות,שכר יומי (₪),מיקום/דירה,הוראות והערות\n";
-
-            const rows = document.querySelectorAll('#timesheetBody tr');
-            rows.forEach(row => {
-                if (row.classList.contains('weekly-summary-row')) return;
-                const cols = row.querySelectorAll('td');
-                if (cols.length >= 8) {
-                    let dateText = cols[0].innerText.split('\n')[0].replace(/"/g, '""');
-                    let dayText = cols[1].innerText.replace(/"/g, '""');
-                    let inVal = row.querySelector('.in-time') ? row.querySelector('.in-time').value : '';
-                    let outVal = row.querySelector('.out-time') ? row.querySelector('.out-time').value : '';
-                    let hoursVal = cols[4].innerText.replace(/"/g, '""');
-                    let wageVal = cols[5].innerText.replace(/"/g, '""');
-                    let locVal = row.querySelector('.loc-input') ? row.querySelector('.loc-input').value.replace(/"/g, '""') : '';
-                    let notesVal = row.querySelector('.notes-input') ? row.querySelector('.notes-input').value.replace(/[\n\r]+/g, ' ').replace(/"/g, '""') : '';
-
-                    csvContent += `"${dateText}","${dayText}","${inVal}","${outVal}","${hoursVal}","${wageVal}","${locVal}","${notesVal}"\n`;
-                }
-            });
-
-            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `timesheet_${month}_${year}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function exportToPDFFile() {
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            const totalHours = document.getElementById('totalMonthHours').innerText;
-            const summaryHTML = document.getElementById('monthlySummaryBox').innerText.replace(/<br>/g, '\n').replace(/<\/?[^>]+(>|$)/g, "");
-
-            let htmlContent = `
-                <html lang="he" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>דו״ח שעות חודש ${month}/${year} - אברהם יונג</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
-                        h2 { text-align: center; margin-bottom: 5px; }
-                        p { text-align: center; color: #555; font-size: 13px; margin-bottom: 20px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                        th, td { border: 1px solid #999; padding: 6px; text-align: center; font-size: 12px; }
-                        th { background: #0f172a; color: white; }
-                        .summary { margin-top: 20px; padding: 15px; background: #f8fafc; border: 1px solid #cbd5e1; font-size: 14px; line-height: 1.6; }
-                    </style>
-                </head>
-                <body>
-                    <h2>אברהם יונג - דו״ח נוכחות ושכר</h2>
-                    <p>חודש: ${month} / ${year}</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>תאריך</th>
-                                <th>יום</th>
-                                <th>כניסה</th>
-                                <th>יציאה</th>
-                                <th>שעות</th>
-                                <th>שכר יומי</th>
-                                <th>דירה / מיקום</th>
-                                <th>הערות וחגים</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            const rows = document.querySelectorAll('#timesheetBody tr');
-            rows.forEach(row => {
-                if (row.classList.contains('weekly-summary-row')) return;
-                const cols = row.querySelectorAll('td');
-                if (cols.length >= 8) {
-                    let dateText = cols[0].innerText.split('\n')[0];
-                    let dayText = cols[1].innerText;
-                    let inVal = row.querySelector('.in-time') ? row.querySelector('.in-time').value : '';
-                    let outVal = row.querySelector('.out-time') ? row.querySelector('.out-time').value : '';
-                    let hoursVal = cols[4].innerText;
-                    let wageVal = cols[5].innerText;
-                    let locVal = row.querySelector('.loc-input') ? row.querySelector('.loc-input').value : '';
-                    let notesVal = row.querySelector('.notes-input') ? row.querySelector('.notes-input').value : '';
-
-                    htmlContent += `
-                        <tr>
-                            <td>${dateText}</td>
-                            <td>${dayText}</td>
-                            <td>${inVal}</td>
-                            <td>${outVal}</td>
-                            <td>${hoursVal}</td>
-                            <td>${wageVal}</td>
-                            <td>${locVal}</td>
-                            <td>${notesVal}</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            htmlContent += `
-                        </tbody>
-                    </table>
-                    <div class="summary">
-                        <b>סיכום חודשי:</b><br>
-                        ${summaryHTML.replace(/\n/g, '<br>')}
-                    </div>
-                </body>
-                </html>
-            `;
-
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `timesheet_${month}_${year}.html`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function addSalaryAdjustment() {
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            
-            const dateInput = document.getElementById('adjDate').value;
-            const amountInput = document.getElementById('adjAmount');
-            const instructionsInput = document.getElementById('adjInstructions');
-            
-            const amount = parseFloat(amountInput.value);
-            const instructions = instructionsInput.value.trim() || 'תוספת מהחודש האחרון';
-            
-            if (isNaN(amount) || amount === 0) {
-                alert('אנא הכנס סכום תקין לתוספת');
-                return;
-            }
-
-            if (!monthlyAdjustments[monthKey]) {
-                monthlyAdjustments[monthKey] = [];
-            }
-
-            monthlyAdjustments[monthKey].push({
-                date: dateInput || 'לא צוין תאריך',
-                amount: amount,
-                instructions: instructions
-            });
-
-            localStorage.setItem('monthlyAdjustments', JSON.stringify(monthlyAdjustments));
-            amountInput.value = '';
-            instructionsInput.value = '';
-            document.getElementById('adjDate').value = '';
-            renderAdjustmentsList();
-            calculateTotals();
-            alert('התוספת התעדכנה בהצלחה!');
-        }
-
-        function renderAdjustmentsList() {
-            const year = document.getElementById('activeYearSelector').value;
-            const month = document.getElementById('activeMonthSelector').value;
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            const listContainer = document.getElementById('adjustmentsList');
-            if (!listContainer) return;
-            
-            const items = monthlyAdjustments[monthKey] || [];
-            if (items.length === 0) {
-                listContainer.innerHTML = '<span style="color: gray;">אין תוספות לחודש זה.</span>';
-                return;
-            }
-
-            let html = '<ul style="padding-right: 15px; margin: 0;">';
-            items.forEach((item, index) => {
-                html += `<li style="margin-bottom: 5px;">📅 <b>${item.date}</b> — <b>+${item.amount} ₪</b> — (${item.instructions}) <button onclick="removeAdjustment('${monthKey}', ${index})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-right:8px;">מחק</button></li>`;
-            });
-            html += '</ul>';
-            listContainer.innerHTML = html;
-        }
-
-        function removeAdjustment(monthKey, index) {
-            if (monthlyAdjustments[monthKey]) {
-                monthlyAdjustments[monthKey].splice(index, 1);
-                localStorage.setItem('monthlyAdjustments', JSON.stringify(monthlyAdjustments));
-                renderAdjustmentsList();
-                calculateTotals();
-            }
-        }
-    </script>
 </body>
 </html>
