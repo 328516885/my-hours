@@ -7,33 +7,33 @@
     <meta name="theme-color" content="#1A3A5C">
     <style>
         :root {
-            --bg-body: #f2f4f7;
+            --bg-body: #eef2f5;
             --bg-card: #ffffff;
-            --text-main: #333333;
+            --text-main: #2b3648;
             --primary: #1A3A5C;
             --secondary: #2E6DA4;
             --accent: #d9534f;
-            --light: #f8f9fa;
-            --border: #d3d3d3;
+            --light: #f4f7f9;
+            --border: #cbd5e1;
             --btn-blue: #007bff;
             --purple: #6f42c1;
         }
 
         body.dark-theme {
-            --bg-body: #12181f;
-            --bg-card: #1e2630;
-            --text-main: #e1e8ed;
-            --primary: #2c5282;
-            --secondary: #3182ce;
-            --light: #2a3441;
-            --border: #3c4858;
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --primary: #1e3a5f;
+            --secondary: #3b82f6;
+            --light: #334155;
+            --border: #475569;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-body);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             color: var(--text-main);
             transition: background-color 0.3s, color 0.3s;
         }
@@ -42,7 +42,7 @@
         .login-card {
             background: var(--bg-card);
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 420px;
             padding: 40px 30px;
@@ -50,7 +50,7 @@
             border: 1px solid var(--border);
         }
         .login-card h2 { margin-top: 0; color: var(--primary); font-size: 24px; }
-        .login-card p { color: #888; font-size: 14px; margin-bottom: 25px; }
+        .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; }
         .form-group { margin-bottom: 18px; text-align: right; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; }
         .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; background: var(--bg-card); color: var(--text-main); }
@@ -60,50 +60,64 @@
         .success-msg { color: #5cb85c; font-size: 13px; margin-top: 12px; display: none; font-weight: bold; }
 
         #mainApp, #resetStep1, #resetStep2 { display: none; }
-        .container { max-width: 1350px; margin: 0 auto; background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 1px solid var(--border); }
         
-        header { background-color: var(--primary); color: white; padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 20px; position: relative; }
-        header h1 { margin: 0 0 5px 0; font-size: 26px; }
-        header p { margin: 0; font-size: 13px; opacity: 0.9; }
+        /* פריסה מלאה 100% על כל רוחב המסך והמחשב */
+        .container-full { 
+            width: 100%; 
+            box-sizing: border-box; 
+            background: var(--bg-card); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); 
+            border: 1px solid var(--border); 
+        }
         
-        .top-nav-btns { position: absolute; left: 15px; top: 15px; display: flex; gap: 8px; }
-        .nav-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
-        .nav-btn:hover { background: rgba(255,255,255,0.4); }
-
-        .live-clock-card { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .live-clock-time { font-size: 24px; font-weight: bold; font-family: monospace; }
-
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: var(--light); padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
-        .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; opacity: 0.8; }
-        .stat-card .value { font-size: 22px; font-weight: bold; color: var(--secondary); }
-        .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
-        .progress-bar-fill { background: #28a745; height: 100%; width: 0%; transition: width 0.5s ease; }
-
-        .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
-        .month-label-display { background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 15px; }
+        header { background: linear-gradient(135deg, var(--primary), #0d233a); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; position: relative; }
+        header h1 { margin: 0 0 5px 0; font-size: 28px; letter-spacing: 0.5px; }
+        header p { margin: 0; font-size: 14px; opacity: 0.9; }
         
-        .btn { background-color: var(--secondary); color: white; border: none; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        .btn-green { background-color: #28a745; }
-        .btn-excel { background-color: #1d6f42; }
+        .top-nav-btns { position: absolute; left: 15px; top: 18px; display: flex; gap: 10px; }
+        .nav-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .live-clock-card { background: linear-gradient(135deg, #1e3a5f, var(--secondary)); color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .live-clock-time { font-size: 26px; font-weight: bold; font-family: monospace; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--light); padding: 18px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
+        .stat-card h4 { margin: 0 0 8px 0; font-size: 14px; opacity: 0.85; }
+        .stat-card .value { font-size: 24px; font-weight: bold; color: var(--secondary); }
+        .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+        .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
+        .month-label-display { background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: bold; font-size: 15px; }
+        
+        .btn { background-color: var(--secondary); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-green { background-color: #10b981; }
+        .btn-preset { background-color: #0284c7; }
+        .btn-excel { background-color: #15803d; }
         .btn-purple { background-color: var(--purple); }
         .btn-red { background-color: var(--accent); }
-        .btn-lock { background-color: #6c757d; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
-        th { background-color: var(--primary); color: white; }
-        td input { background: transparent; border: 1px solid transparent; color: var(--text-main); text-align: center; font-family: inherit; width: 95%; }
-        td input:focus { border-color: var(--secondary); background: var(--bg-card); outline: none; border-radius: 4px; }
+        th, td { border: 1px solid var(--border); padding: 10px 6px; text-align: center; }
+        th { background-color: var(--primary); color: white; font-weight: 600; }
         
-        .alert-dot { color: #d9534f; font-weight: bold; margin-right: 4px; font-size: 14px; cursor: help; }
+        /* הרחבת שדה ההערות למקסימום נוחות */
+        .note-input { width: 98% !important; text-align: right !important; padding: 4px 6px; }
+        
+        td input { background: transparent; border: 1px solid transparent; color: var(--text-main); text-align: center; font-family: inherit; font-size: 13px; }
+        td input:focus { border-color: var(--secondary); background: var(--bg-card); outline: none; border-radius: 4px; box-shadow: 0 0 0 2px rgba(46,109,164,0.2); }
+        
+        .alert-dot { color: #ef4444; font-weight: bold; margin-right: 4px; font-size: 15px; cursor: help; }
         .week-summary-row { background-color: var(--light); font-weight: bold; color: var(--primary); }
-        .month-summary-row { background-color: var(--primary); color: white; font-weight: bold; font-size: 15px; }
+        .month-summary-row { background-color: var(--primary); color: white; font-weight: bold; font-size: 16px; }
 
         @media print { 
             body { background: #fff; color: #000; padding: 0; } 
-            .container { box-shadow: none; padding: 0; border: none; } 
+            .container-full { box-shadow: none; padding: 0; border: none; } 
             .no-print { display: none !important; } 
         }
     </style>
@@ -158,11 +172,11 @@
     </div>
 </div>
 
-<div id="mainApp" class="container">
+<div id="mainApp" class="container-full">
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-            <button class="nav-btn" onclick="sendBackupToEmail(true)">📧 גיבוי למייל</button>
+
             <button class="nav-btn" onclick="importBackup()">📂 טען גיבוי</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
@@ -188,10 +202,6 @@
             <h4>סה״כ שכר משוער</h4>
             <div class="value" id="dashMonthPay">0.00 ₪</div>
         </div>
-        <div class="stat-card">
-            <h4>מגמה לעומת חודש שעבר</h4>
-            <div class="value" id="dashTrend">0%</div>
-        </div>
     </div>
 
     <div class="controls no-print">
@@ -201,9 +211,9 @@
             <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-preset" onclick="fillShiftPreset()">⚡ מילוי משמרת קבועה (15:00-07:45)</button>
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-            <button id="lockMonthBtn" class="btn btn-lock" onclick="toggleLockMonth()">🔒 נעל חודש זה</button>
-            <button class="btn btn-purple" onclick="sendBackupToEmail(true)">✉️ שלח גיבוי ענן למייל</button>
+
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -212,15 +222,15 @@
     <table>
         <thead>
             <tr>
-                <th>תאריך</th>
-                <th>יום</th>
-                <th>כניסה</th>
-                <th>יציאה</th>
-                <th>סה״כ שעות</th>
-                <th>סה״כ יומי ₪</th>
-                <th>דירה / מיקום</th>
+                <th style="width: 130px;">תאריך</th>
+                <th style="width: 60px;">יום</th>
+                <th style="width: 90px;">כניסה</th>
+                <th style="width: 90px;">יציאה</th>
+                <th style="width: 90px;">סה״כ שעות</th>
+                <th style="width: 100px;">סה״כ יומי ₪</th>
+                <th style="width: 160px;">דירה / מיקום</th>
                 <th>הוראות / הערות / חגים ושבתות</th>
-                <th class="no-print">פעולות</th>
+                <th class="no-print" style="width: 130px;">פעולות</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -408,20 +418,6 @@ function saveShifts(allData) {
     localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
 }
 
-function isMonthLocked() {
-    let monthVal = document.getElementById('monthPicker').value;
-    let locks = JSON.parse(localStorage.getItem('locked_months') || '{}');
-    return !!locks[monthVal];
-}
-
-function toggleLockMonth() {
-    let monthVal = document.getElementById('monthPicker').value;
-    let locks = JSON.parse(localStorage.getItem('locked_months') || '{}');
-    locks[monthVal] = !locks[monthVal];
-    localStorage.setItem('locked_months', JSON.stringify(locks));
-    render();
-}
-
 function loadMonth() {
     let monthVal = document.getElementById('monthPicker').value;
     if (!monthVal) return;
@@ -462,6 +458,28 @@ function loadMonth() {
     render();
 }
 
+function fillShiftPreset() {
+    let targetDate = prompt("הזן תאריך למילוי משמרת קבועה 15:00-07:45 (בפורמט YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+    if (!targetDate) return;
+
+    let item = currentMonthData.find(x => x.date === targetDate);
+    if (item) {
+        item.inTime = "15:00";
+        item.outTime = "07:45";
+    } else {
+        currentMonthData.push({
+            id: 'shift_' + Math.random().toString(36).substr(2, 9),
+            date: targetDate,
+            inTime: '15:00',
+            outTime: '07:45',
+            apartment: 'זבוטינסקי 107',
+            note: 'משמרת קבועה'
+        });
+    }
+    saveCurrentMonth();
+    render();
+}
+
 function calculatePay(inTime, outTime) {
     if (!inTime || !outTime) return { hours: 0, pay: 0 };
     let [inH, inM] = inTime.split(':').map(Number);
@@ -495,16 +513,6 @@ function render() {
     let totalMonthPay = 0;
     let totalWeekHours = 0;
     let totalWeekPay = 0;
-    let locked = isMonthLocked();
-
-    let lockBtn = document.getElementById('lockMonthBtn');
-    if (locked) {
-        lockBtn.innerText = "🔓 פתח חודש זה";
-        lockBtn.style.backgroundColor = "#d9534f";
-    } else {
-        lockBtn.innerText = "🔒 נעל חודש זה";
-        lockBtn.style.backgroundColor = "#6c757d";
-    }
 
     currentMonthData.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -519,28 +527,26 @@ function render() {
         totalWeekHours += calc.hours;
         totalWeekPay += calc.pay;
 
-        let hasAnomaly = calc.hours > 16 || (item.inTime && !item.outTime) || (!item.inTime && item.outTime);
+        let hasAnomaly = calc.hours > 20 || (item.inTime && !item.outTime) || (!item.inTime && item.outTime);
 
         let tr = document.createElement('tr');
-        if (dayOfWeek === 6) tr.style.backgroundColor = 'rgba(46, 109, 164, 0.1)';
+        if (dayOfWeek === 6) tr.style.backgroundColor = 'rgba(46, 109, 164, 0.08)';
 
         tr.innerHTML = `
             <td>
-                ${hasAnomaly ? '<span class="alert-dot" title="שים לב: חריגה או חוסר בשעות המשמרת">⚠️</span>' : ''}
-                <input type="date" value="${item.date}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'date', this.value)">
+                ${hasAnomaly ? '<span class="alert-dot" title="שים לב: חוסר בשעת כניסה/יציאה">⚠️</span>' : ''}
+                <input type="date" value="${item.date}" onblur="updateRow('${item.id}', 'date', this.value)">
             </td>
             <td><b>${daysHebrew[dayOfWeek]}</b></td>
-            <td><input type="time" value="${item.inTime}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'inTime', this.value)"></td>
-            <td><input type="time" value="${item.outTime}" ${locked ? 'disabled' : ''} onblur="updateRow('${item.id}', 'outTime', this.value)"></td>
+            <td><input type="time" value="${item.inTime}" onblur="updateRow('${item.id}', 'inTime', this.value)"></td>
+            <td><input type="time" value="${item.outTime}" onblur="updateRow('${item.id}', 'outTime', this.value)"></td>
             <td><b>${calc.hours > 0 ? calc.hours.toFixed(2) : ''}</b></td>
             <td><b>${calc.pay > 0 ? calc.pay.toFixed(2) + ' ₪' : ''}</b></td>
-            <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" ${locked ? 'disabled' : ''} style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
-            <td><input type="text" value="${item.note}" ${locked ? 'disabled' : ''} style="width:95%" onblur="updateRow('${item.id}', 'note', this.value)"></td>
+            <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
+            <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
             <td class="no-print">
-                ${!locked ? `
-                <button style="background:#5cb85c; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+ משמרת</button>
-                <button style="background:#d9534f; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
-                ` : '🔒'}
+                <button style="background:#10b981; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+ משמרת</button>
+                <button style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -581,29 +587,6 @@ function updateDashboard(currentHours, currentPay) {
     let maxTarget = 160; 
     let percent = Math.min(100, (currentHours / maxTarget) * 100);
     document.getElementById('hoursProgressBar').style.width = `${percent}%`;
-
-    let monthVal = document.getElementById('monthPicker').value;
-    let [y, m] = monthVal.split('-').map(Number);
-    let prevMonthNum = m === 1 ? 12 : m - 1;
-    let prevYear = m === 1 ? y - 1 : y;
-    let prevMonthKey = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}`;
-
-    let allShifts = getSavedShifts();
-    let prevData = allShifts[prevMonthKey] || [];
-    let prevHours = 0;
-    prevData.forEach(item => {
-        prevHours += calculatePay(item.inTime, item.outTime).hours;
-    });
-
-    let trendEl = document.getElementById('dashTrend');
-    if (prevHours > 0) {
-        let diff = ((currentHours - prevHours) / prevHours) * 100;
-        trendEl.innerText = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
-        trendEl.style.color = diff >= 0 ? '#5cb85c' : '#d9534f';
-    } else {
-        trendEl.innerText = 'אין נתונים קודמים';
-        trendEl.style.color = 'inherit';
-    }
 }
 
 function togglePunchClock() {
@@ -615,7 +598,7 @@ function togglePunchClock() {
         localStorage.setItem('active_punch_clock', now.toISOString());
         startClockTimer(now);
         btn.innerText = "⏹️ סיים משמרת כעת";
-        btn.style.backgroundColor = "#d9534f";
+        btn.style.backgroundColor = "#ef4444";
     } else {
         let start = new Date(activeClock);
         let now = new Date();
@@ -623,7 +606,7 @@ function togglePunchClock() {
         clearInterval(clockInterval);
         document.getElementById('clockTimerDisplay').innerText = "00:00:00";
         btn.innerText = "⏱️ התחל משמרת כעת";
-        btn.style.backgroundColor = "#28a745";
+        btn.style.backgroundColor = "#10b981";
 
         let dateStr = now.toISOString().split('T')[0];
         let inTimeStr = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
@@ -655,7 +638,7 @@ function checkActiveClock() {
         let start = new Date(activeClock);
         let btn = document.getElementById('clockBtn');
         btn.innerText = "⏹️ סיים משמרת כעת";
-        btn.style.backgroundColor = "#d9534f";
+        btn.style.backgroundColor = "#ef4444";
         startClockTimer(start);
     }
 }
@@ -673,7 +656,6 @@ function startClockTimer(startTime) {
 }
 
 function updateRow(id, field, value) {
-    if (isMonthLocked()) return;
     let item = currentMonthData.find(x => x.id === id);
     if (item && item[field] !== value) {
         item[field] = value;
@@ -683,14 +665,12 @@ function updateRow(id, field, value) {
 }
 
 function deleteRow(id) {
-    if (isMonthLocked()) return;
     currentMonthData = currentMonthData.filter(x => x.id !== id);
     saveCurrentMonth();
     render();
 }
 
 function duplicateRow(dateStr) {
-    if (isMonthLocked()) return;
     currentMonthData.push({
         id: 'shift_' + Math.random().toString(36).substr(2, 9),
         date: dateStr,
@@ -704,7 +684,6 @@ function duplicateRow(dateStr) {
 }
 
 function addCustomShiftByDate() {
-    if (isMonthLocked()) { alert("החודש נעול לעדכון"); return; }
     let todayStr = new Date().toISOString().split('T')[0];
     let selectedDate = prompt("הזן תאריך למשמרת חדשה (בפורמט YYYY-MM-DD):", todayStr);
     
