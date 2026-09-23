@@ -227,7 +227,7 @@
                         <button class="btn btn-save" onclick="saveData()">💾 שמור נתונים</button>
                         <button class="btn btn-email" onclick="exportToEmail()">📧 ייצוא דו״ח למייל</button>
                         <button class="btn btn-pdf" onclick="alert('הפקת PDF בוצעה בהצלחה')">📄 הפק PDF</button>
-                        <button class="btn btn-excel" onclick="alert('ייצוא לאקסל בוצע בהצלחה')">📊 אקסל</button>
+                        <button class="btn btn-excel" onclick="exportToExcelFile()" style="background: #059669; color: white;">📊 ייצוא לאקסל (הורדה)</button>
                         <button class="btn btn-nav" onclick="openFixedHoursModal()">🕒 שעות קבועות</button>
                     </div>
 
@@ -319,16 +319,18 @@
                     </div>
                 </div>
 
+                <!-- פיצ'ר ניהול דירות היסטורי מלא -->
                 <div class="card" style="margin-bottom: 20px; background: rgba(2, 132, 199, 0.03);">
-                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">🚚 ניהול מעבר דירה היסטורי לפי תאריך</h4>
-                    <p style="font-size: 12px; color: gray; margin-bottom: 10px;">הגדר החל מאיזה תאריך עברת דירה, לדוגמה: מתאריך 01/10/2026 עובדים בזבוטינסקי 50.</p>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <label style="font-size: 13px;">החל מתאריך:</label>
-                        <input type="date" id="moveDateInput" style="width: 140px;">
-                        <input type="text" id="newMoveLocInput" placeholder="כתובת דירה חדשה..." style="width: 180px;">
-                        <button class="btn btn-save" onclick="saveMovingRule()">הוסף חוק מעבר דירה</button>
+                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">🏠 ניהול והוספת דירות לפי תאריכים</h4>
+                    <p style="font-size: 12px; color: gray; margin-bottom: 10px;">הוסף חוקי דירה לפי תאריך (למשל: מה-01/10/2026 עוברים לזבוטינסקי 50). הנתונים הקודמים שלך יישארו שמורים.</p>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+                        <input type="date" id="newApartmentDate" style="width: 140px;" title="בחר תאריך תחילה">
+                        <input type="text" id="newApartmentName" placeholder="שם הדירה / כתובת (למשל: זבוטינסקי 50)" style="flex-grow: 1; min-width: 200px;">
+                        <button class="btn btn-save" onclick="addNewApartmentRule()">➕ הוספה</button>
                     </div>
-                    <div id="movingRulesList" style="margin-top: 10px; font-size: 12px;"></div>
+                    <div id="apartmentsRulesList" style="font-size: 12px; background: var(--card-bg); padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <!-- רשימת הדירות תיטען לכאן -->
+                    </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -345,9 +347,7 @@
     <div id="fixedHoursModal" class="modal-overlay">
         <div class="modal-card">
             <h3 style="margin-bottom: 15px;">🕒 הגדרת שעות קבועות לימי השבוע</h3>
-            <div id="fixedDaysContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 13px;">
-                <!-- ייבנה דינמית או סטטית -->
-            </div>
+            <div id="fixedDaysContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 13px;"></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn btn-theme" onclick="closeFixedHoursModal()">ביטול</button>
                 <button class="btn btn-save" onclick="saveFixedHoursAll()">שמור שעות קבועות</button>
@@ -361,13 +361,14 @@
         let savedDataStore = JSON.parse(localStorage.getItem('timesheetDataStore')) || {};
         let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 35.41;
         let nightGlobalRate = parseFloat(localStorage.getItem('nightGlobalRate')) || 124.25;
-        let defaultLoc = localStorage.getItem('defaultLocation') || 'זבוטינסקי 107';
-        let movingRules = JSON.parse(localStorage.getItem('movingRules')) || [];
+        let apartmentRules = JSON.parse(localStorage.getItem('apartmentRules')) || [
+            { date: '2026-01-01', location: 'זבוטינסקי 107' }
+        ];
         let fixedHoursDays = JSON.parse(localStorage.getItem('fixedHoursDays')) || {
             0: {in: '15:00', out: '07:45'},
             1: {in: '15:00', out: '07:45'},
             2: {in: '15:00', out: '07:45'},
-            3: {in: '17:00', out: '07:45'}, // רביעי
+            3: {in: '17:00', out: '07:45'},
             4: {in: '15:00', out: '07:45'},
             5: {in: '', out: ''},
             6: {in: '', out: ''}
@@ -375,9 +376,7 @@
 
         let currentVerificationCode = "";
 
-        // מנוע תאריכים עבריים מדויקים (כולל התאמה לספטמבר 2026/תשפ"ז)
         function getHebrewDateAndHolidays(year, month, day) {
-            let dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             let holiday = '';
             let hebrewDay = 'אלול - תשרי';
 
@@ -395,8 +394,10 @@
 
         function getLocationForDate(year, month, day) {
             let dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            let applicableLoc = defaultLoc;
-            movingRules.forEach(rule => {
+            let applicableLoc = 'זבוטינסקי 107';
+            // מיון לפי תאריך ומציאת הדירה המתאימה ביותר לתאריך זה
+            let sortedRules = [...apartmentRules].sort((a, b) => a.date.localeCompare(b.date));
+            sortedRules.forEach(rule => {
                 if (dateStr >= rule.date) {
                     applicableLoc = rule.location;
                 }
@@ -413,10 +414,10 @@
             }
             document.getElementById('hourlyRateInput').value = hourlyRate;
             document.getElementById('nightGlobalInput').value = nightGlobalRate;
+            renderApartmentRulesList();
             buildFixedDaysModalUI();
             buildTimesheetForMonth();
             renderAdjustmentsList();
-            renderMovingRulesList();
         };
 
         function handleLogin(e) {
@@ -456,7 +457,6 @@
             if (btn.innerText.includes('פתח מייל')) {
                 currentVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
                 
-                // מנגנון שליחת מייל עקיף מוכח וישיר
                 const subject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת שעות אברהם יונג");
                 const body = encodeURIComponent(`שלום אברהם,\n\nקוד האימות הסודי שלך הוא: ${currentVerificationCode}\n\nהעתק קוד זה למערכת.`);
                 window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
@@ -504,7 +504,7 @@
         }
 
         function openCloudBackup() {
-            alert('גיבוי לענן נששלח בהצלחה לכתובת המייל: ay0533115854@gmail.com');
+            alert('גיבוי לענן נשלח בהצלחה לכתובת המייל: ay0533115854@gmail.com');
         }
 
         function exportBackupFile() {
@@ -529,42 +529,52 @@
             alert('תעריף הלילה הגלובלי עודכן בהצלחה!');
         }
 
-        function saveMovingRule() {
-            const dateVal = document.getElementById('moveDateInput').value;
-            const locVal = document.getElementById('newMoveLocInput').value.trim();
-            if (!dateVal || !locVal) {
-                alert('אנא בחר תאריך והכנס כתובת דירה');
+        // פונקציות ניהול דירות היסטוריות לפי תאריכים
+        function addNewApartmentRule() {
+            const dateVal = document.getElementById('newApartmentDate').value;
+            const nameVal = document.getElementById('newApartmentName').value.trim();
+
+            if (!dateVal || !nameVal) {
+                alert('אנא בחר תאריך והכנס שם דירה / כתובת');
                 return;
             }
-            movingRules.push({ date: dateVal, location: locVal });
-            movingRules.sort((a, b) => a.date.localeCompare(b.date));
-            localStorage.setItem('movingRules', JSON.stringify(movingRules));
-            document.getElementById('moveDateInput').value = '';
-            document.getElementById('newMoveLocInput').value = '';
-            renderMovingRulesList();
+
+            apartmentRules.push({ date: dateVal, location: nameVal });
+            apartmentRules.sort((a, b) => a.date.localeCompare(b.date));
+            localStorage.setItem('apartmentRules', JSON.stringify(apartmentRules));
+
+            document.getElementById('newApartmentDate').value = '';
+            document.getElementById('newApartmentName').value = '';
+            renderApartmentRulesList();
             buildTimesheetForMonth();
-            alert('חוק מעבר הדירה נוסף בהצלחה!');
+            alert('הדירה נוספה בהצלחה למערכת ההיסטורית!');
         }
 
-        function renderMovingRulesList() {
-            const container = document.getElementById('movingRulesList');
+        function renderApartmentRulesList() {
+            const container = document.getElementById('apartmentsRulesList');
             if (!container) return;
-            if (movingRules.length === 0) {
-                container.innerHTML = '<span style="color:gray;">אין חוקי מעבר דירה היסטוריים.</span>';
+
+            if (apartmentRules.length === 0) {
+                container.innerHTML = '<span style="color:gray;">אין דירות מוגדרות. מוגדרת כברירת מחדל זבוטינסקי 107.</span>';
                 return;
             }
-            let html = '<ul style="padding-right:15px; margin:0;">';
-            movingRules.forEach((r, idx) => {
-                html += `<li>החל מ-<b>${r.date}</b> מעבר לכתובת: <b>${r.location}</b> <button onclick="removeMovingRule(${idx})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">מחק</button></li>`;
+
+            let html = '<ul style="padding-right: 15px; margin: 0;">';
+            apartmentRules.forEach((rule, index) => {
+                html += `<li style="margin-bottom: 4px;">החל מתאריך <b>${rule.date}</b> ➔ דירה/מיקום: <b>${rule.location}</b> <button onclick="removeApartmentRule(${index})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-right:10px;">מחק</button></li>`;
             });
             html += '</ul>';
             container.innerHTML = html;
         }
 
-        function removeMovingRule(idx) {
-            movingRules.splice(idx, 1);
-            localStorage.setItem('movingRules', JSON.stringify(movingRules));
-            renderMovingRulesList();
+        function removeApartmentRule(index) {
+            if (apartmentRules.length <= 1) {
+                alert('חייבת להישאר לפחות דירה אחת פעילה במערכת.');
+                return;
+            }
+            apartmentRules.splice(index, 1);
+            localStorage.setItem('apartmentRules', JSON.stringify(apartmentRules));
+            renderApartmentRulesList();
             buildTimesheetForMonth();
         }
 
@@ -622,7 +632,7 @@
                 let formattedDate = day <= daysCount ? `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}` : 'נוסף';
                 let dayOfWeekName = day <= daysCount ? ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][dayIndex] : 'משמרת';
                 let hebrewInfo = day <= daysCount ? getHebrewDateAndHolidays(year, month, day) : '';
-                let defaultLocationForDay = day <= daysCount ? getLocationForDate(year, month, day) : defaultLoc;
+                let defaultLocationForDay = day <= daysCount ? getLocationForDate(year, month, day) : (apartmentRules.length > 0 ? apartmentRules[apartmentRules.length-1].location : 'זבוטינסקי 107');
 
                 const rowKey = `row_${day}`;
                 const rowData = monthData[rowKey] || { in: '', out: '', location: defaultLocationForDay, notes: hebrewInfo.includes('ראש השנה') || hebrewInfo.includes('כיפור') ? hebrewInfo : '' };
@@ -669,6 +679,7 @@
 
         function addNewShiftRowBelow(btn) {
             const currentRow = btn.closest('tr');
+            const defaultLocForNew = apartmentRules.length > 0 ? apartmentRules[apartmentRules.length-1].location : 'זבוטינסקי 107';
             const newTr = document.createElement('tr');
             newTr.innerHTML = `
                 <td>משמרת נוספת<br><span style="font-size:10px; color:var(--accent-color);">נוסף</span></td>
@@ -677,7 +688,7 @@
                 <td><input type="time" class="out-time" onchange="calculateTotals()"></td>
                 <td class="row-hours">0.00</td>
                 <td class="row-wage">0.00 ₪</td>
-                <td><input type="text" class="loc-input" value="${defaultLoc}" style="width: 85px;"></td>
+                <td><input type="text" class="loc-input" value="${defaultLocForNew}" style="width: 85px;"></td>
                 <td><textarea class="notes-input" placeholder="הוראות והערות..." style="width: 100%; height: 35px; resize: vertical;"></textarea></td>
                 <td>
                     <div style="display: flex; gap: 2px; justify-content: center; align-items: center; flex-wrap: nowrap;">
@@ -716,7 +727,6 @@
             calculateTotals();
         }
 
-        // חישוב שעות ותשלום כולל לילה גלובלי (00:00 עד 06:30 בסך התעריף הגלובלי)
         function calculateTotals() {
             const rows = document.querySelectorAll('#timesheetBody tr');
             let totalHours = 0;
@@ -804,7 +814,6 @@
             `;
         }
 
-        // גרף שוק ההון השנתי עם כלי עזר (Tooltip)
         function updateAnnualGraph(year) {
             const graphContainer = document.getElementById('annualHoursGraph');
             graphContainer.innerHTML = '';
@@ -868,6 +877,39 @@
             const subject = encodeURIComponent(`דיווח שעות חודש ${month}/${year} - אברהם יונג`);
             const body = encodeURIComponent(`שלום,\n\nלהלן סיכום הנתונים המלא לחודש ${month}/${year}:\n- סה״כ שעות: ${totalHours}\n\n${summaryHTML}\n\nבברכה,\nאברהם יונג`);
             window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
+        }
+
+        function exportToExcelFile() {
+            const year = document.getElementById('activeYearSelector').value;
+            const month = document.getElementById('activeMonthSelector').value;
+            let csvContent = "\uFEFF"; 
+            csvContent += "תאריך,יום,כניסה,יציאה,שעות,שכר יומי (₪),מיקום/דירה,הוראות והערות\n";
+
+            const rows = document.querySelectorAll('#timesheetBody tr');
+            rows.forEach(row => {
+                if (row.classList.contains('weekly-summary-row')) return;
+                const cols = row.querySelectorAll('td');
+                if (cols.length >= 8) {
+                    let dateText = cols[0].innerText.split('\n')[0].replace(/"/g, '""');
+                    let dayText = cols[1].innerText.replace(/"/g, '""');
+                    let inVal = row.querySelector('.in-time') ? row.querySelector('.in-time').value : '';
+                    let outVal = row.querySelector('.out-time') ? row.querySelector('.out-time').value : '';
+                    let hoursVal = cols[4].innerText.replace(/"/g, '""');
+                    let wageVal = cols[5].innerText.replace(/"/g, '""');
+                    let locVal = row.querySelector('.loc-input') ? row.querySelector('.loc-input').value.replace(/"/g, '""') : '';
+                    let notesVal = row.querySelector('.notes-input') ? row.querySelector('.notes-input').value.replace(/[\n\r]+/g, ' ').replace(/"/g, '""') : '';
+
+                    csvContent += `"${dateText}","${dayText}","${inVal}","${outVal}","${hoursVal}","${wageVal}","${locVal}","${notesVal}"\n`;
+                }
+            });
+
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `timesheet_${month}_${year}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function addSalaryAdjustment() {
