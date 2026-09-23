@@ -4,13 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת ניהול שעות נוכחות ושכר - אברהם יונג</title>
-    <!-- טעינת ספרית EmailJS לשליחת קוד אימות אמיתי למייל -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function() {
-            emailjs.init("YOUR_PUBLIC_KEY"); // מפתח התחברות לשרת המייל החינמי
-        })();
-    </script>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -121,12 +114,12 @@
 </head>
 <body>
 
-    <!-- מסך כניסה עם שחזור סיסמה מאובטח ושליחת מייל אמיתית -->
+    <!-- מסך כניסה מאובטח עם קוד אבטחה אישי -->
     <div id="loginScreen">
         <div class="login-card">
             <h2>כניסת מערכת - אברהם יונג</h2>
             
-            <!-- טופס התחברות רגיל -->
+            <!-- טופס התחברות -->
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>אימייל / שם משתמש</label>
@@ -139,31 +132,23 @@
                 <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">סיסמה שגויה</div>
                 <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
                 <div style="text-align: center;">
-                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שלח קוד אימות למייל</a>
+                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שחזור באמצעות קוד אבטחה אישי</a>
                 </div>
             </form>
 
-            <!-- טופס שחזור סיסמה מאובטח מול מייל -->
+            <!-- טופס שחזור מאובטח בקוד אישי -->
             <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
-                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את כתובת המייל שלך לשליחת קוד אימות מאובטח.</p>
+                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את קוד האבטחה האישי הסודי שלך (ברירת מחדל: <b>5585</b>) ואת הסיסמה החדשה.</p>
                 <div class="form-group">
-                    <label>כתובת מייל</label>
-                    <input type="email" id="recoveryEmail" value="ay0533115854@gmail.com" required>
+                    <label>קוד אבטחה אישי סודי</label>
+                    <input type="password" id="securityPinInput" placeholder="הכנס קוד סודי" required>
                 </div>
-                
-                <div id="recoveryStep2" style="display: none;">
-                    <div class="form-group">
-                        <label>הכנס את קוד האימות שנשלח אליך למייל</label>
-                        <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
-                    </div>
-                    <div class="form-group">
-                        <label>סיסמה חדשה</label>
-                        <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
-                    </div>
+                <div class="form-group">
+                    <label>סיסמה חדשה למערכת</label>
+                    <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה" required>
                 </div>
-
-                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
-                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">שלח קוד למייל</button>
+                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: red; display: none;"></div>
+                <button type="submit" class="btn-primary" style="margin-bottom: 10px;">אפס סיסמה והיכנס</button>
                 <div style="text-align: center;">
                     <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
                 </div>
@@ -339,8 +324,6 @@
         let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 45;
         let defaultLoc = localStorage.getItem('defaultLocation') || 'זבוטינסקי 107';
 
-        let generatedVerificationCode = "";
-
         function getHebrewDateAndHolidays(year, month, day) {
             let holiday = '';
             if (month === 9 && day === 11) holiday = 'ערב ראש השנה תשפ״ז';
@@ -383,9 +366,6 @@
             e.preventDefault();
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('forgotForm').style.display = 'block';
-            document.getElementById('recoveryStep2').style.display = 'none';
-            document.getElementById('recoveryBtn').innerText = 'שלח קוד למייל';
-            document.getElementById('recoveryMsg').style.display = 'none';
         }
 
         function backToLogin(e) {
@@ -396,45 +376,19 @@
 
         function handleForgotSubmit(e) {
             e.preventDefault();
+            const enteredPin = document.getElementById('securityPinInput').value.trim();
+            const newPass = document.getElementById('newPasswordInput').value.trim();
             const msgBox = document.getElementById('recoveryMsg');
-            const btn = document.getElementById('recoveryBtn');
 
-            if (btn.innerText === 'שלח קוד למייל') {
-                // יצירת קוד בן 4 ספרות ושליחתו למייל דרך EmailJS
-                generatedVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-                
-                msgBox.style.display = 'block';
-                msgBox.style.color = 'blue';
-                msgBox.innerText = 'שולח קוד אימות למייל...';
-
-                // שליחה דרך EmailJS (משתמש בשירות חינמי)
-                emailjs.send("default_service", "template_recovery", {
-                    to_email: "ay0533115854@gmail.com",
-                    pass_code: generatedVerificationCode
-                }).then(function() {
-                    msgBox.style.color = 'green';
-                    msgBox.innerText = 'קוד אימות נשלח בהצלחה לכתובת ay0533115854@gmail.com!';
-                    document.getElementById('recoveryStep2').style.display = 'block';
-                    btn.innerText = 'אמת קוד ואפס סיסמה';
-                }, function(error) {
-                    // גיבוי למקרה שהשירות דורש הגדרת טמפלייט
-                    msgBox.style.color = 'green';
-                    msgBox.innerText = `קוד האימות שלך למייל: ${generatedVerificationCode}`;
-                    document.getElementById('recoveryStep2').style.display = 'block';
-                    btn.innerText = 'אמת קוד ואפס סיסמה';
-                });
+            // קוד אבטחה אישי סודי (5585)
+            if (enteredPin === "5585" && newPass.length >= 4) {
+                localStorage.setItem('user_password', newPass);
+                alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
+                sessionStorage.setItem('isLoggedIn', 'true');
+                showApp();
             } else {
-                const enteredCode = document.getElementById('verificationCodeInput').value.trim();
-                const newPass = document.getElementById('newPasswordInput').value.trim();
-
-                if (enteredCode === generatedVerificationCode && newPass.length >= 4) {
-                    localStorage.setItem('user_password', newPass);
-                    alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
-                    sessionStorage.setItem('isLoggedIn', 'true');
-                    showApp();
-                } else {
-                    alert('קוד אימות שגוי או סיסמה קצרה מדי!');
-                }
+                msgBox.style.display = 'block';
+                msgBox.innerText = 'קוד אבטחה שגוי או סיסמה קצרה מדי (קוד ברירת מחדל: 5585)';
             }
         }
 
