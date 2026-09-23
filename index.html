@@ -90,8 +90,6 @@
         .chart-container { position: relative; height: 140px; padding-top: 15px; border-bottom: 2px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; }
         .chart-svg { position: absolute; top: 15px; left: 0; width: 100%; height: 100px; overflow: visible; pointer-events: none; }
         .chart-labels-row { display: flex; justify-content: space-between; width: 100%; position: absolute; bottom: -22px; font-size: 10px; font-weight: 600; color: var(--text-main); }
-        .chart-point { width: 10px; height: 10px; background: var(--secondary); border: 2px solid #fff; border-radius: 50%; position: absolute; transform: translate(-50%, 50%); cursor: pointer; transition: 0.2s; z-index: 2; }
-        .chart-point:hover { background: var(--purple); transform: translate(-50%, 50%) scale(1.3); }
 
         .controls { display: flex; justify-content: space-between; align-items: center; background: var(--light); padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); }
         .month-label-display { background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: bold; font-size: 15px; }
@@ -102,6 +100,7 @@
         .btn-excel { background-color: #15803d; }
         .btn-purple { background-color: var(--purple); }
         .btn-red { background-color: var(--accent); }
+        .btn-blue-custom { background-color: var(--btn-blue); }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
         th, td { border: 1px solid var(--border); padding: 10px 6px; text-align: center; }
@@ -186,7 +185,7 @@
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-            <button class="nav-btn" onclick="sendDirectMailBackup()">✉️ גיבוי ישיר למייל</button>
+            <button class="nav-btn" onclick="executeSafeCloudBackup()">✉️ גיבוי ענן מאובטח</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
         <h1>אברהם יונג</h1>
@@ -200,7 +199,7 @@
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="hoursProgressBar"></div></div>
         </div>
         <div class="stat-card">
-            <h4>📈 גרף מעקב שנתי (עליות וירידות כמו שוק ההון)</h4>
+            <h4>📈 גרף מעקב שנתי (לחץ על נקודה/חודש לפרטים)</h4>
             <div class="chart-container" id="monthlyChartContainer">
                 <svg class="chart-svg" id="chartSvgElement"></svg>
                 <div class="chart-labels-row" id="chartLabelsRow"></div>
@@ -216,7 +215,8 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-            <button class="btn btn-purple" onclick="sendDirectMailBackup()">✉️ שלח גיבוי מעודכן למייל</button>
+            <button class="btn btn-blue-custom" onclick="editShiftByDatePrompt()">⚡ עדכן משמרת לפי תאריך</button>
+            <button class="btn btn-purple" onclick="executeSafeCloudBackup()">✉️ גיבוי ענן למייל</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -233,7 +233,7 @@
                 <th style="width: 100px;">סה״כ יומי ₪</th>
                 <th style="width: 160px;">דירה / מיקום</th>
                 <th>הוראות / הערות / חגים ושבתות</th>
-                <th class="no-print" style="width: 200px;">פעולות</th>
+                <th class="no-print" style="width: 220px;">פעולות</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -321,8 +321,8 @@ function verifyAndResetPassword() {
     }
 }
 
-// פונקציית הגיבוי הישיר והמושלם למייל דרך הדפדפן (עוקף לחלוטין חסימות שרתים)
-function sendDirectMailBackup() {
+// גיבוי כפול בטוח: מוריד קובץ טקסט למחשב ופותח מייל מוכן לשליחה
+function executeSafeCloudBackup() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
@@ -330,15 +330,25 @@ function sendDirectMailBackup() {
     }
     let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
 
-    let subject = encodeURIComponent("🔒 גיבוי ענן מאובטח - מערכת נוכחות אברהם יונג (" + new Date().toLocaleDateString('he-IL') + ")");
-    let body = encodeURIComponent("שלום אברהם,\n\nזהו גיבוי הענן המעודכן שלך ממערכת ניהול השעות מתאריך " + new Date().toLocaleString('he-IL') + ".\n\nבמקרה הצורך (כמו החלפת מחשב או תקלה), העתק את קוד השחזור הבא והדבק אותו במערכת:\n\n" + encodedData);
+    // 1. הורדת קובץ קשיח
+    let blob = new Blob([encodedData], { type: 'text/plain;charset=utf-8;' });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `shuky_backup_secure_${new Date().toISOString().split('T')[0]}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    // פותח אוטומטית את תוכנת המייל או את גוגל מייל עם כל הנתונים בפנים!
+    // 2. פתיחת מייל לשליחה לעצמך
+    let subject = encodeURIComponent("🔒 גיבוי ענן מאובטח - מערכת נוכחות אברהם יונג (" + new Date().toLocaleDateString('he-IL') + ")");
+    let body = encodeURIComponent("שלום אברהם,\n\nזהו גיבוי הענן המעודכן שלך ממערכת ניהול השעות מתאריך " + new Date().toLocaleString('he-IL') + ".\n\nהנה מחרוזת הנתונים המלאה לשחזור במקרה הצורך:\n\n" + encodedData);
+
     window.location.href = `mailto:${DEFAULT_USER}?subject=${subject}&body=${body}`;
+    alert("✅ קובץ גיבוי ירד בהצלחה למחשב שלך, ונפתח חלון שליחה למייל שלך!");
 }
 
 function handleLogout() {
-    sendDirectMailBackup();
+    executeSafeCloudBackup();
     sessionStorage.removeItem('isLoggedIn');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
@@ -461,6 +471,16 @@ function setRowPreset(id) {
     }
 }
 
+function clearRowShift(id) {
+    let item = currentMonthData.find(x => x.id === id);
+    if (item) {
+        item.inTime = '';
+        item.outTime = '';
+        saveCurrentMonth();
+        render();
+    }
+}
+
 function calculatePay(inTime, outTime) {
     if (!inTime || !outTime) return { hours: 0, pay: 0 };
     let [inH, inM] = inTime.split(':').map(Number);
@@ -535,7 +555,8 @@ function render() {
             <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
             <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
             <td class="no-print">
-                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="הזן שעות 15:00-07:45">⚡ 15:00-07:45</button>
+                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="שעות 15:00-07:45">⚡ שעות</button>
+                <button style="background:#f59e0b; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="clearRowShift('${item.id}')" title="נקה שעות ליום חופש / ללא עבודה">❌ איפוס</button>
                 <button style="background:#10b981; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+</button>
                 <button style="background:#ef4444; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
             </td>
@@ -616,7 +637,7 @@ function renderStockMarketChart() {
         let lbl = document.createElement('div');
         lbl.style.cssText = "flex: 1; text-align: center; font-size: 10px; font-weight: bold; cursor: pointer;";
         lbl.innerText = item.monthName;
-        lbl.title = `${item.monthName}: ${item.hours.toFixed(2)} שעות (לחץ למעבר לחודש)`;
+        lbl.title = `${item.monthName}: ${item.hours.toFixed(2)} שעות (לחץ למעבר)`;
         lbl.onclick = () => {
             document.getElementById('monthPicker').value = item.monthKey;
             loadMonth();
@@ -639,14 +660,66 @@ function renderStockMarketChart() {
         circle.setAttribute("r", "5");
         circle.setAttribute("fill", "var(--purple)");
         circle.style.cursor = "pointer";
+        
         circle.setAttribute("title", `${p.item.monthName}: ${p.item.hours.toFixed(2)} שעות`);
         
         circle.onclick = () => {
             document.getElementById('monthPicker').value = p.item.monthKey;
             loadMonth();
+            alert(`חודש ${p.item.monthName}: צברת סה״כ ${p.item.hours.toFixed(2)} שעות.`);
         };
         svgEl.appendChild(circle);
     });
+}
+
+function editShiftByDatePrompt() {
+    let targetDate = prompt("הזן תאריך לעדכון (בפורמט YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+    if (!targetDate) return;
+
+    let parts = targetDate.split('-');
+    if (parts.length !== 3) {
+        alert("תאריך לא תקין");
+        return;
+    }
+
+    let targetMonth = `${parts[0]}-${parts[1]}`;
+    document.getElementById('monthPicker').value = targetMonth;
+    
+    let allShifts = getSavedShifts();
+    if (!allShifts[targetMonth]) {
+        loadMonth();
+        allShifts = getSavedShifts();
+    } else {
+        currentMonthData = allShifts[targetMonth];
+    }
+
+    let found = currentMonthData.find(x => x.date === targetDate);
+    if (!found) {
+        let addChoice = confirm("התאריך אינו קיים ברשימה לחודש זה. האם להוסיף אותו?");
+        if (!addChoice) return;
+        found = {
+            id: 'shift_' + Math.random().toString(36).substr(2, 9),
+            date: targetDate,
+            inTime: '',
+            outTime: '',
+            apartment: 'זבוטינסקי 107',
+            note: 'משמרת מעודכנת'
+        };
+        currentMonthData.push(found);
+    }
+
+    let newIn = prompt("הכנס שעת כניסה (למשל 15:00, או השאר ריק לאיפוס):", found.inTime || "15:00");
+    if (newIn === null) return;
+    let newOut = prompt("הכנס שעת יציאה (למשל 07:45, או השאר ריק לאיפוס):", found.outTime || "07:45");
+    if (newOut === null) return;
+
+    found.inTime = newIn;
+    found.outTime = newOut;
+
+    allShifts[targetMonth] = currentMonthData;
+    saveShifts(allShifts);
+    loadMonth();
+    alert("המשמרת עודכנה בהצלחה!");
 }
 
 function checkYearEndDisplay() {
