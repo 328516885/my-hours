@@ -85,7 +85,7 @@
         th, td { border: 1px solid var(--border-color); padding: 8px; text-align: center; font-size: 13px; }
         th { background: var(--header-bg); color: var(--header-text); }
 
-        input[type="time"], input[type="text"], textarea, select, input[type="number"], input[type="date"] {
+        input[type="time"], input[type="text"], textarea, select, input[type="number"], input[type="date"], input[type="password"], input[type="email"] {
             padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-color);
         }
 
@@ -101,7 +101,6 @@
         .btn-email { background: #7c3aed; color: white; }
         .btn-nav { background: #0f766e; color: white; }
 
-        /* מודל */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000;
@@ -151,7 +150,7 @@
 </head>
 <body>
 
-    <!-- מסך כניסה ושחזור -->
+    <!-- מסך כניסה -->
     <div id="loginScreen">
         <div class="login-card">
             <h2>כניסת מערכת - אברהם יונג</h2>
@@ -159,42 +158,14 @@
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>אימייל / שם משתמש</label>
-                    <input type="text" id="username" value="ay0533115854@gmail.com" required>
+                    <input type="text" id="username" placeholder="הכנס מייל..." required>
                 </div>
                 <div class="form-group">
                     <label>סיסמה</label>
-                    <input type="password" id="password" required>
+                    <input type="password" id="password" placeholder="הכנס סיסמה..." required>
                 </div>
-                <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">סיסמה שגויה</div>
+                <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">שם משתמש או סיסמה שגויים</div>
                 <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
-                <div style="text-align: center;">
-                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שלח קוד אימות למייל שלי</a>
-                </div>
-            </form>
-
-            <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
-                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הקש על כפתור השליחה. המערכת תפתח את תיבת המייל שלך עם קוד אבטחה חדש.</p>
-                <div class="form-group">
-                    <label>כתובת מייל</label>
-                    <input type="email" id="recoveryEmail" value="ay0533115854@gmail.com" required>
-                </div>
-                
-                <div id="recoveryStep2" style="display: none;">
-                    <div class="form-group">
-                        <label>הכנס את קוד האימות שהתקבל במייל</label>
-                        <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
-                    </div>
-                    <div class="form-group">
-                        <label>סיסמה חדשה</label>
-                        <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
-                    </div>
-                </div>
-
-                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
-                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">פתח מייל ושלח קוד אבטחה</button>
-                <div style="text-align: center;">
-                    <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
-                </div>
             </form>
         </div>
     </div>
@@ -310,6 +281,29 @@
             <!-- אזור הגדרות מתקדם -->
             <div id="settingsView" class="card" style="display: none;">
                 <h3 style="margin-bottom: 15px;">⚙️ הגדרות מתקדמות למערכת</h3>
+                
+                <!-- ניהול משתמשים וסיסמאות -->
+                <div class="card" style="margin-bottom: 20px; background: rgba(2, 132, 199, 0.03);">
+                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">👥 ניהול משתמשים וגישה למערכת</h4>
+                    <p style="font-size: 12px; color: gray; margin-bottom: 10px;">הוסף משתמשים חדשים באמצעות מייל וסיסמה, או עדכן את הסיסמה שלך.</p>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                        <input type="email" id="newUserEmail" placeholder="מייל משתמש חדש..." style="flex-grow: 1; min-width: 180px;">
+                        <input type="password" id="newUserPass" placeholder="סיסמה חדשה..." style="width: 150px;">
+                        <button class="btn btn-save" onclick="addNewUser()">➕ הוסף משתמש</button>
+                    </div>
+
+                    <div id="usersListContainer" style="font-size: 12px; background: var(--card-bg); padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 15px;">
+                        <!-- רשימת המשתמשים תיטען לכאן -->
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <label style="font-size: 13px; font-weight: bold;">שנה סיסמה אישית:</label>
+                        <input type="password" id="changeMyPassInput" placeholder="הכנס סיסמה אישית חדשה..." style="width: 180px;">
+                        <button class="btn btn-save" onclick="updateMyPassword()">שמור סיסמה חדשה</button>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                     <div class="card" style="margin-bottom: 0;">
                         <h4 style="margin-bottom: 10px; font-size: 15px;">💰 תעריף שעתי רגיל</h4>
@@ -363,7 +357,9 @@
     </div>
 
     <script>
-        const DEFAULT_USER = "ay0533115854@gmail.com";
+        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [
+            { email: 'ay0533115854@gmail.com', pass: '12345678' }
+        ];
         let monthlyAdjustments = JSON.parse(localStorage.getItem('monthlyAdjustments')) || {};
         let savedDataStore = JSON.parse(localStorage.getItem('timesheetDataStore')) || {};
         let hourlyRate = parseFloat(localStorage.getItem('hourlyRate')) || 35.41;
@@ -380,8 +376,6 @@
             5: {in: '', out: ''},
             6: {in: '', out: ''}
         };
-
-        let currentVerificationCode = "";
 
         function getHebrewDateAndHolidays(year, month, day) {
             let holiday = '';
@@ -420,6 +414,7 @@
             }
             document.getElementById('hourlyRateInput').value = hourlyRate;
             document.getElementById('nightGlobalInput').value = nightGlobalRate;
+            renderUsersList();
             renderApartmentRulesList();
             buildFixedDaysModalUI();
             buildTimesheetForMonth();
@@ -430,61 +425,14 @@
             e.preventDefault();
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
-            const savedPass = localStorage.getItem('user_password') || '12345678';
 
-            if (user === DEFAULT_USER && pass === savedPass) {
+            let found = registeredUsers.find(u => u.email === user && u.pass === pass);
+            if (found) {
                 sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('currentUser', user);
                 showApp();
             } else {
                 document.getElementById('loginError').style.display = 'block';
-            }
-        }
-
-        function showForgotPassword(e) {
-            e.preventDefault();
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('forgotForm').style.display = 'block';
-            document.getElementById('recoveryStep2').style.display = 'none';
-            document.getElementById('recoveryBtn').innerText = 'פתח מייל ושלח קוד אבטחה';
-            document.getElementById('recoveryMsg').style.display = 'none';
-        }
-
-        function backToLogin(e) {
-            e.preventDefault();
-            document.getElementById('forgotForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-        }
-
-        function handleForgotSubmit(e) {
-            e.preventDefault();
-            const msgBox = document.getElementById('recoveryMsg');
-            const btn = document.getElementById('recoveryBtn');
-
-            if (btn.innerText.includes('פתח מייל')) {
-                currentVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-                
-                const subject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת שעות אברהם יונג");
-                const body = encodeURIComponent(`שלום אברהם,\n\nקוד האימות הסודי שלך הוא: ${currentVerificationCode}\n\nהעתק קוד זה למערכת.`);
-                window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
-
-                msgBox.style.display = 'block';
-                msgBox.style.color = 'green';
-                msgBox.innerText = 'תיבת המייל נפתחה בהצלחה עם קוד האימות שלך!';
-                
-                document.getElementById('recoveryStep2').style.display = 'block';
-                btn.innerText = 'אמת קוד ואפס סיסמה';
-            } else {
-                const enteredCode = document.getElementById('verificationCodeInput').value.trim();
-                const newPass = document.getElementById('newPasswordInput').value.trim();
-
-                if (enteredCode === currentVerificationCode && newPass.length >= 4) {
-                    localStorage.setItem('user_password', newPass);
-                    alert('הסיסמה שונתה בהצלחה! מתחבר למערכת...');
-                    sessionStorage.setItem('isLoggedIn', 'true');
-                    showApp();
-                } else {
-                    alert('קוד האימות שגוי או שהסיסמה קצרה מדי!');
-                }
             }
         }
 
@@ -495,7 +443,77 @@
 
         function handleLogout() {
             sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('currentUser');
             location.reload();
+        }
+
+        // ניהול משתמשים דרך ההגדרות
+        function addNewUser() {
+            const email = document.getElementById('newUserEmail').value.trim();
+            const pass = document.getElementById('newUserPass').value.trim();
+
+            if (!email || !pass) {
+                alert('אנא הכנס מייל וסיסמה תקינים למשתמש החדש');
+                return;
+            }
+
+            if (registeredUsers.some(u => u.email === email)) {
+                alert('משתמש עם כתובת מייל זו כבר קיים במערכת!');
+                return;
+            }
+
+            registeredUsers.push({ email: email, pass: pass });
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+
+            document.getElementById('newUserEmail').value = '';
+            document.getElementById('newUserPass').value = '';
+            renderUsersList();
+            alert('המשתמש נוסף בהצלחה למערכת!');
+        }
+
+        function renderUsersList() {
+            const container = document.getElementById('usersListContainer');
+            if (!container) return;
+
+            if (registeredUsers.length === 0) {
+                container.innerHTML = '<span style="color:gray;">אין משתמשים רשומים.</span>';
+                return;
+            }
+
+            let html = '<ul style="padding-right: 15px; margin: 0;">';
+            registeredUsers.forEach((u, index) => {
+                html += `<li style="margin-bottom: 4px;">מייל: <b>${u.email}</b> <button onclick="removeUser(${index})" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-right:10px;">מחק משתמש</button></li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        function removeUser(index) {
+            if (registeredUsers.length <= 1) {
+                alert('חייב להישאר לפחות משתמש אחד פעיל במערכת.');
+                return;
+            }
+            registeredUsers.splice(index, 1);
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            renderUsersList();
+        }
+
+        function updateMyPassword() {
+            const newPass = document.getElementById('changeMyPassInput').value.trim();
+            if (!newPass || newPass.length < 4) {
+                alert('אנא הכנס סיסמה באורך של לפחות 4 תווים');
+                return;
+            }
+            let activeEmail = sessionStorage.getItem('currentUser') || registeredUsers[0].email;
+            let userObj = registeredUsers.find(u => u.email === activeEmail);
+            if (userObj) {
+                userObj.pass = newPass;
+            } else {
+                registeredUsers[0].pass = newPass;
+            }
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            document.getElementById('changeMyPassInput').value = '';
+            alert('הסיסמה האישית שלך עודכנה בהצלחה!');
         }
 
         function toggleTheme() {
@@ -511,7 +529,7 @@
 
         function exportBackupFile() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-                savedDataStore, monthlyAdjustments, apartmentRules, fixedHoursDays, hourlyRate, nightGlobalRate
+                savedDataStore, monthlyAdjustments, apartmentRules, fixedHoursDays, hourlyRate, nightGlobalRate, registeredUsers
             }));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
@@ -898,9 +916,10 @@
             const totalHours = document.getElementById('totalMonthHours').innerText;
             const summaryHTML = document.getElementById('monthlySummaryBox').innerText;
             
+            let activeUser = sessionStorage.getItem('currentUser') || 'ay0533115854@gmail.com';
             const subject = encodeURIComponent(`דיווח שעות חודש ${month}/${year} - אברהם יונג`);
             const body = encodeURIComponent(`שלום,\n\nלהלן סיכום הנתונים המלא לחודש ${month}/${year}:\n- סה״כ שעות: ${totalHours}\n\n${summaryHTML}\n\nבברכה,\nאברהם יונג`);
-            window.location.href = `mailto:ay0533115854@gmail.com?subject=${subject}&body=${body}`;
+            window.location.href = `mailto:${activeUser}?subject=${subject}&body=${body}`;
         }
 
         function exportToExcelFile() {
@@ -936,7 +955,6 @@
             document.body.removeChild(link);
         }
 
-        // הורדת PDF אמיתי כקובץ למחשב
         function exportToPDFFile() {
             const year = document.getElementById('activeYearSelector').value;
             const month = document.getElementById('activeMonthSelector').value;
