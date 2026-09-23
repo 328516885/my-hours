@@ -123,7 +123,7 @@
             align-items: center;
         }
 
-        /* תפריט ניווט עליון/צדדי מעבר בין מסכים */
+        /* תפריט ניווט עליון למעבר בין מסכים */
         .nav-tabs {
             display: flex;
             gap: 10px;
@@ -202,7 +202,7 @@
             color: var(--text-color);
         }
 
-        /* עיצוב אזור תוספות ותיקונים */
+        /* אזור תוספות ותיקונים */
         .adjustments-container {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -346,7 +346,7 @@
             <div id="adjustmentsView" class="view-section">
                 <div class="card">
                     <h3>ניהול תוספות משכורת, בונוסים ותיקונים בדיעבד</h3>
-                    <p style="font-size: 14px; color: gray; margin-bottom: 15px;">כאן תוכל להוסיף סכום כספי לכל חודש נבחר (למשל תשלום בגין ימים שפספסת בחודש הקודם) יחד עם הוראות והסבר מפורט.</p>
+                    <p style="font-size: 14px; color: gray; margin-bottom: 15px;">כאן תוכל להוסיף סכום כספי לכל חודש נבחר יחד עם הוראות והסבר מפורט.</p>
                     
                     <div class="adjustments-container">
                         <div class="adjustment-row">
@@ -433,7 +433,6 @@
             localStorage.setItem('darkTheme', document.body.classList.contains('dark-theme'));
         }
 
-        // ניווט בין חלונות (מסכים) בלי לטעון מחדש את הדף
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(section => {
                 section.classList.remove('active');
@@ -453,7 +452,6 @@
             inputs[1].value = "07:45";
         }
 
-        // ניהול תוספות משכורת
         function addSalaryAdjustment() {
             const monthSelect = document.getElementById('targetMonthSelect').value;
             const amountInput = document.getElementById('adjAmount');
@@ -557,3 +555,4 @@
     </script>
 </body>
 </html>
+Update clean code with views and adjustments
