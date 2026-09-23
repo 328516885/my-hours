@@ -186,7 +186,7 @@
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-            <button class="nav-btn" onclick="sendCloudBackupEmail()">✉️ גיבוי אוטומטי למייל</button>
+            <button class="nav-btn" onclick="sendDirectMailBackup()">✉️ גיבוי ישיר למייל</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
         <h1>אברהם יונג</h1>
@@ -216,7 +216,7 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-            <button class="btn btn-purple" onclick="sendCloudBackupEmail()">✉️ שלח גיבוי מעודכן למייל</button>
+            <button class="btn btn-purple" onclick="sendDirectMailBackup()">✉️ שלח גיבוי מעודכן למייל</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -302,27 +302,9 @@ function sendResetCode() {
     }
     
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
-    document.getElementById('sendMsg').style.display = 'block';
-    
-    fetch("https://formsubmit.co/ajax/" + email, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-            _subject: "🔑 קוד אימות לשחזור סיסמה - מערכת נוכחות",
-            name: "מערכת נוכחות אברהם יונג",
-            message: "קוד האימות שלך לשחזור הסיסמה הוא: " + generatedCode
-        })
-    }).then(() => {
-        document.getElementById('sendMsg').innerText = "הקוד נשלח בהצלחה לתיבת הדוא\"ל שלך!";
-        setTimeout(() => {
-            document.getElementById('resetStep1').style.display = 'none';
-            document.getElementById('resetStep2').style.display = 'block';
-        }, 1000);
-    }).catch(() => {
-        alert("קוד האימות שלך: " + generatedCode);
-        document.getElementById('resetStep1').style.display = 'none';
-        document.getElementById('resetStep2').style.display = 'block';
-    });
+    alert("קוד האימות לשחזור הסיסמה שלך הוא: " + generatedCode);
+    document.getElementById('resetStep1').style.display = 'none';
+    document.getElementById('resetStep2').style.display = 'block';
 }
 
 function verifyAndResetPassword() {
@@ -339,7 +321,8 @@ function verifyAndResetPassword() {
     }
 }
 
-function sendCloudBackupEmail() {
+// פונקציית הגיבוי הישיר והמושלם למייל דרך הדפדפן (עוקף לחלוטין חסימות שרתים)
+function sendDirectMailBackup() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
@@ -347,30 +330,15 @@ function sendCloudBackupEmail() {
     }
     let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
 
-    let btnText = event && event.target ? event.target.innerText : "";
-    if(event && event.target) event.target.innerText = "⏳ שולח גיבוי לענן המייל...";
+    let subject = encodeURIComponent("🔒 גיבוי ענן מאובטח - מערכת נוכחות אברהם יונג (" + new Date().toLocaleDateString('he-IL') + ")");
+    let body = encodeURIComponent("שלום אברהם,\n\nזהו גיבוי הענן המעודכן שלך ממערכת ניהול השעות מתאריך " + new Date().toLocaleString('he-IL') + ".\n\nבמקרה הצורך (כמו החלפת מחשב או תקלה), העתק את קוד השחזור הבא והדבק אותו במערכת:\n\n" + encodedData);
 
-    fetch("https://formsubmit.co/ajax/" + DEFAULT_USER, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-            _subject: "🔒 גיבוי ענן מאובטח - מערכת נוכחות אברהם יונג (" + new Date().toLocaleDateString('he-IL') + ")",
-            name: "מערכת נוכחות אוטומטית",
-            message: "שלום אברהם,\n\nזהו גיבוי ענן מעודכן אחד-לא-אחד של כל מערכת השעות שלך מתאריך " + new Date().toLocaleString('he-IL') + ".\n\nבמקרה הצורך (החלפת מחשב או תקלה), שחזר את הנתונים באמצעות המחרוזת הבאה:\n\n" + encodedData
-        })
-    })
-    .then(response => {
-        if(event && event.target) event.target.innerText = btnText;
-        alert("✅ גיבוי הענן נשלח בהצלחה מלאה אל תיבת המייל שלך (ay0533115854@gmail.com)! הנתונים שמורים ומגובים באופן מלא.");
-    })
-    .catch(error => {
-        if(event && event.target) event.target.innerText = btnText;
-        prompt("הגיבוי מוכן! העתק את קוד הגיבוי המלא לשמירה בטוחה:", encodedData);
-    });
+    // פותח אוטומטית את תוכנת המייל או את גוגל מייל עם כל הנתונים בפנים!
+    window.location.href = `mailto:${DEFAULT_USER}?subject=${subject}&body=${body}`;
 }
 
 function handleLogout() {
-    sendCloudBackupEmail();
+    sendDirectMailBackup();
     sessionStorage.removeItem('isLoggedIn');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
@@ -483,7 +451,6 @@ function loadMonth() {
     render();
 }
 
-// כפתור מהיר להזנת שעות מ-15:00 עד 07:45 בלחיצה
 function setRowPreset(id) {
     let item = currentMonthData.find(x => x.id === id);
     if (item) {
@@ -613,7 +580,6 @@ function updateDashboard(currentHours) {
     document.getElementById('hoursProgressBar').style.width = `${percent}%`;
 }
 
-// גרף סגנון שוק ההון (קווי עם נקודות ומאות חודשים מלאים)
 function renderStockMarketChart() {
     let svgEl = document.getElementById('chartSvgElement');
     let labelsRow = document.getElementById('chartLabelsRow');
@@ -647,7 +613,6 @@ function renderStockMarketChart() {
         if (isNaN(y)) y = svgHeight;
         pointsCoords.push({x, y, item});
 
-        // יצירת תוויות שמות חודשים מלאים מתחת לגרף
         let lbl = document.createElement('div');
         lbl.style.cssText = "flex: 1; text-align: center; font-size: 10px; font-weight: bold; cursor: pointer;";
         lbl.innerText = item.monthName;
@@ -659,7 +624,6 @@ function renderStockMarketChart() {
         labelsRow.appendChild(lbl);
     });
 
-    // בניית קו הגרף (Polyline)
     let pointsStr = pointsCoords.map(p => `${p.x},${p.y}`).join(' ');
     let polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     polyline.setAttribute("points", pointsStr);
@@ -668,7 +632,6 @@ function renderStockMarketChart() {
     polyline.setAttribute("stroke-width", "3");
     svgEl.appendChild(polyline);
 
-    // הוספת נקודות אינטראקטיביות על גבי הגרף
     pointsCoords.forEach(p => {
         let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", p.x);
