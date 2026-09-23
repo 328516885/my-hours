@@ -8,6 +8,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
        (function(){
+          // שים כאן את ה-Public Key שלך מ-EmailJS
           emailjs.init("YOUR_PUBLIC_KEY"); 
        })();
     </script>
@@ -102,6 +103,7 @@
         </div>
         <button id="sendBtn" class="btn-login" onclick="sendResetCode()">שלח קוד אימות למייל</button>
         <div id="sendMsg" class="success-msg">שולח קוד למייל... אנא המתן.</div>
+        <div id="sendError" class="error-msg">אירעה שגיאה בשליחת המייל. בדק את החיבור או הגדרות ה-EmailJS.</div>
         <a class="forgot-link" onclick="showLoginForm()">חזרה להתחברות</a>
     </div>
 
@@ -183,6 +185,8 @@ function handleLogin(e) {
 function showResetStep1() {
     document.getElementById('loginFormCard').style.display = 'none';
     document.getElementById('resetStep1').style.display = 'block';
+    document.getElementById('sendError').style.display = 'none';
+    document.getElementById('sendMsg').style.display = 'none';
 }
 
 function showLoginForm() {
@@ -200,21 +204,24 @@ function sendResetCode() {
     
     generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('sendMsg').style.display = 'block';
+    document.getElementById('sendError').style.display = 'none';
 
     let templateParams = {
         to_email: email,
         pass_code: generatedCode
     };
 
+    // שליחת המייל דרך EmailJS
     emailjs.send('default_service', 'template_reset', templateParams)
         .then(function() {
-            alert(`קוד אימות נשלח בהצלחה למייל ${email}!`);
-            document.getElementById('resetStep1').style.display = 'none';
-            document.getElementById('resetStep2').style.display = 'block';
+            document.getElementById('sendMsg').innerText = "הקוד נשלח בהצלחה לתיבת הדוא\"ל שלך!";
+            setTimeout(() => {
+                document.getElementById('resetStep1').style.display = 'none';
+                document.getElementById('resetStep2').style.display = 'block';
+            }, 1000);
         }, function(error) {
-            alert(`קוד האימות לשחזור הסיסמה שלך הוא: ${generatedCode}`);
-            document.getElementById('resetStep1').style.display = 'none';
-            document.getElementById('resetStep2').style.display = 'block';
+            document.getElementById('sendMsg').style.display = 'none';
+            document.getElementById('sendError').style.display = 'block';
         });
 }
 
@@ -253,16 +260,14 @@ const monthNamesHebrew = [
     "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
 ];
 
-// לוח חגים ושבתות מדויק לשנת 2026
+// לוח חגים ושבתות
 const events = {
-    // אוגוסט 2026
     "2026-08-01": "שבת | פרשת עֵקֶב",
     "2026-08-08": "שבת | פרשת רְאֵה",
     "2026-08-15": "שבת | פרשת שֹׁפְטִים",
     "2026-08-22": "שבת | פרשת כִּי תֵצֵא",
     "2026-08-29": "שבת | פרשת כִּי תָבוֹא",
 
-    // ספטמבר 2026 - מדויק
     "2026-09-05": "שבת | פרשת נִצָּבִים",
     "2026-09-11": "ערב ראש השנה תשפ\"ז",
     "2026-09-12": "שבת | חג ראש השנה - יום א'",
@@ -278,7 +283,6 @@ const events = {
     "2026-09-29": "חול המועד סוכות",
     "2026-09-30": "חול המועד סוכות",
 
-    // אוקטובר 2026
     "2026-10-01": "הושענא רבה | ערב שמחת תורה",
     "2026-10-02": "חג שמיני עצרת / שמחת תורה",
     "2026-10-03": "שבת | פרשת בְּרֵאשִׁית",
