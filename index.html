@@ -124,13 +124,17 @@
     </header>
 
     <div class="controls no-print">
-        <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <label for="monthPicker"><b>בחר חודש ושנה:</b></label>
-            <input type="month" id="monthPicker" value="2026-09" onchange="loadMonth()">
+            <input type="month" id="monthPicker" value="2026-09" onchange="syncFromPicker()">
+            
+            <label><b>מספר חודש (1-12):</b></label>
+            <input type="number" id="monthNumInput" min="1" max="12" value="9" style="width: 55px; padding: 6px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;" onchange="syncFromNumInput()">
+            
             <div id="monthNameTag" class="month-label-display">ספטמבר | 09</div>
         </div>
         <div>
-            <button class="btn btn-green" onclick="addCustomShift()">+ הוסף משמרת נוספת בחודש זה</button>
+            <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
     </div>
@@ -304,6 +308,26 @@ function saveShifts(allData) {
     localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
 }
 
+function syncFromPicker() {
+    let pickerVal = document.getElementById('monthPicker').value;
+    if (pickerVal) {
+        let [year, month] = pickerVal.split('-').map(Number);
+        document.getElementById('monthNumInput').value = month;
+        loadMonth();
+    }
+}
+
+function syncFromNumInput() {
+    let numVal = parseInt(document.getElementById('monthNumInput').value);
+    if (numVal >= 1 && numVal <= 12) {
+        let pickerVal = document.getElementById('monthPicker').value || "2026-09";
+        let year = pickerVal.split('-')[0];
+        let formattedMonth = String(numVal).padStart(2, '0');
+        document.getElementById('monthPicker').value = `${year}-${formattedMonth}`;
+        loadMonth();
+    }
+}
+
 function loadMonth() {
     let monthVal = document.getElementById('monthPicker').value;
     if (!monthVal) return;
@@ -312,6 +336,7 @@ function loadMonth() {
     let monthName = monthNamesHebrew[month - 1];
     let monthFormattedNum = String(month).padStart(2, '0');
     document.getElementById('monthNameTag').innerText = `${monthName} | ${monthFormattedNum}`;
+    document.getElementById('monthNumInput').value = month;
 
     let allShifts = getSavedShifts();
     
@@ -378,6 +403,8 @@ function render() {
     let totalWeekHours = 0;
     let totalWeekPay = 0;
 
+    currentMonthData.sort((a, b) => a.date.localeCompare(b.date));
+
     currentMonthData.forEach((item, index) => {
         let parts = item.date.split('-');
         let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -392,7 +419,6 @@ function render() {
         let tr = document.createElement('tr');
         if (dayOfWeek === 6) tr.style.backgroundColor = '#f0f4f8';
 
-        // שימוש באירוע onblur (יציאה מהשדה) כדי לאפשר הקלדה חופשית של 4 ספרות
         tr.innerHTML = `
             <td><input type="date" value="${item.date}" onblur="updateRow('${item.id}', 'date', this.value)"></td>
             <td><b>${daysHebrew[dayOfWeek]}</b></td>
@@ -460,23 +486,46 @@ function duplicateRow(dateStr) {
         apartment: 'זבוטינסקי 107',
         note: 'משמרת נוספת'
     });
-    currentMonthData.sort((a,b) => a.date.localeCompare(b.date));
     saveCurrentMonth();
     render();
 }
 
-function addCustomShift() {
-    let monthVal = document.getElementById('monthPicker').value;
+// הוספת משמרת לפי בחירת תאריך מדויק
+function addCustomShiftByDate() {
+    let todayStr = new Date().toISOString().split('T')[0];
+    let selectedDate = prompt("הזן תאריך למשמרת חדשה (בפורמט YYYY-MM-DD):", todayStr);
+    
+    if (!selectedDate) return;
+
+    let parts = selectedDate.split('-');
+    if (parts.length !== 3) {
+        alert("תאריך לא תקין");
+        return;
+    }
+
+    let targetMonth = `${parts[0]}-${parts[1]}`;
+    document.getElementById('monthPicker').value = targetMonth;
+    
+    let allShifts = getSavedShifts();
+    if (!allShifts[targetMonth]) {
+        loadMonth(); 
+        allShifts = getSavedShifts();
+    } else {
+        currentMonthData = allShifts[targetMonth];
+    }
+
     currentMonthData.push({
         id: 'shift_' + Math.random().toString(36).substr(2, 9),
-        date: monthVal + "-01",
+        date: selectedDate,
         inTime: '',
         outTime: '',
         apartment: 'זבוטינסקי 107',
-        note: 'משמרת חדשה'
+        note: 'משמרת נוספת'
     });
-    saveCurrentMonth();
-    render();
+
+    allShifts[targetMonth] = currentMonthData;
+    saveShifts(allShifts);
+    loadMonth();
 }
 
 function saveCurrentMonth() {
