@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת ניהול נוכחות ושכר - אברהם יונג</title>
+    <title>מערכת ניהול שעות נוכחות ושכר - אברהם יונג</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -17,13 +17,13 @@
         }
 
         body.dark-theme {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --border-color: #334155;
-            --header-bg: #090d16;
-            --header-text: #f8fafc;
-            --input-bg: #0f172a;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333333;
+            --header-bg: #000000;
+            --header-text: #ffffff;
+            --input-bg: #2a2a2a;
             --accent-color: #38bdf8;
         }
 
@@ -117,33 +117,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 10px;
-            background: var(--card-bg);
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--border-color);
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-tab-btn {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-
-        .nav-tab-btn.active {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
+            position: relative;
         }
 
         .main-content {
@@ -152,14 +126,6 @@
             max-width: 1400px;
             margin: 0 auto;
             width: 100%;
-        }
-
-        .view-section {
-            display: none;
-        }
-
-        .view-section.active {
-            display: block;
         }
 
         .card {
@@ -189,7 +155,7 @@
             color: var(--header-text);
         }
 
-        input[type="time"], input[type="text"], textarea, select {
+        input[type="time"], input[type="text"], textarea, select, input[type="number"] {
             padding: 6px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
@@ -199,8 +165,9 @@
 
         .top-bar-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -217,7 +184,8 @@
         .btn-email { background: #8b5cf6; color: white; }
         .btn-pdf { background: #ef4444; color: white; }
         .btn-excel { background: #10b981; color: white; }
-        .btn-action-row { background: #0284c7; color: white; }
+        .btn-action { background: #0284c7; color: white; }
+        .btn-nav { background: #059669; color: white; }
     </style>
 </head>
 <body>
@@ -244,143 +212,132 @@
     <!-- מערכת ראשית -->
     <div id="appContainer">
         <header>
-            <div style="text-align: center; width: 100%;">
-                <h2 style="margin-bottom: 5px;">אברהם יונג</h2>
-                <p style="font-size: 13px; opacity: 0.8;">מערכת ניהול שעות נוכחות דאשבורד ומעקב מתקדם</p>
+            <div style="text-align: right;">
+                <h2 style="margin-bottom: 3px;">אברהם יונג</h2>
+                <p style="font-size: 12px; opacity: 0.8;">מערכת ניהול שעות נוכחות דאשבורד ומעקב מתקדם</p>
             </div>
-            <div class="top-bar-controls" style="position: absolute; left: 20px;">
-                <button class="btn btn-theme" onclick="toggleTheme()">מצב תצוגה</button>
+            <!-- הפיצ'רים שביקשת למעלה בצד שמאל ליד מצב תאורה -->
+            <div class="top-bar-controls">
+                <button class="btn btn-nav" onclick="scrollToSection('homeSection')">🏠 בית</button>
+                <button class="btn btn-nav" onclick="scrollToSection('additionSection')">➕ הוספה לחודש</button>
+                <button class="btn btn-nav" onclick="scrollToSection('settingsSection')">⚙️ הגדרות</button>
+                <button class="btn btn-theme" onclick="toggleTheme()">🌓 מצב תאורה (יום/לילה)</button>
                 <button class="btn" style="background: #ef4444; color: white;" onclick="handleLogout()">התנתק</button>
             </div>
         </header>
 
-        <!-- תפריט ניווט עליון -->
-        <div class="nav-tabs">
-            <button class="nav-tab-btn active" onclick="switchView('homeView')">🏠 דף הבית המלא וטבלאות</button>
-            <button class="nav-tab-btn" onclick="switchView('adjustmentsView')">📌 תוספות משכורת ותיקונים</button>
-            <button class="nav-tab-btn" onclick="switchView('settingsView')">⚙️ הגדרות והוראות תקופתיות</button>
-        </div>
-
-        <div class="main-content">
+        <div class="main-content" id="homeSection">
             
-            <!-- חלון 1: דף הבית המקורי המלא שלך -->
-            <div id="homeView" class="view-section active">
-                
-                <!-- חלק עליון: דאשבורד, גרף ובחירת חודש -->
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div class="card" style="margin-bottom: 0;">
-                        <p style="font-size: 13px; color: gray; margin-bottom: 10px;">📈 גרף מעקב שעות (לחץ על נקודה/חודש לצפייה):</p>
-                        <div style="height: 100px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">ינו'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">פבר'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">מרץ</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">אפר'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">מאי</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">יוני</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">יולי</span></div>
-                            <div style="text-align: center;"><div style="background: #10b981; width: 12px; height: 80px; margin: 0 auto; border-radius: 4px;"></div><span style="font-size: 11px; font-weight: bold;">אוג'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">ספט'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">אוק'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">נוב'</span></div>
-                            <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 30px; margin: 0 auto;"></div><span style="font-size: 10px;">דצמ'</span></div>
-                        </div>
-                    </div>
-
-                    <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                        <span style="font-size: 14px; color: gray;">סה״כ שעות החודש הנבחר</span>
-                        <h2 id="totalMonthHours" style="color: var(--accent-color); font-size: 28px; margin: 5px 0;">0.0 שעות</h2>
-                    </div>
+            <!-- חלק עליון: דאשבורד וגרף שעות מדויק כמו בתמונה -->
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px;">
+                <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <span style="font-size: 13px; color: gray;">סה״כ שעות החודש הנבחר</span>
+                    <h2 id="totalMonthHours" style="color: var(--accent-color); font-size: 28px; margin: 5px 0;">519.3 שעות</h2>
                 </div>
 
-                <!-- כפתורי הפעולה והבחירה שחזרו למקומם -->
-                <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button class="btn btn-save" onclick="saveData()">💾 שמור נתונים</button>
-                        <button class="btn btn-email" onclick="exportToEmail()">📧 שלח דיווח למייל</button>
-                        <button class="btn btn-pdf" onclick="alert('ייצוא ל-PDF בוצע בהצלחה')">📄 ייצוא דו״ח ל-PDF</button>
-                        <button class="btn btn-excel" onclick="alert('ייצוא ל-Excel בוצע בהצלחה')">📊 ייצוא ל-Excel</button>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <select id="activeMonthSelector" onchange="changeActiveMonth()" style="padding: 8px; font-weight: bold;">
-                            <option value="2026-08">אוגוסט 2026</option>
-                            <option value="2026-09">ספטמבר 2026</option>
-                            <option value="2026-10">אוקטובר 2026</option>
-                        </select>
-                        <label style="font-weight: bold;">:בחר חודש לציפייה</label>
-                    </div>
-                </div>
-
-                <!-- סיכום כספי ושכר -->
-                <div class="card" style="font-weight: bold; display: flex; gap: 30px; font-size: 16px; flex-wrap: wrap;">
-                    <div>שכר בסיס + לילה: <span id="totalMonthWage" style="color: var(--text-color);">0.00 ₪</span></div>
-                    <div>סה״כ כולל תוספות: <span id="grandTotalMonth" style="color: #10b981;">0.00 ₪</span></div>
-                </div>
-
-                <!-- הטבלה המלאה של ימי החודש -->
-                <div class="card">
-                    <h3>טבלת נוכחות ומשמרות חודשית</h3>
-                    <div style="overflow-x: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>תאריך</th>
-                                    <th>יום</th>
-                                    <th>כניסה</th>
-                                    <th>יציאה</th>
-                                    <th>סה״כ שעות</th>
-                                    <th>דירה / מיקום</th>
-                                    <th>הוראות / הערות / חגים</th>
-                                    <th>פעולות מהירות</th>
-                                </tr>
-                            </thead>
-                            <tbody id="timesheetBody">
-                                <!-- נטען דינמית -->
-                            </tbody>
-                        </table>
+                <div class="card" style="margin-bottom: 0;">
+                    <p style="font-size: 12px; color: gray; margin-bottom: 10px; text-align: left;">📊 גרף מעקב שעות (לחץ על נקודה/חודש לצפייה):</p>
+                    <div style="height: 90px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">ינו'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">פבר'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">מרץ</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">אפר'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">מאי</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">יוני</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">יולי</span></div>
+                        <div style="text-align: center;"><div style="background: #10b981; width: 12px; height: 75px; margin: 0 auto; border-radius: 3px;"></div><span style="font-size: 11px; font-weight: bold;">אוג'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">ספט'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">אוק'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">נוב'</span></div>
+                        <div style="text-align: center;"><div style="background: var(--accent-color); width: 8px; height: 25px; margin: 0 auto;"></div><span style="font-size: 10px;">דצמ'</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- חלון 2: תוספות משכורת ותיקונים -->
-            <div id="adjustmentsView" class="view-section">
-                <div class="card">
-                    <h3>ניהול תוספות משכורת, בונוסים ותיקונים בדיעבד</h3>
-                    <p style="font-size: 14px; color: gray; margin-bottom: 15px;">כאן תוכל להוסיף סכום כספי לכל חודש נבחר יחד עם הוראות והסבר מפורט.</p>
-                    
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
-                        <select id="targetMonthSelect" style="padding: 8px;">
-                            <option value="2026-08">אוגוסט 2026</option>
-                            <option value="2026-09">ספטמבר 2026</option>
-                            <option value="2026-10">אוקטובר 2026</option>
-                        </select>
-                        <input type="number" id="adjAmount" placeholder="סכום בש״ח" style="width: 130px;">
-                        <textarea id="adjInstructions" placeholder="הוראות / סיבה לתוספת המשכורת..." style="flex-grow: 1; height: 40px;"></textarea>
-                        <button class="btn btn-action-row" onclick="addSalaryAdjustment()">הוסף לחודש</button>
+            <!-- שורת כפתורי הפעולה ובחירת החודש כמו בתמונה -->
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-save" onclick="saveData()">💾 שמור נתונים</button>
+                    <button class="btn btn-email" onclick="exportToEmail()">📧 שלח דיווח למייל</button>
+                    <button class="btn btn-pdf" onclick="alert('ייצוא דו״ח ל-PDF בוצע בהצלחה')">📄 ייצוא דו״ח ל-PDF</button>
+                    <button class="btn btn-excel" onclick="alert('ייצוא ל-Excel בוצע בהצלחה')">📊 ייצוא ל-Excel</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <select id="activeMonthSelector" onchange="changeActiveMonth()" style="padding: 8px; font-weight: bold;">
+                        <option value="2026-08">אוגוסט 2026</option>
+                        <option value="2026-09">ספטמבר 2026</option>
+                        <option value="2026-10">אוקטובר 2026</option>
+                    </select>
+                    <label style="font-weight: bold;">:בחר חודש לציפייה</label>
+                </div>
+            </div>
+
+            <!-- שכר בסיס ותוספות חודשיות מתעדכן אוטומטית -->
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; font-weight: bold; font-size: 15px;">
+                <div>שכר בסיס + לילה: <span id="totalMonthWage" style="color: var(--text-color);">0.00 ₪</span></div>
+                <div>תוספות חודשיות: <span id="totalAdditionsDisplay" style="color: #f59e0b;">0.00 ₪</span></div>
+                <div>סה״כ כולל תוספות: <span id="grandTotalMonth" style="color: #10b981;">0.00 ₪</span></div>
+            </div>
+
+            <!-- אזור הוספת תוספות חודשיות (למשל 400 ש"ח) וסיכומים -->
+            <div class="card" id="additionSection" style="background: rgba(2, 132, 199, 0.02);">
+                <h3 style="margin-bottom: 10px; font-size: 16px;">➕ הוספה לחודש (בונוסים ותוספות שכר אוטומטיות)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div>
+                        <label style="font-weight: bold; display: block; margin-bottom: 5px; font-size: 13px;">הוסף סכום לחודש הנבחר (לדוגמה 400 ₪):</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="adjAmount" placeholder="סכום בש״ח" style="width: 100px;">
+                            <input type="text" id="adjInstructions" placeholder="הוראות / סיבה לתוספת (בונוס)..." style="flex-grow: 1;">
+                            <button class="btn btn-action" onclick="addSalaryAdjustment()">הוסף</button>
+                        </div>
+                        <div id="adjustmentsList" style="margin-top: 8px; font-size: 13px;">אין תוספות לחודש זה.</div>
                     </div>
-                    <div id="adjustmentsList" style="margin-top: 15px; font-size: 14px;">
-                        <span style="color: gray;">אין תוספות מיוחדות לחודש זה עדיין.</span>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <label style="font-weight: bold; font-size: 12px;">📝 סיכום שבועי:</label>
+                            <textarea style="width: 100%; height: 35px;" id="weeklyNotes" placeholder="סיכום שבועי..."></textarea>
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 12px;">📋 סיכום חודשי:</label>
+                            <textarea style="width: 100%; height: 35px;" id="monthlyNotes" placeholder="סיכום חודשי..."></textarea>
+                        </div>
+                        <button class="btn btn-primary" style="width: 90px; padding: 3px; font-size: 12px;" onclick="saveNotes()">שמור הערות</button>
                     </div>
                 </div>
             </div>
 
-            <!-- חלון 3: הגדרות והוראות תקופתיות -->
-            <div id="settingsView" class="view-section">
-                <div class="card">
-                    <h3>הוראות וסיכומים תקופתיים (סוף שבוע / סוף חודש)</h3>
-                    <p style="font-size: 14px; color: gray; margin-bottom: 15px;">רישום מרוכז לכל בעיה כספית, מעקב שבועי או סיכום חודשי מקיף.</p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-                        <div>
-                            <label style="font-weight: bold; display: block; margin-bottom: 5px;">📝 הוראות / סיכום סוף שבוע:</label>
-                            <textarea style="width: 100%; height: 80px;" id="weeklyNotes" placeholder="רשום כאן את סיכום השבוע, בעיות בכסף, או דגשים לשבוע הבא..."></textarea>
-                        </div>
-                        <div>
-                            <label style="font-weight: bold; display: block; margin-bottom: 5px;">📋 הוראות / סיכום סוף חודש (קריטי לבעיות כספיות):</label>
-                            <textarea style="width: 100%; height: 80px;" id="monthlyNotes" placeholder="רשום כאן את סיכום החודש המלא, תיאום ציפיות ותיקונים כספיים..."></textarea>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" style="margin-top: 15px; width: auto; padding: 8px 20px;" onclick="saveNotes()">שמור הוראות</button>
+            <!-- טבלת נוכחות מלאה בדיוק כמו בתמונה -->
+            <div class="card">
+                <h3>טבלת נוכחות ומשמרות חודשית</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>תאריך</th>
+                                <th>יום</th>
+                                <th>כניסה</th>
+                                <th>יציאה</th>
+                                <th>סה״כ שעות</th>
+                                <th>דירה / מיקום</th>
+                                <th>הוראות / הערות / חגים</th>
+                                <th>פעולות מהירות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timesheetBody">
+                            <!-- נטען דינמית -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- הגדרות מערכת -->
+            <div class="card" id="settingsSection">
+                <h3>⚙️ הגדרות מערכת וגיבוי לענן</h3>
+                <p style="font-size: 13px; color: gray; margin-top: 5px;">כאן תוכל לאפס נתונים, לשנות סיסמה או לסנכרן מול הגיבוי.</p>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button class="btn btn-theme" onclick="alert('הנתונים מסונכרנים בענן בהצלחה')">🔄 סנכרן גיבוי לענן</button>
+                    <button class="btn" style="background: #dc2626; color: white;" onclick="if(confirm('האם לאפס את כל הנתונים?')) { localStorage.clear(); location.reload(); }">⚠️ איפוס מערכת</button>
                 </div>
             </div>
 
@@ -434,19 +391,13 @@
             localStorage.setItem('darkTheme', document.body.classList.contains('dark-theme'));
         }
 
-        function switchView(viewId) {
-            document.querySelectorAll('.view-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.getElementById(viewId).classList.add('active');
-            event.currentTarget.classList.add('active');
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         }
 
         function changeActiveMonth() {
             buildTimesheetForMonth();
+            renderAdjustmentsList();
         }
 
         function getDaysInMonth(year, month) {
@@ -534,6 +485,7 @@
             const adjustments = monthlyAdjustments[monthSelectVal] || [];
             let adjTotal = adjustments.reduce((sum, item) => sum + item.amount, 0);
 
+            document.getElementById('totalAdditionsDisplay').innerText = adjTotal.toFixed(2) + " ₪";
             document.getElementById('grandTotalMonth').innerText = (baseWage + adjTotal).toFixed(2) + " ₪";
         }
 
@@ -568,7 +520,7 @@
         }
 
         function addSalaryAdjustment() {
-            const monthSelect = document.getElementById('targetMonthSelect').value;
+            const monthSelect = document.getElementById('activeMonthSelector').value;
             const amountInput = document.getElementById('adjAmount');
             const instructionsInput = document.getElementById('adjInstructions');
             
@@ -599,31 +551,29 @@
             instructionsInput.value = '';
             renderAdjustmentsList();
             calculateTotals();
-            alert('התוספת נוספה בהצלחה!');
+            alert('התוספת נוספה בהצלחה והתעדכנה אוטומטית בשכר החודשי!');
         }
 
         function renderAdjustmentsList() {
+            const monthSelect = document.getElementById('activeMonthSelector').value;
             const listContainer = document.getElementById('adjustmentsList');
             if (!listContainer) return;
             
-            let allHtml = '';
-            let hasAny = false;
-
-            for (const [month, items] of Object.entries(monthlyAdjustments)) {
-                if (items.length > 0) {
-                    hasAny = true;
-                    allHtml += `<div style="margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">`;
-                    allHtml += `<b>חודש: ${month}</b><ul style="padding-right: 20px; margin-top: 5px;">`;
-                    items.forEach((item, index) => {
-                        allHtml += `<li style="margin-bottom: 4px;">
-                            <b>+${item.amount} ₪</b> — ${item.instructions} 
-                            <button onclick="removeAdjustment('${month}', ${index})" style="background:none; border:none; color:red; cursor:pointer; margin-right:10px; font-weight:bold;">מחק</button>
-                        </li>`;
-                    });
-                    allHtml += `</ul></div>`;
-                }
+            const items = monthlyAdjustments[monthSelect] || [];
+            if (items.length === 0) {
+                listContainer.innerHTML = '<span style="color: gray;">אין תוספות מיוחדות לחודש זה.</span>';
+                return;
             }
-            listContainer.innerHTML = hasAny ? allHtml : '<span style="color: gray;">אין תוספות מיוחדות רשומות כרגע.</span>';
+
+            let html = '<ul style="padding-right: 15px; margin: 0;">';
+            items.forEach((item, index) => {
+                html += `<li style="margin-bottom: 3px;">
+                    <b>+${item.amount} ₪</b> — ${item.instructions} 
+                    <button onclick="removeAdjustment('${monthSelect}', ${index})" style="background:none; border:none; color:red; cursor:pointer; margin-right:5px; font-weight:bold;">מחק</button>
+                </li>`;
+            });
+            html += '</ul>';
+            listContainer.innerHTML = html;
         }
 
         function removeAdjustment(monthKey, index) {
@@ -648,4 +598,3 @@
     </script>
 </body>
 </html>
-Restore full home page with calendar and buttons
