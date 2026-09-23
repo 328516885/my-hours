@@ -8,7 +8,6 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
        (function(){
-          // שים כאן את ה-Public Key שלך מ-EmailJS
           emailjs.init("YOUR_PUBLIC_KEY"); 
        })();
     </script>
@@ -103,7 +102,7 @@
         </div>
         <button id="sendBtn" class="btn-login" onclick="sendResetCode()">שלח קוד אימות למייל</button>
         <div id="sendMsg" class="success-msg">שולח קוד למייל... אנא המתן.</div>
-        <div id="sendError" class="error-msg">אירעה שגיאה בשליחת המייל. בדק את החיבור או הגדרות ה-EmailJS.</div>
+        <div id="sendError" class="error-msg">אירעה שגיאה בשליחת המייל.</div>
         <a class="forgot-link" onclick="showLoginForm()">חזרה להתחברות</a>
     </div>
 
@@ -211,7 +210,7 @@ function sendResetCode() {
         pass_code: generatedCode
     };
 
-    // שליחת המייל דרך EmailJS
+    // שליחת המייל בלבד דרך EmailJS ללא שום הודעה קופצת במסך
     emailjs.send('default_service', 'template_reset', templateParams)
         .then(function() {
             document.getElementById('sendMsg').innerText = "הקוד נשלח בהצלחה לתיבת הדוא\"ל שלך!";
