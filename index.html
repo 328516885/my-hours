@@ -86,7 +86,6 @@
         .progress-bar-bg { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
         .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
 
-        /* גרף שוק ההון (קווי עם נקודות ושמות חודשים מלאים) */
         .chart-container { position: relative; height: 140px; padding-top: 15px; border-bottom: 2px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; }
         .chart-svg { position: absolute; top: 15px; left: 0; width: 100%; height: 100px; overflow: visible; pointer-events: none; }
         .chart-labels-row { display: flex; justify-content: space-between; width: 100%; position: absolute; bottom: -22px; font-size: 10px; font-weight: 600; color: var(--text-main); }
@@ -120,6 +119,11 @@
         .year-end-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
         .year-stat-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center; }
         .year-stat-card .val { font-size: 24px; font-weight: bold; color: #34d399; margin-top: 5px; }
+
+        /* חלון מודל לעדכון שעות קבועות לימים בשבוע */
+        #presetModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-card { background: var(--bg-card); padding: 25px; border-radius: 12px; width: 90%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border); }
+        .modal-card h3 { margin-top: 0; color: var(--primary); }
 
         @media print { 
             body { background: #fff; color: #000; padding: 0; } 
@@ -181,6 +185,19 @@
     </div>
 </div>
 
+<!-- מודל ניהול שעות קבועות לימים (כפתור כחול) -->
+<div id="presetModal">
+    <div class="modal-card">
+        <h3>⚙️ הגדרת שעות קבועות לפי יום בשבוע</h3>
+        <p style="font-size: 13px; color: #64748b;">קבע את השעות לכל יום (למשל יום חמישי ב-05:00 או איפוס ליום שישי). בלחיצה על החלת שעות, הן יתעדכנו לפי הגדרות אלו.</p>
+        <div id="weeklyPresetsContainer" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;"></div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-green" onclick="applyWeeklyPresetsToMonth()">החל על החודש הנוכחי</button>
+            <button class="btn btn-red" onclick="closePresetModal()">סגור</button>
+        </div>
+    </div>
+</div>
+
 <div id="mainApp" class="container-full">
     <header>
         <div class="top-nav-btns no-print">
@@ -215,7 +232,7 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
-            <button class="btn btn-blue-custom" onclick="editShiftByDatePrompt()">⚡ עדכן משמרת לפי תאריך</button>
+            <button class="btn btn-blue-custom" onclick="openPresetModal()">⚙️ שעות קבועות לימים</button>
             <button class="btn btn-purple" onclick="executeSafeCloudBackup()">✉️ גיבוי ענן למייל</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
@@ -321,7 +338,6 @@ function verifyAndResetPassword() {
     }
 }
 
-// גיבוי כפול בטוח: מוריד קובץ טקסט למחשב ופותח מייל מוכן לשליחה
 function executeSafeCloudBackup() {
     let dataObj = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -330,7 +346,6 @@ function executeSafeCloudBackup() {
     }
     let encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
 
-    // 1. הורדת קובץ קשיח
     let blob = new Blob([encodedData], { type: 'text/plain;charset=utf-8;' });
     let link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -339,7 +354,6 @@ function executeSafeCloudBackup() {
     link.click();
     document.body.removeChild(link);
 
-    // 2. פתיחת מייל לשליחה לעצמך
     let subject = encodeURIComponent("🔒 גיבוי ענן מאובטח - מערכת נוכחות אברהם יונג (" + new Date().toLocaleDateString('he-IL') + ")");
     let body = encodeURIComponent("שלום אברהם,\n\nזהו גיבוי הענן המעודכן שלך ממערכת ניהול השעות מתאריך " + new Date().toLocaleString('he-IL') + ".\n\nהנה מחרוזת הנתונים המלאה לשחזור במקרה הצורך:\n\n" + encodedData);
 
@@ -421,6 +435,71 @@ function saveShifts(allData) {
     localStorage.setItem('shuky_monthly_shifts_v3', JSON.stringify(allData));
 }
 
+// ניהול שעות קבועות לפי יום בשבוע (ראשון עד שבת)
+function getWeeklyPresets() {
+    let saved = localStorage.getItem('shuky_weekly_presets');
+    if (saved) return JSON.parse(saved);
+    let defaults = {};
+    for (let i = 0; i < 7; i++) {
+        // ברירת מחדל לכל ימים: 15:00 עד 07:45 (מלבד שישי שיושאר ריק או לפי בחירה)
+        defaults[i] = { inTime: (i === 5 ? "" : "15:00"), outTime: (i === 5 ? "" : "07:45") };
+    }
+    return defaults;
+}
+
+function saveWeeklyPresets(presets) {
+    localStorage.setItem('shuky_weekly_presets', JSON.stringify(presets));
+}
+
+function openPresetModal() {
+    let container = document.getElementById('weeklyPresetsContainer');
+    container.innerHTML = '';
+    let presets = getWeeklyPresets();
+
+    daysHebrew.forEach((dayName, idx) => {
+        let row = document.createElement('div');
+        row.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: var(--light); border-radius: 6px;";
+        row.innerHTML = `
+            <span style="font-weight: bold; width: 60px;">יום ${dayName}</span>
+            <label style="font-size: 12px;">כניסה: <input type="time" id="preset_in_${idx}" value="${presets[idx].inTime || ''}" style="padding: 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);"></label>
+            <label style="font-size: 12px;">יציאה: <input type="time" id="preset_out_${idx}" value="${presets[idx].outTime || ''}" style="padding: 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);"></label>
+        `;
+        container.appendChild(row);
+    });
+
+    document.getElementById('presetModal').style.display = 'flex';
+}
+
+function closePresetModal() {
+    document.getElementById('presetModal').style.display = 'none';
+}
+
+function applyWeeklyPresetsToMonth() {
+    let presets = {};
+    for (let i = 0; i < 7; i++) {
+        presets[i] = {
+            inTime: document.getElementById(`preset_in_${i}`).value,
+            outTime: document.getElementById(`preset_out_${i}`).value
+        };
+    }
+    saveWeeklyPresets(presets);
+
+    currentMonthData.forEach(item => {
+        let parts = item.date.split('-');
+        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        let dayOfWeek = dateObj.getDay();
+        if (presets[dayOfWeek]) {
+            item.inTime = presets[dayOfWeek].inTime;
+            item.outTime = presets[dayOfWeek].outTime;
+        }
+    });
+
+    saveCurrentMonth();
+    render();
+    closePresetModal();
+    alert("השעות הקבועות הוחלו בהצלחה על החודש!");
+}
+
 function loadMonth() {
     let monthVal = document.getElementById('monthPicker').value;
     if (!monthVal) return;
@@ -446,6 +525,7 @@ function loadMonth() {
             let dayOfWeek = dateObj.getDay();
             let note = events[fullDate] || (dayOfWeek === 6 ? "שבת" : "");
 
+            // התחלה ריקה לגמרי כפי שביקשת (למעט חגים/שבתות בהערות אם צריך)
             currentMonthData.push({
                 id: 'shift_' + Math.random().toString(36).substr(2, 9),
                 date: fullDate,
@@ -461,6 +541,7 @@ function loadMonth() {
     render();
 }
 
+// כפתור מהיר בשורה: מזין 15:00 עד 07:45 רק בלחיצה
 function setRowPreset(id) {
     let item = currentMonthData.find(x => x.id === id);
     if (item) {
@@ -471,6 +552,7 @@ function setRowPreset(id) {
     }
 }
 
+// כפתור איפוס (❌) ליום שבו אינך עובד
 function clearRowShift(id) {
     let item = currentMonthData.find(x => x.id === id);
     if (item) {
@@ -555,8 +637,8 @@ function render() {
             <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onblur="updateRow('${item.id}', 'apartment', this.value)"></td>
             <td><input type="text" class="note-input" value="${item.note}" onblur="updateRow('${item.id}', 'note', this.value)"></td>
             <td class="no-print">
-                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="שעות 15:00-07:45">⚡ שעות</button>
-                <button style="background:#f59e0b; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="clearRowShift('${item.id}')" title="נקה שעות ליום חופש / ללא עבודה">❌ איפוס</button>
+                <button style="background:#0284c7; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="setRowPreset('${item.id}')" title="הזן שעות 15:00-07:45">⚡ שעות</button>
+                <button style="background:#f59e0b; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;" onclick="clearRowShift('${item.id}')" title="איפוס שעות ליום חופש">❌ איפוס</button>
                 <button style="background:#10b981; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+</button>
                 <button style="background:#ef4444; color:#fff; border:none; padding:4px 6px; border-radius:4px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
             </td>
@@ -670,56 +752,6 @@ function renderStockMarketChart() {
         };
         svgEl.appendChild(circle);
     });
-}
-
-function editShiftByDatePrompt() {
-    let targetDate = prompt("הזן תאריך לעדכון (בפורמט YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
-    if (!targetDate) return;
-
-    let parts = targetDate.split('-');
-    if (parts.length !== 3) {
-        alert("תאריך לא תקין");
-        return;
-    }
-
-    let targetMonth = `${parts[0]}-${parts[1]}`;
-    document.getElementById('monthPicker').value = targetMonth;
-    
-    let allShifts = getSavedShifts();
-    if (!allShifts[targetMonth]) {
-        loadMonth();
-        allShifts = getSavedShifts();
-    } else {
-        currentMonthData = allShifts[targetMonth];
-    }
-
-    let found = currentMonthData.find(x => x.date === targetDate);
-    if (!found) {
-        let addChoice = confirm("התאריך אינו קיים ברשימה לחודש זה. האם להוסיף אותו?");
-        if (!addChoice) return;
-        found = {
-            id: 'shift_' + Math.random().toString(36).substr(2, 9),
-            date: targetDate,
-            inTime: '',
-            outTime: '',
-            apartment: 'זבוטינסקי 107',
-            note: 'משמרת מעודכנת'
-        };
-        currentMonthData.push(found);
-    }
-
-    let newIn = prompt("הכנס שעת כניסה (למשל 15:00, או השאר ריק לאיפוס):", found.inTime || "15:00");
-    if (newIn === null) return;
-    let newOut = prompt("הכנס שעת יציאה (למשל 07:45, או השאר ריק לאיפוס):", found.outTime || "07:45");
-    if (newOut === null) return;
-
-    found.inTime = newIn;
-    found.outTime = newOut;
-
-    allShifts[targetMonth] = currentMonthData;
-    saveShifts(allShifts);
-    loadMonth();
-    alert("המשמרת עודכנה בהצלחה!");
 }
 
 function checkYearEndDisplay() {
