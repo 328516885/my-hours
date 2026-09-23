@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אברהם יונג - חזון דב | מערכת נוכחות</title>
+    <style>
+        :root {
+            --primary: #1A3A5C;
+            --secondary: #2E6DA4;
+            --accent: #d9534f;
+            --light: #f8f9fa;
+            --border: #d3d3d3;
+            --btn-blue: #007bff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f2f4f7;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 85vh;
+        }
+        .login-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 30px;
+            text-align: center;
+            border: 1px solid #e1e8ed;
+        }
+        .login-card h2 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 24px;
+        }
+        .login-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+            text-align: right;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            color: #444;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .btn-login {
+            width: 100%;
+            background-color: var(--btn-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-login:hover { background-color: #0056b3; }
+        
+        .forgot-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--secondary);
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .forgot-link:hover { text-decoration: underline; }
+
+        .error-msg {
+            color: var(--accent);
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            font-weight: bold;
+        }
+
+        #mainApp, #resetStep1, #resetStep2 { display: none; }
+
+        .container {
+            max-width: 1350px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        header h1 { margin: 0 0 5px 0; font-size: 26px; }
+        header p { margin: 0; font-size: 13px; opacity: 0.9; }
+        
+        .logout-btn {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn-green { background-color: #5cb85c; }
+        .btn-red { background-color: var(--accent); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+        }
+        th { background-color: var(--primary); color: white; }
+
+        .week-summary-row { background-color: #e8eef5; font-weight: bold; color: var(--primary); }
+        .month-summary-row { background-color: #1A3A5C; color: white; font-weight: bold; font-size: 15px; }
+        
+        @media print {
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- מסך התחברות -->
+<div id="loginScreen" class="login-wrapper">
+    <!-- טופס התחברות רגיל -->
+    <div id="loginFormCard" class="login-card">
+        <h2>שלום אברהם, טוב לראות אותך!</h2>
+        <p>כניסה למערכת דיווח שעות נוכחות</p>
+        
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="username">שם משתמש (דוא"ל):</label>
+                <input type="text" id="username" value="ay0533115854@gmail.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">סיסמה:</label>
+                <input type="password" id="password" placeholder="הכנס סיסמה" required>
+            </div>
+
+            <button type="submit" class="btn-login">התחברות</button>
+            <div id="loginError" class="error-msg">שם המשתמש או הסיסמה אינם נכונים</div>
+            <a class="forgot-link" onclick="showResetStep1()">שכחת סיסמה? לחץ כאן לשחזור</a>
+        </form>
+    </div>
+
+    <!-- שלב 1: אימות דוא"ל ושליחת קוד -->
+    <div id="resetStep1" class="login-card">
+        <h2>שחזור סיסמה</h2>
+        <p>הזן את כתובת הדוא"ל שלך לקבלת קוד אימות</p>
+        <div class="form-group">
+            <label for="resetEmail">דוא"ל:</label>
+            <input type="email" id="resetEmail" value="ay0533115854@gmail.com">
+        </div>
+        <button class="btn-login" onclick="sendResetCode()">שלח קוד אימות למייל</button>
+        <a class="forgot-link" onclick="showLoginForm()">חזרה להתחברות</a>
+    </div>
+
+    <!-- שלב 2: הזנת קוד וקביעת סיסמה חדשה (מספרים/פשוטה) -->
+    <div id="resetStep2" class="login-card">
+        <h2>איפוס סיסמה</h2>
+        <p>הזן את קוד האימות שנשלח והגדר סיסמה חדשה (אפשר מספרים בלבד)</p>
+        <div class="form-group">
+            <label for="inputCode">קוד אימות שנשלח:</label>
+            <input type="text" id="inputCode" placeholder="הכנס קוד בן 4 ספרות">
+        </div>
+        <div class="form-group">
+            <label for="newPass">סיסמה חדשה:</label>
+            <input type="text" id="newPass" placeholder="הכנס סיסמה חדשה (מספרים בלבד)">
+        </div>
+        <button class="btn-login" onclick="verifyAndResetPassword()">עדכן סיסמה והתחבר</button>
+        <div id="resetError" class="error-msg">קוד האימות שגוי או שלא הוגדרה סיסמה</div>
+    </div>
+</div>
+
+<!-- המערכת הראשית -->
+<div id="mainApp" class="container">
+    <header>
+        <button class="logout-btn no-print" onclick="handleLogout()">יציאה 🚪</button>
+        <h1>אברהם יונג - חזון דב</h1>
+        <p>יומן שעות עבודה חודשי | תצוגה נקייה, חישוב שעות וסיכומים</p>
+    </header>
+
+    <div class="controls no-print">
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <label for="monthPicker"><b>בחר חודש ושנה:</b></label>
+            <input type="month" id="monthPicker" value="2026-08" onchange="loadMonth()">
+            <div id="monthNameTag" class="month-label-display">אוגוסט | 08</div>
+        </div>
+        <div>
+            <button class="btn btn-green" onclick="addCustomShift()">+ הוסף משמרת נוספת בחודש זה</button>
+            <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>תאריך</th>
+                <th>יום</th>
+                <th>כניסה</th>
+                <th>יציאה</th>
+                <th>סה״כ שעות</th>
+                <th>סה״כ יומי ₪</th>
+                <th>דירה / מיקום</th>
+                <th>הוראות / הערות / חגים ושבתות</th>
+                <th class="no-print">פעולות</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+const DEFAULT_USER = "ay0533115854@gmail.com";
+let generatedCode = null;
+
+// טעינת סיסמה קיימת או הגדרת ברירת מחדל ראשונית
+function getSavedPassword() {
+    return localStorage.getItem('user_password') || "123456789";
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    let userIn = document.getElementById('username').value.trim();
+    let passIn = document.getElementById('password').value.trim();
+    let errDiv = document.getElementById('loginError');
+
+    if (userIn === DEFAULT_USER && passIn === getSavedPassword()) {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        showApp();
+    } else {
+        errDiv.style.display = 'block';
+    }
+}
+
+function showResetStep1() {
+    document.getElementById('loginFormCard').style.display = 'none';
+    document.getElementById('resetStep1').style.display = 'block';
+}
+
+function showLoginForm() {
+    document.getElementById('resetStep1').style.display = 'none';
+    document.getElementById('resetStep2').style.display = 'none';
+    document.getElementById('loginFormCard').style.display = 'block';
+}
+
+function sendResetCode() {
+    let email = document.getElementById('resetEmail').value.trim();
+    if (email !== DEFAULT_USER) {
+        alert('כתובת הדוא"ל אינה תואמת למערכת');
+        return;
+    }
+    
+    // יצירת קוד אימות רנדומלי בן 4 ספרות
+    generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    // פתיחת תוכנת המייל של המשתמש מוגדרת מראש עם הקוד
+    let subject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת נוכחות");
+    let body = encodeURIComponent(`שלום אברהם,\n\nקוד האימות שלך לשחזור הסיסמה במערכת הוא: ${generatedCode}\n\nהזן קוד זה במערכת כדי לקבוע סיסמה חדשה.`);
+    
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    
+    alert(`קוד אימות נשלח! הקוד שלך לשחזור הוא: ${generatedCode}`);
+    
+    document.getElementById('resetStep1').style.display = 'none';
+    document.getElementById('resetStep2').style.display = 'block';
+}
+
+function verifyAndResetPassword() {
+    let inputCode = document.getElementById('inputCode').value.trim();
+    let newPass = document.getElementById('newPass').value.trim();
+    let resetErr = document.getElementById('resetError');
+
+    // מאפשר כל סיסמה (מספרים, אותיות, קצרה או ארוכה) ללא הגבלה
+    if (inputCode === generatedCode && newPass.length > 0) {
+        localStorage.setItem('user_password', newPass);
+        alert('הסיסמה עודכנה בהצלחה! כעת תוכל להתחבר.');
+        showLoginForm();
+    } else {
+        resetErr.style.display = 'block';
+    }
+}
+
+function handleLogout() {
+    sessionStorage.removeItem('isLoggedIn');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    loadMonth();
+}
+
+if (sessionStorage.getItem('isLoggedIn') === 'true') {
+    showApp();
+}
+
+const monthNamesHebrew = [
+    "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+    "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
+];
+
+const events = {
+    "2026-08-08": "שבת | פרשת עֵקֶב",
+    "2026-08-15": "שבת | פרשת רְאֵה",
+    "2026-08-22": "שבת | פרשת שֹׁפְטִים",
+    "2026-08-29": "שבת | פרשת כִּי תֵצֵא",
+    "2026-09-05": "שבת | פרשת כִּי תָבוֹא",
+    "2026-09-12": "שבת | פרשת נִצָּבִים-וַיֵּלֶךְ",
+    "2026-09-19": "שבת | ערב ראש השנה",
+    "2026-09-21": "חג | ראש השנה",
+    "2026-09-22": "חג | ראש השנה יום ב'",
+    "2026-09-30": "ערב יום כיפור",
+    "2026-10-01": "חג | יום כיפור",
+    "2026-10-06": "חג | סוכות",
+    "2026-10-13": "חג | שמחת תורה"
+};
+
+const daysHebrew = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "שבת"];
+let currentMonthData = [];
+
+function getSavedShifts() {
+    let saved = localStorage.getItem('shuky_monthly_shifts_v2');
+    return saved ? JSON.parse(saved) : {};
+}
+
+function saveShifts(allData) {
+    localStorage.setItem('shuky_monthly_shifts_v2', JSON.stringify(allData));
+}
+
+function loadMonth() {
+    let monthVal = document.getElementById('monthPicker').value;
+    if (!monthVal) return;
+
+    let [year, month] = monthVal.split('-').map(Number);
+    
+    let monthName = monthNamesHebrew[month - 1];
+    let monthFormattedNum = String(month).padStart(2, '0');
+    document.getElementById('monthNameTag').innerText = `${monthName} | ${monthFormattedNum}`;
+
+    let allShifts = getSavedShifts();
+    
+    if (allShifts[monthVal] && allShifts[monthVal].length > 0) {
+        currentMonthData = allShifts[monthVal];
+    } else {
+        currentMonthData = [];
+        let daysInMonth = new Date(year, month, 0).getDate();
+        
+        for (let d = 1; d <= daysInMonth; d++) {
+            let dayStr = String(d).padStart(2, '0');
+            let monthStr = String(month).padStart(2, '0');
+            let fullDate = `${year}-${monthStr}-${dayStr}`;
+            let dateObj = new Date(year, month - 1, d);
+            let dayOfWeek = dateObj.getDay();
+            
+            let note = events[fullDate] || (dayOfWeek === 6 ? "שבת" : "");
+
+            currentMonthData.push({
+                id: 'shift_' + Math.random().toString(36).substr(2, 9),
+                date: fullDate,
+                inTime: '',
+                outTime: '',
+                apartment: 'זבוטינסקי 107',
+                note: note
+            });
+        }
+        allShifts[monthVal] = currentMonthData;
+        saveShifts(allShifts);
+    }
+
+    render();
+}
+
+function calculatePay(inTime, outTime) {
+    if (!inTime || !outTime) return { hours: 0, pay: 0 };
+    let [inH, inM] = inTime.split(':').map(Number);
+    let [outH, outM] = outTime.split(':').map(Number);
+    let start = inH + inM / 60;
+    let end = outH + outM / 60;
+    
+    let totalHours = end >= start ? (end - start) : ((24 - start) + end);
+    
+    let startM = inH * 60 + inM;
+    let endM = outH * 60 + outM;
+    if (endM <= startM) endM += 24 * 60;
+    
+    let nightM = 0;
+    for (let m = startM; m < endM; m++) {
+        let mod = m % (24 * 60);
+        if (mod >= 0 && mod < 6 * 60 + 30) nightM++;
+    }
+    
+    let nightHours = nightM / 60;
+    let dayHours = Math.max(0, totalHours - nightHours);
+    let totalPay = (dayHours * 35.41) + (nightHours * 124.25);
+
+    return { hours: totalHours, pay: totalPay };
+}
+
+function render() {
+    let tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    
+    let totalMonthHours = 0;
+    let totalMonthPay = 0;
+    let totalWeekHours = 0;
+    let totalWeekPay = 0;
+
+    currentMonthData.forEach((item, index) => {
+        let parts = item.date.split('-');
+        let dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        let dayOfWeek = dateObj.getDay();
+        
+        let calc = calculatePay(item.inTime, item.outTime);
+        totalMonthHours += calc.hours;
+        totalMonthPay += calc.pay;
+        totalWeekHours += calc.hours;
+        totalWeekPay += calc.pay;
+
+        let tr = document.createElement('tr');
+        if (dayOfWeek === 6) tr.style.backgroundColor = '#f0f4f8';
+
+        tr.innerHTML = `
+            <td><input type="date" value="${item.date}" onchange="updateRow('${item.id}', 'date', this.value)"></td>
+            <td><b>${daysHebrew[dayOfWeek]}</b></td>
+            <td><input type="time" value="${item.inTime}" onchange="updateRow('${item.id}', 'inTime', this.value)"></td>
+            <td><input type="time" value="${item.outTime}" onchange="updateRow('${item.id}', 'outTime', this.value)"></td>
+            <td><b>${calc.hours > 0 ? calc.hours.toFixed(2) : ''}</b></td>
+            <td><b>${calc.pay > 0 ? calc.pay.toFixed(2) + ' ₪' : ''}</b></td>
+            <td><input type="text" value="${item.apartment || 'זבוטינסקי 107'}" style="width:90%" onchange="updateRow('${item.id}', 'apartment', this.value)"></td>
+            <td><input type="text" value="${item.note}" style="width:95%" onchange="updateRow('${item.id}', 'note', this.value)"></td>
+            <td class="no-print">
+                <button style="background:#5cb85c; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="duplicateRow('${item.date}')">+ משמרת</button>
+                <button style="background:#d9534f; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="deleteRow('${item.id}')">X</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+
+        let nextItem = currentMonthData[index + 1];
+        if (dayOfWeek === 6 || !nextItem) {
+            let trW = document.createElement('tr');
+            trW.className = 'week-summary-row';
+            trW.innerHTML = `
+                <td colspan="4" style="text-align:right;">📖 סיכום שבועי:</td>
+                <td>${totalWeekHours > 0 ? totalWeekHours.toFixed(2) : ''}</td>
+                <td>${totalWeekPay > 0 ? totalWeekPay.toFixed(2) + ' ₪' : ''}</td>
+                <td colspan="3"></td>
+            `;
+            tbody.appendChild(trW);
+            totalWeekHours = 0;
+            totalWeekPay = 0;
+        }
+    });
+
+    let trM = document.createElement('tr');
+    trM.className = 'month-summary-row';
+    trM.innerHTML = `
+        <td colspan="4" style="text-align:right;">📅 סה״כ לכל החודש:</td>
+        <td>${totalMonthHours > 0 ? totalMonthHours.toFixed(2) : ''}</td>
+        <td>${totalMonthPay > 0 ? totalMonthPay.toFixed(2) + ' ₪' : ''}</td>
+        <td colspan="3"></td>
+    `;
+    tbody.appendChild(trM);
+}
+
+function updateRow(id, field, value) {
+    let item = currentMonthData.find(x => x.id === id);
+    if (item) {
+        item[field] = value;
+        saveCurrentMonth();
+        render();
+    }
+}
+
+function deleteRow(id) {
+    currentMonthData = currentMonthData.filter(x => x.id !== id);
+    saveCurrentMonth();
+    render();
+}
+
+function duplicateRow(dateStr) {
+    currentMonthData.push({
+        id: 'shift_' + Math.random().toString(36).substr(2, 9),
+        date: dateStr,
+        inTime: '',
+        outTime: '',
+        apartment: 'זבוטינסקי 107',
+        note: 'משמרת נוספת'
+    });
+    currentMonthData.sort((a,b) => a.date.localeCompare(b.date));
+    saveCurrentMonth();
+    render();
+}
+
+function addCustomShift() {
+    let monthVal = document.getElementById('monthPicker').value;
+    currentMonthData.push({
+        id: 'shift_' + Math.random().toString(36).substr(2, 9),
+        date: monthVal + "-01",
+        inTime: '',
+        outTime: '',
+        apartment: 'זבוטינסקי 107',
+        note: 'משמרת חדשה'
+    });
+    saveCurrentMonth();
+    render();
+}
+
+function saveCurrentMonth() {
+    let monthVal = document.getElementById('monthPicker').value;
+    let allShifts = getSavedShifts();
+    allShifts[monthVal] = currentMonthData;
+    saveShifts(allShifts);
+}
+</script>
+
+</body>
+</html>
