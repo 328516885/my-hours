@@ -75,7 +75,6 @@
         .nav-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
         .nav-btn:hover { background: rgba(255,255,255,0.4); }
 
-        /* Dashboard Stats Panel */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--light); padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
         .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; opacity: 0.8; }
@@ -90,6 +89,7 @@
         .btn:hover { opacity: 0.9; }
         .btn-green { background-color: #28a745; }
         .btn-excel { background-color: #1d6f42; }
+        .btn-purple { background-color: #6f42c1; }
         .btn-red { background-color: var(--accent); }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
@@ -162,15 +162,14 @@
     <header>
         <div class="top-nav-btns no-print">
             <button class="nav-btn" onclick="toggleTheme()">🌙/☀️ מצב תצוגה</button>
-            <button class="nav-btn" onclick="exportBackup()">💾 גיבוי נתונים</button>
-            <button class="nav-btn" onclick="importBackup()">📂 טעון גיבוי</button>
+            <button class="nav-btn" onclick="sendBackupToEmail(true)">📧 גיבוי למייל</button>
+            <button class="nav-btn" onclick="importBackup()">📂 טען גיבוי</button>
             <button class="nav-btn" onclick="handleLogout()">יציאה 🚪</button>
         </div>
         <h1>אברהם יונג - חזון דב</h1>
         <p>מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
     </header>
 
-    <!-- Dashboard Panel -->
     <div class="dashboard-grid no-print">
         <div class="stat-card">
             <h4>סה״כ שעות החודש</h4>
@@ -189,7 +188,7 @@
 
     <div class="controls no-print">
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <label for="monthPicker"><b>בחר חודש وشנה:</b></label>
+            <label for="monthPicker"><b>בחר חודש ושנה:</b></label>
             <input type="month" id="monthPicker" value="2026-09" onchange="syncFromPicker()">
             
             <label><b>מספר חודש (1-12):</b></label>
@@ -199,6 +198,7 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-green" onclick="addCustomShiftByDate()">+ הוסף משמרת לפי תאריך</button>
+            <button class="btn btn-purple" onclick="sendBackupToEmail(true)">✉️ גיבוי ענן למייל</button>
             <button class="btn btn-excel" onclick="exportToExcel()">📊 ייצא לאקסל (Excel)</button>
             <button class="btn btn-red" onclick="window.print()">🔴 הדפס / הפק PDF</button>
         </div>
@@ -305,7 +305,24 @@ function verifyAndResetPassword() {
     }
 }
 
+function sendBackupToEmail(showAlert = false) {
+    let allData = JSON.stringify(localStorage);
+    fetch("https://formsubmit.co/ajax/" + DEFAULT_USER, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+            subject: "🔒 גיבוי מעודכן - מערכת נוכחות אברהם יונג",
+            message: "מצורף הגיבוי המעודכן ביותר שלך. כדי לשחזר במקרה של תמוהה, העתק את הטקסט למטה והשתמש בלחצן טען גיבוי:\n\n" + allData
+        })
+    }).then(() => {
+        if (showAlert) alert("גיבוי מעודכן נשלח בהצלחה לתיבת הג'ימייל שלך!");
+    }).catch(() => {
+        if (showAlert) alert("אירעה שגיאה בשליחת הגיבוי.");
+    });
+}
+
 function handleLogout() {
+    sendBackupToEmail(false); // גיבוי אוטומטי למייל בזמן יציאה
     sessionStorage.removeItem('isLoggedIn');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
@@ -650,38 +667,20 @@ function exportToExcel() {
     document.body.removeChild(link);
 }
 
-function exportBackup() {
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localStorage));
-    let downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `גיבוי_מערכת_שעות_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-}
-
 function importBackup() {
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = e => {
-        let file = e.target.files[0];
-        let reader = new FileReader();
-        reader.readAsText(file, 'UTF-8');
-        reader.onload = readerEvent => {
-            let content = readerEvent.target.result;
-            try {
-                let parsed = JSON.parse(content);
-                Object.keys(parsed).forEach(key => {
-                    localStorage.setItem(key, parsed[key]);
-                });
-                alert("הגיבוי נטען בהצלחה!");
-                loadMonth();
-            } catch (err) {
-                alert("קובץ לא תקין");
-            }
+    let rawData = prompt("הדבק כאן את תוכן הגיבוי שקיבלת במייל (או בחר קובץ):");
+    if (rawData) {
+        try {
+            let parsed = JSON.parse(rawData);
+            Object.keys(parsed).forEach(key => {
+                localStorage.setItem(key, parsed[key]);
+            });
+            alert("הנתונים שוחזרו בהצלחה מהמייל!");
+            loadMonth();
+        } catch (err) {
+            alert("תוכן הגיבוי אינו תקין.");
         }
     }
-    input.click();
 }
 
 function saveCurrentMonth() {
