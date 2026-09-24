@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="text/javascript">
         (function(){
-            emailjs.init("6GOYaH5dH_TKkk_hu");
+            emailjs.init("6G0YaH5dH_TKKk_hu");
         })();
     </script>
     <style>
@@ -375,12 +375,13 @@
 
         const emailParams = {
             to_email: emailInput,
+            name: emailInput,
             to_name: emailInput, // שולח את המייל/שם אל התגית {{name}} בתבנית
             subject: 'שחזור סיסמה למערכת ניהול מתקדמת',
             message: `הסיסמה שלך למערכת היא: ${users[emailInput]}`
         };
 
-        emailjs.send('service_nybca58', 'template_9e88gji', emailParams)
+        emailjs.send('service_nybca58', 'template_gzcqacc', emailParams)
             .then(function(response) {
                 alert('פרטי שחזור הסיסמה נשלחו בהצלחה לתיבת המייל של: ' + emailInput);
             }, function(error) {
@@ -404,12 +405,13 @@
 
         const emailParams = {
             to_email: currentUser,
+            name: currentUser,
             to_name: currentUser, // שולח את שם המשתמש אל התגית {{name}} בתבנית
             subject: 'דו"ח נוכחות ונתונים מופק אוטומטית',
             message: `סיכום נתוני הנוכחות שלך במערכת:\n- סך כניסות: ${entryCount}\n- סך יציאות: ${exitCount}\n\nפירוט מלא:\n${recordsText}`
         };
 
-        emailjs.send('service_nybca58', 'template_9e88gji', emailParams)
+        emailjs.send('service_nybca58', 'template_gzcqacc', emailParams)
             .then(function(response) {
                 alert('דו"ח הנוכחות נשלח בהצלחה רבה לכתובת המייל שלך: ' + currentUser);
             }, function(error) {
