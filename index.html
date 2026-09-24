@@ -96,7 +96,11 @@ html[data-theme="dark"] .announce{background:#3a3012;color:#f3dc92;border-color:
 .monthbadge{background:#0f2542;color:#fff;border-radius:7px;padding:6px 10px;font-weight:700;white-space:nowrap}
 .b-blue{background:#1f7ae0}
 .mini.delx{background:#e03131;color:#fff;font-weight:700}
-.sheet input[type=time],.sheet input.loc,.sheet input.note{border:none;background:transparent}
+.sheet input.tm,.sheet input.loc,.sheet input.note{border:none;background:transparent}
+.tm{width:70px;text-align:center;direction:ltr;font-variant-numeric:tabular-nums}
+.sheet input.tm{width:64px;font-weight:600}
+tr.monthrow td{background:#0f2542;color:#fff;font-weight:700;text-align:right;padding:11px 14px;font-size:14.5px}
+tr.monthrow td .g{color:#7ee2a8;font-size:16px}
 .sheet input:focus{background:var(--input)}
 .sheet td{padding:7px 6px}
 .notecell{display:flex;align-items:center;gap:6px;justify-content:flex-end}
@@ -130,11 +134,8 @@ table.sheet{width:100%;border-collapse:collapse;min-width:1050px}
 .greg{font-weight:600}
 .heb{color:var(--muted);font-size:12px;margin-top:2px}
 .nightbadge{display:inline-block;font-size:11px;background:#2b2f6b;color:#fff;border-radius:8px;padding:0 6px;margin-inline-start:4px}
-.sheet input[type=time]{width:98px}
 .sheet input.loc{width:150px;text-align:center}
 .sheet input.note{width:100%;min-width:150px}
-.sheet tr.shabbat>td{background:var(--shabbat)}
-.sheet tr.holiday>td{background:var(--holiday)}
 .sheet tr.today td.datecell{box-shadow:inset -4px 0 0 var(--accent)}
 .badge{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;background:var(--soft);border:1px solid var(--line);margin:1px 2px;white-space:nowrap}
 .badge.hol{color:var(--amber);border-color:var(--amber)}
@@ -248,8 +249,8 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
       <button class="b-blue" id="fixed-btn">⚙️ שעות קבועות לימים</button>
       <button class="b-gray" id="locs-btn">🏠 הדירות שלי</button>
       <button class="b-purple hidden" id="report-btn">📧 גיבוי ענן למייל</button>
-      <button class="b-excel" id="excel-btn">📊 ייצוא לאקסל (Excel)</button>
-      <button class="b-red" id="pdf-btn">🔴 הדפסה / הפק PDF</button>
+      <button class="b-excel" id="excel-btn">📊 ייצוא לאקסל</button>
+      <button class="b-red" id="pdf-btn">🖨️ הדפסה / הפקת קובץ</button>
     </div>
   </div>
 
@@ -318,6 +319,16 @@ const dm = d => `${d.getDate()}/${d.getMonth()+1}`;
 const norm = e => (e || "").trim().toLowerCase();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function normTime(v){
+  v = String(v || "").trim(); if (!v) return "";
+  let h, m;
+  const mm = v.match(/^(\d{1,2})\D+(\d{1,2})$/);
+  if (mm) { h = +mm[1]; m = +mm[2]; }
+  else { const d = v.replace(/\D/g, ""); if (!d) return ""; if (d.length <= 2) { h = +d; m = 0; } else if (d.length === 3) { h = +d[0]; m = +d.slice(1); } else { h = +d.slice(0, 2); m = +d.slice(2, 4); } }
+  if (h === 24 && m === 0) h = 0;
+  return h < 24 && m < 60 ? `${pad(h)}:${pad(m)}` : "";
+}
+document.addEventListener("change", e => { if (e.target.classList && e.target.classList.contains("tm")) e.target.value = normTime(e.target.value); }, true);
 const toMin = t => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h*60 + m; };
 function shiftHours(s){ const a = toMin(s.in), b = toMin(s.out); if (a == null || b == null) return 0; let d = b - a; if (d < 0) d += 1440; return d/60; }
 function fmtHM(h){ const t = Math.round(h*60); return `${Math.floor(t/60)}:${pad(t%60)}`; }
@@ -532,8 +543,8 @@ function renderTable(){
       const n = rows.length;
       html += `<tr class="${cls}" data-date="${ds}" data-id="${s ? s.id : ""}">`;
       if (i === 0) html += `<td class="datecell" rowspan="${n}"><div class="greg">📅 ${dmy(d)}</div><div class="heb">${esc(hebDate(d))}</div></td><td rowspan="${n}" title="יום ${DAYS[d.getDay()]}"><b>${DAYL[d.getDay()]}</b></td>`;
-      html += `<td><input type="time" data-f="in" value="${s ? esc(s.in) : ""}"></td>`;
-      html += `<td><input type="time" data-f="out" value="${s ? esc(s.out) : ""}"></td>`;
+      html += `<td><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-f="in" value="${s ? esc(s.in) : ""}"></td>`;
+      html += `<td><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-f="out" value="${s ? esc(s.out) : ""}"></td>`;
       html += `<td class="hours" data-hours>${hoursCell(s)}</td>`;
       if (i === 0) html += `<td class="daytotal" rowspan="${n}" data-daytotal="${ds}">${hoursOnDate(ds) ? fmtHM(hoursOnDate(ds)) : ""}</td>`;
       html += `<td><input class="loc" list="loc-list" data-f="location" value="${esc(s && s.location ? s.location : defLoc)}" placeholder="דירה / מיקום"></td>`;
@@ -550,6 +561,7 @@ function renderTable(){
       html += `<tr class="weekrow ${ymd(ws) === ymd(weekStart) ? "active" : ""}" data-week="${ymd(ws)}"><td colspan="9" data-weeksum="${ymd(ws)}"></td></tr>`;
     }
   }
+  html += `<tr class="monthrow"><td colspan="9" id="month-sum"></td></tr>`;
   tb.innerHTML = html;
   refreshWeekRows();
   $("loc-list").innerHTML = [...new Set([...settings.locations.map(l => l.address), ...[...shifts.values()].map(s => s.location).filter(Boolean)])].map(a => `<option value="${esc(a)}">`).join("");
@@ -560,7 +572,17 @@ function hoursCell(s){
   if (!s || !shiftHours(s)) return "";
   return fmtHM(shiftHours(s)) + (isNightShift(s) ? `<span class="nightbadge" title="כולל שעות לילה">🌙 לילה</span>` : "");
 }
+function refreshMonthRow(){
+  const el = $("month-sum"); if (!el) return;
+  const [f, t] = monthRange(cur.y, cur.m), h = hoursInRange(f, t), p = calcPay(shiftsInRange(f, t)), adj = adjFor(cur.y, cur.m);
+  el.innerHTML = `📊 סיכום חודש ${MONTHS[cur.m]} ${cur.y}: &nbsp; <b>${h.toFixed(2)}</b> שעות (${fmtHM(h)}) · ${workDays(f, t)} ימי עבודה
+    &nbsp;|&nbsp; ☀️ שעות יום ${fmtHM(p.dayH)} = ${money(p.dayPay)}
+    &nbsp;|&nbsp; 🌙 ${p.nights} לילות = ${money(p.nightPay)}
+    ${adj.map(a => ` &nbsp;|&nbsp; 🎁 ${esc(a.label)} ${+a.amount < 0 ? "−" : "+"}${money(Math.abs(+a.amount))}`).join("")}
+    &nbsp;|&nbsp; 💰 סה"כ לתשלום: <span class="g">${money(p.total + adjSum(adj))}</span>`;
+}
 function refreshWeekRows(){
+  refreshMonthRow();
   document.querySelectorAll("[data-weeksum]").forEach(td => {
     const ws = parseYmd(td.dataset.weeksum), we = addDays(ws, 6);
     const h = hoursInRange(ymd(ws), ymd(we)), p = calcPay(shiftsInRange(ymd(ws), ymd(we)));
@@ -752,8 +774,8 @@ function openFixed(){
   const m = modal(`<h3>⏱ שעות קבועות לכל יום ${closeX}</h3>
     <div class="muted" style="margin-bottom:10px">הגדר שעות קבועות. בטבלה, כפתור ⏱ בכל יום ממלא את השעות של אותו יום בשבוע.</div>
     <div class="fixed-grid">${DAYS.map((n, i) => `<div>${n}</div>
-      <input type="time" data-d="${i}" data-k="in" value="${esc(settings.fixed[i]?.in || "")}">
-      <input type="time" data-d="${i}" data-k="out" value="${esc(settings.fixed[i]?.out || "")}">`).join("")}</div>
+      <input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-d="${i}" data-k="in" value="${esc(settings.fixed[i]?.in || "")}">
+      <input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-d="${i}" data-k="out" value="${esc(settings.fixed[i]?.out || "")}">`).join("")}</div>
     <div class="frow" style="margin-top:14px;justify-content:space-between">
       <button class="b-green" id="fx-save">שמור</button>
       <button class="b-gray" id="fx-fill">מלא את ${MONTHS[cur.m]} לפי השעות הקבועות</button>
@@ -777,7 +799,7 @@ function openFixed(){
 function openAddDate(){
   const m = modal(`<h3>➕ הוספת משמרת בתאריך ${closeX}</h3>
     <div class="frow"><label>תאריך</label><input type="date" id="ad-date" value="${ymd(today)}"></div>
-    <div class="frow"><label>כניסה</label><input type="time" id="ad-in"><label style="min-width:auto">יציאה</label><input type="time" id="ad-out"></div>
+    <div class="frow"><label>כניסה</label><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" id="ad-in"><label style="min-width:auto">יציאה</label><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" id="ad-out"></div>
     <div class="frow"><label>דירה / מיקום</label><input id="ad-loc" list="loc-list" style="flex:1"></div>
     <div class="frow"><label>הוראות</label><input id="ad-notes" style="flex:1"></div>
     <div class="muted" id="ad-info" style="margin-bottom:10px"></div>
@@ -970,7 +992,7 @@ function tabRates(body){
   body.innerHTML = `<div class="muted" style="margin-bottom:10px">התעריפים האלה חלים על כל העובדים, חוץ מעובד שקבעת לו תעריף אישי בלשונית "עובדים ותעריפים".</div>
     <div class="frow"><label>☀️ שעת יום (₪)</label><input id="r-day" type="number" step="0.01" min="0" value="${R.day}" style="width:110px"></div>
     <div class="frow"><label>🌙 סכום ללילה (₪)</label><input id="r-night" type="number" step="0.01" min="0" value="${R.nightFlat}" style="width:110px"></div>
-    <div class="frow"><label>שעות הלילה</label>מ-<input id="r-ns" type="time" value="${esc(R.nightStart)}"> עד <input id="r-ne" type="time" value="${esc(R.nightEnd)}"></div>
+    <div class="frow"><label>שעות הלילה</label>מ-<input id="r-ns" type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" value="${esc(R.nightStart)}"> עד <input id="r-ne" type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" value="${esc(R.nightEnd)}"></div>
     <div class="frow"><label>לילה חלקי</label><select id="r-part"><option value="prop" ${R.partial !== "full" ? "selected" : ""}>לפי החלק שעבד (יחסי)</option><option value="full" ${R.partial === "full" ? "selected" : ""}>הסכום המלא על כל לילה</option></select></div>
     <div class="muted" style="margin:6px 0 12px;font-size:12.5px">דוגמה: משמרת 22:00–07:00 = שעות יום 22:00–00:00 ו-06:30–07:00 (2.5 שעות × ${money(R.day)}) + לילה אחד מלא (${money(R.nightFlat)}).</div>
     <button class="b-green" id="r-save">שמור תעריפים</button>`;
@@ -1117,12 +1139,14 @@ async function exportPDF(){
   let rows = "";
   for (const r of monthRows()) {
     if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי ${dm(r.ws)}–${dm(r.we)}: ${fmtHM(r.h)} שעות · ${money(r.pay)}</td></tr>`; continue; }
-    const s = r.s, bg = r.d.getDay() === 6 ? "background:#eef3ff;" : "";
+    const s = r.s, bg = "";
     rows += `<tr style="${bg}"><td style="${td}">${r.first ? `${dmy(r.d)}<br><span style="color:#666">${esc(hebDate(r.d))}</span>` : ""}</td><td style="${td}">${r.first ? DAYS[r.d.getDay()] : ""}</td>
       <td style="${td}">${esc(s?.in || "")}</td><td style="${td}">${esc(s?.out || "")}</td><td style="${td}">${s && shiftHours(s) ? fmtHM(shiftHours(s)) : ""}</td>
       <td style="${td};font-weight:bold">${r.first && r.dayTotal ? fmtHM(r.dayTotal) : ""}</td><td style="${td}">${esc(r.loc)}</td>
       <td style="${td}">${esc([...(r.first ? r.notes : []), s?.notes].filter(Boolean).join(" · "))}</td></tr>`;
   }
+  const A = adjFor(cur.y, cur.m);
+  rows += `<tr><td colspan="8" style="${td};background:#0f2542;color:#fff;font-weight:bold;text-align:right;font-size:12px">סיכום חודש ${MONTHS[cur.m]} ${cur.y}: ${fmtHM(h)} שעות · שעות יום ${fmtHM(P.dayH)} = ${money(P.dayPay)} · ${P.nights} לילות = ${money(P.nightPay)}${A.map(a => ` · ${esc(a.label)} ${money(+a.amount)}`).join("")} · סה"כ לתשלום ${money(P.total + adjSum(A))}</td></tr>`;
   const el = document.createElement("div");
   el.innerHTML = `<div dir="rtl" style="font-family:Arial,sans-serif;color:#000;background:#fff;padding:10px;width:1060px">
     <div style="font-size:20px;font-weight:bold">מערכת ניהול שעות ונוכחות – ${esc(settings.name || viewEmail)}</div>
