@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מערכת ניהול שעות ונוכחות</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f2542">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="שעות עבודה">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
@@ -49,6 +55,24 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
 @media(max-width:1250px){.hero-clock{position:static;transform:none;display:inline-block;text-align:center;margin-bottom:8px}}
 .wnote{display:inline-block;margin-inline-start:14px;color:var(--amber);font-weight:700}
 tr.monthrow .wnote{color:#ffd57a}
+.planbadge{display:inline-block;background:#e6f0ff;color:#1f4fa8;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+html[data-theme="dark"] .planbadge{background:#1d2a45;color:#9fc0ff}
+.pendbadge{display:inline-block;font-size:11px;background:#fff1d6;color:#8a5a00;border-radius:8px;padding:0 6px;margin-inline-start:4px}
+.mini.apv{background:var(--green);color:#fff;padding:1px 7px;font-size:11.5px;margin-inline-start:4px}
+.notices{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.notice{border-radius:10px;padding:10px 14px;font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);background:var(--card)}
+.notice.warn{background:#fff4e5;border-color:#f3c27a;color:#6b4200}
+.notice.info{background:#eef5ff;border-color:#b9d3ff;color:#1f3f7a}
+.notice.admin{background:#fdecec;border-color:#f2b5b5;color:#7a1f1f}
+html[data-theme="dark"] .notice.warn{background:#3a2c12;color:#f3d49a;border-color:#6b5220}
+html[data-theme="dark"] .notice.info{background:#15233d;color:#b9d3ff;border-color:#2c4270}
+html[data-theme="dark"] .notice.admin{background:#3a1717;color:#f5b8b8;border-color:#6b2a2a}
+.notice button{padding:4px 12px;font-size:13px}
+.target{grid-column:span 2}
+.target .bar{height:12px;background:var(--line);border-radius:8px;overflow:hidden;margin:6px 0}
+.target .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:8px}
+.badge-n{display:inline-block;background:#e03131;color:#fff;border-radius:10px;font-size:11px;padding:0 6px;margin-inline-start:4px}
+.mbtn{margin-inline-start:8px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);padding:2px 10px;font-size:12px;border-radius:6px}
 .notebtn{margin-inline-start:10px;background:transparent;border:1px dashed currentColor;color:inherit;padding:2px 9px;font-size:12px;border-radius:6px}
 .hero .clock{font-variant-numeric:tabular-nums;font-weight:700}
 .announce{background:#fff4d6;color:#5a4300;border:1px solid #f0d27a;border-radius:10px;padding:9px 14px;margin-bottom:12px;font-weight:600}
@@ -243,6 +267,7 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
     </div>
   </div>
 
+  <div class="notices" id="notices"></div>
   <div class="tiles" id="tiles"></div>
 
   <div class="toolbar card" style="padding:10px 12px">
@@ -256,6 +281,8 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
       <button class="b-green" id="add-date-btn">+ הוסף משמרת לפי תאריך</button>
       <button class="b-blue" id="fixed-btn">⚙️ שעות קבועות לימים</button>
       <button class="b-gray" id="locs-btn">🏠 הדירות שלי</button>
+      <button class="b-gray" id="slip-btn">🧾 תלוש שכר</button>
+      <button class="b-gray" id="msg-btn">✉️ הודעה למנהל</button>
       <button class="b-purple hidden" id="report-btn">📧 גיבוי ענן למייל</button>
       <button class="b-excel" id="excel-btn">📊 ייצוא לאקסל</button>
       <button class="b-red" id="pdf-btn">🖨️ הדפסה / הפקת קובץ</button>
@@ -308,6 +335,8 @@ let shifts = new Map();   // id -> {id,date,in,out,location,notes,live?}
 let globalCfg = defaultGlobal();   // config/global – תעריפים כלליים, הודעה, גיבוי
 let userRates = {};                // תעריף אישי של העובד המוצג (users/{email}.rates)
 let userAdj = [];                  // תוספות / בונוסים של העובד המוצג (users/{email}.adjustments)
+let userLocks = {};                // חודשים נעולים של העובד המוצג (users/{email}.locks)
+let userPlan = [];                 // משמרות מתוכננות (users/{email}.plan)
 const today = new Date();
 let cur = { y: today.getFullYear(), m: today.getMonth() };
 let weekStart = startOfWeek(today);
@@ -342,8 +371,8 @@ function shiftHours(s){ const a = toMin(s.in), b = toMin(s.out); if (a == null |
 function fmtHM(h){ const t = Math.round(h*60); return `${Math.floor(t/60)}:${pad(t%60)}`; }
 const money = n => "₪" + (Math.round(n*100)/100).toLocaleString("he-IL", {maximumFractionDigits:2});
 function defaultSettings(){ return { name: "", locations: [], fixed: {} }; }
-function defaultGlobal(){ return { rates: { day: 35.41, nightFlat: 124.25, nightStart: "00:00", nightEnd: "06:30", partial: "prop" }, announce: "", backup: { auto: true, last: 0 } }; }
-function mergeGlobal(g){ const d = defaultGlobal(); g = g || {}; return { ...d, ...g, rates: { ...d.rates, ...(g.rates || {}) }, backup: { ...d.backup, ...(g.backup || {}) } }; }
+function defaultGlobal(){ return { rates: { day: 35.41, nightFlat: 124.25, nightStart: "00:00", nightEnd: "06:30", partial: "prop", restPct: 150, restStart: "18:00", restEnd: "20:00", restNight: false }, announce: "", backup: { auto: true, last: 0 }, monthly: { auto: true, lastSent: "" }, apartments: [], approval: true }; }
+function mergeGlobal(g){ const d = defaultGlobal(); g = g || {}; return { ...d, ...g, rates: { ...d.rates, ...(g.rates || {}) }, backup: { ...d.backup, ...(g.backup || {}) }, monthly: { ...d.monthly, ...(g.monthly || {}) }, apartments: g.apartments || [] }; }
 function ratesFor(personal){
   const r = { ...globalCfg.rates };
   if (personal && +personal.day > 0) r.day = +personal.day;
@@ -370,24 +399,44 @@ function autoLabel(text, amount){
   return +amount < 0 ? "ניכוי" : "תוספת מיוחדת";
 }
 // חישוב שכר: שעות יום × תעריף, ולילה (למשל 00:00–06:30) בסכום קבוע ללילה
+const dayIdx = ds => Math.round(parseYmd(ds).getTime() / 86400000);
+function idxYmd(d){ const x = new Date(d * 86400000); return `${x.getUTCFullYear()}-${pad(x.getUTCMonth()+1)}-${pad(x.getUTCDate())}`; }
+function isRestYmd(ds){ const d = parseYmd(ds); if (d.getDay() === 6) return true; return (holidaysOf(d.getFullYear())[ds] || []).some(x => x.chag); }
+function restWindows(fromDay, toDay, R){
+  const rs = toMin(R.restStart) ?? 1080, re = toMin(R.restEnd) ?? 1200, w = [];
+  for (let d = fromDay; d <= toDay; d++) if (isRestYmd(idxYmd(d))) w.push([(d - 1) * 1440 + rs, d * 1440 + re]);
+  w.sort((x, y) => x[0] - y[0]); const m = [];
+  for (const x of w) { if (m.length && x[0] <= m[m.length - 1][1]) m[m.length - 1][1] = Math.max(m[m.length - 1][1], x[1]); else m.push([...x]); }
+  return m;
+}
+const rng = (a, b) => `<span dir="ltr" style="unicode-bidi:isolate">${esc(a)}–${esc(b)}</span>`;
+const ovl = (a1, a2, b1, b2) => Math.max(0, Math.min(a2, b2) - Math.max(a1, b1));
+// חישוב שכר: שעות יום × תעריף, לילה (למשל 00:00–06:30) בסכום קבוע, ותוספת שבת/חג באחוזים
 function calcPay(list, R = effRates()){
   const ns = toMin(R.nightStart) ?? 0, ne = toMin(R.nightEnd) ?? 390, winLen = Math.max(1, ne - ns);
-  let dayMin = 0; const nights = new Map();
+  const pct = Math.max(100, +R.restPct || 100);
+  let dayMin = 0, premMin = 0; const nights = new Map(), restNights = new Set();
   for (const s of list) {
     const a = toMin(s.in), b = toMin(s.out); if (a == null || b == null) continue;
-    let st = a, en = b; if (en < st) en += 1440; if (en === st) continue;
-    const base = Math.round(parseYmd(s.date).getTime() / 86400000);
-    let nightMin = 0;
+    const base = dayIdx(s.date), S = base * 1440 + a; let E = base * 1440 + b; if (b < a) E += 1440; if (E === S) continue;
+    const rw = pct > 100 ? restWindows(base - 1, base + 2, R) : [];
+    let segs = [[S, E]], nightMin = 0;
     for (let k = 0; k <= 1; k++) {
-      const ov = Math.max(0, Math.min(en, k*1440 + ne) - Math.max(st, k*1440 + ns));
-      if (ov > 0) { nights.set(base + k, (nights.get(base + k) || 0) + ov); nightMin += ov; }
+      const W1 = (base + k) * 1440 + ns, W2 = (base + k) * 1440 + ne, ov = ovl(S, E, W1, W2);
+      if (ov > 0) {
+        nights.set(base + k, (nights.get(base + k) || 0) + ov); nightMin += ov;
+        if (R.restNight && rw.some(w => ovl(W1, W2, w[0], w[1]) > 0)) restNights.add(base + k);
+        segs = segs.flatMap(([x, y]) => [[x, Math.min(y, W1)], [Math.max(x, W2), y]].filter(([p, q]) => q > p));
+      }
     }
-    dayMin += (en - st) - nightMin;
+    dayMin += (E - S) - nightMin;
+    for (const [x, y] of segs) for (const w of rw) premMin += ovl(x, y, w[0], w[1]);
   }
   let nightPay = 0, nightMins = 0;
-  for (const ov of nights.values()) { nightMins += ov; nightPay += R.nightFlat * (R.partial === "full" ? 1 : Math.min(1, ov / winLen)); }
-  const dayPay = dayMin / 60 * R.day;
-  return { dayH: dayMin / 60, nightH: nightMins / 60, nights: nights.size, dayPay, nightPay, total: dayPay + nightPay, R };
+  for (const [k, ov] of nights) { nightMins += ov; nightPay += R.nightFlat * (R.partial === "full" ? 1 : Math.min(1, ov / winLen)) * (restNights.has(k) ? pct / 100 : 1); }
+  const premPay = premMin / 60 * R.day * (pct - 100) / 100;
+  const dayPay = dayMin / 60 * R.day + premPay;
+  return { dayH: dayMin / 60, nightH: nightMins / 60, nights: nights.size, premH: premMin / 60, premPay, pct, dayPay, nightPay, total: dayPay + nightPay, R };
 }
 function isNightShift(s){ return calcPay([s]).nights > 0; }
 function shiftsInRange(from, to){ return [...shifts.values()].filter(s => s.date >= from && s.date <= to); }
@@ -427,7 +476,8 @@ function holidaysOf(year){
       const evs = hebcal.HebrewCalendar.calendar({ year, isHebrewYear: false, il: true, sedrot: false, locale: "he-x-NoNikud" });
       for (const ev of evs) {
         const k = ymd(ev.getDate().greg());
-        (map[k] ||= []).push({ text: ev.render("he-x-NoNikud"), hol: true });
+        let chag = false; try { chag = !!(ev.getFlags() & hebcal.flags.CHAG); } catch (e) {}
+        (map[k] ||= []).push({ text: ev.render("he-x-NoNikud"), hol: true, chag });
       }
     } catch (e) { console.warn(e); }
   }
@@ -450,10 +500,10 @@ function nextHoliday(){
 // ================== שכבת נתונים ==================
 const DB = {
   async loadAll(email){
-    settings = defaultSettings(); shifts = new Map(); userRates = {}; userAdj = [];
+    settings = defaultSettings(); shifts = new Map(); userRates = {}; userAdj = []; userLocks = {}; userPlan = [];
     if (DEMO) {
       const d = JSON.parse(localStorage.getItem("demo_data") || "null");
-      if (d) { settings = Object.assign(defaultSettings(), d.settings); (d.shifts || []).forEach(s => shifts.set(s.id, s)); userRates = d.rates || {}; userAdj = d.adj || []; globalCfg = mergeGlobal(d.global); }
+      if (d) { settings = Object.assign(defaultSettings(), d.settings); (d.shifts || []).forEach(s => shifts.set(s.id, s)); userRates = d.rates || {}; userAdj = d.adj || []; userLocks = d.locks || {}; userPlan = d.plan || []; globalCfg = mergeGlobal(d.global); }
       else seedDemo();
       return;
     }
@@ -469,25 +519,32 @@ const DB = {
     globalCfg = mergeGlobal(g && g.exists() ? g.data() : null);
     userRates = (u && u.exists() && u.data().rates) || {};
     userAdj = (u && u.exists() && u.data().adjustments) || [];
+    userLocks = (u && u.exists() && u.data().locks) || {};
+    userPlan = (u && u.exists() && u.data().plan) || [];
   },
-  demoSave(){ localStorage.setItem("demo_data", JSON.stringify({ settings, shifts: [...shifts.values()], rates: userRates, adj: userAdj, global: globalCfg })); },
+  demoSave(){ localStorage.setItem("demo_data", JSON.stringify({ settings, shifts: [...shifts.values()], rates: userRates, adj: userAdj, locks: userLocks, plan: userPlan, global: globalCfg })); },
   async putGlobal(){
     if (DEMO) return this.demoSave();
     await fb.f.setDoc(fb.f.doc(fb.db, "config", "global"), globalCfg);
   },
   async putUser(email, data){
-    if (DEMO) { if (data.rates) userRates = data.rates; if (data.adjustments) userAdj = data.adjustments; if (data.name != null && email === viewEmail) settings.name = data.name; return this.demoSave(); }
+    if (DEMO) { if (data.rates) userRates = data.rates; if (data.adjustments) userAdj = data.adjustments; if (data.locks) userLocks = data.locks; if (data.plan) userPlan = data.plan; if (data.name != null && email === viewEmail) settings.name = data.name; return this.demoSave(); }
     await fb.f.setDoc(fb.f.doc(fb.db, "users", email), data, { merge: true });
     if (email === viewEmail && data.rates) userRates = data.rates;
     if (email === viewEmail && data.adjustments) userAdj = data.adjustments;
+    if (email === viewEmail && data.locks) userLocks = data.locks;
+    if (email === viewEmail && data.plan) userPlan = data.plan;
   },
   async putShift(s){
+    if (!isAdmin && isLocked(s.date)) throw new Error("החודש נעול על ידי המנהל – אי אפשר לשנות");
+    s = { ...s, approved: isAdmin || !globalCfg.approval };
     shifts.set(s.id, s);
     if (DEMO) return this.demoSave();
     const { id, ...data } = s;
     await fb.f.setDoc(fb.f.doc(fb.db, "shifts", viewEmail, "items", id), data);
   },
   async delShift(id){
+    const old = shifts.get(id); if (old && !isAdmin && isLocked(old.date)) throw new Error("החודש נעול על ידי המנהל – אי אפשר לשנות");
     shifts.delete(id);
     if (DEMO) return this.demoSave();
     await fb.f.deleteDoc(fb.f.doc(fb.db, "shifts", viewEmail, "items", id));
@@ -497,6 +554,7 @@ const DB = {
     await fb.f.setDoc(fb.f.doc(fb.db, "settings", viewEmail), settings);
   },
   async putMany(list){
+    list = list.filter(s => isAdmin || !isLocked(s.date)).map(s => ({ ...s, approved: s.approved === true && isAdmin ? true : (isAdmin || !globalCfg.approval) }));
     list.forEach(s => shifts.set(s.id, s));
     if (DEMO) return this.demoSave();
     const { writeBatch, doc } = fb.f;
@@ -507,6 +565,36 @@ const DB = {
     }
   }
 };
+// ---- הודעות מעובד למנהל ----
+const MSG = {
+  demo(){ try { return JSON.parse(localStorage.getItem("demo_msgs") || "[]"); } catch (e) { return []; } },
+  demoSet(l){ try { localStorage.setItem("demo_msgs", JSON.stringify(l)); } catch (e) {} },
+  async send(text){
+    const m = { from: me, fromName: settings.name || me, text, at: Date.now(), read: false, reply: "", replyAt: 0 };
+    if (DEMO) { const l = this.demo(); l.push({ id: newId(), ...m }); this.demoSet(l); return; }
+    await fb.f.addDoc(fb.f.collection(fb.db, "messages"), m);
+  },
+  async mine(){
+    if (DEMO) return this.demo().filter(x => x.from === me).sort((a, b) => b.at - a.at);
+    const q = await fb.f.getDocs(fb.f.query(fb.f.collection(fb.db, "messages"), fb.f.where("from", "==", me)));
+    return q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.at - a.at);
+  },
+  async all(){
+    if (DEMO) return this.demo().sort((a, b) => b.at - a.at);
+    const q = await fb.f.getDocs(fb.f.collection(fb.db, "messages"));
+    return q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.at - a.at);
+  },
+  async update(id, data){
+    if (DEMO) { this.demoSet(this.demo().map(x => x.id === id ? { ...x, ...data } : x)); return; }
+    await fb.f.updateDoc(fb.f.doc(fb.db, "messages", id), data);
+  },
+  async remove(id){
+    if (DEMO) { this.demoSet(this.demo().filter(x => x.id !== id)); return; }
+    await fb.f.deleteDoc(fb.f.doc(fb.db, "messages", id));
+  }
+};
+const isLocked = ds => !!userLocks[String(ds).slice(0, 7)];
+
 function seedDemo(){
   settings = { name: "אברהם יונג", locations: [{ address: "ז'בוטינסקי 107", from: "2020-01-01" }], fixed: { 0:{in:"03:00",out:"07:00"}, 2:{in:"15:00",out:"19:00"} } };
   globalCfg = defaultGlobal(); userRates = {};
@@ -532,7 +620,7 @@ function setMonth(y, m){
   renderAll();
 }
 
-function renderAll(){ renderTable(); renderSummary(); renderCharts(); renderPunch(); renderAnnounce(); }
+function renderAll(){ renderTable(); renderSummary(); renderCharts(); renderPunch(); renderAnnounce(); renderNotices(); }
 
 function renderTable(){
   const tb = $("sheet-body");
@@ -547,17 +635,19 @@ function renderTable(){
     const isHol = notes.some(n => n.hol);
     const cls = [d.getDay() === 6 ? "shabbat" : "", isHol ? "holiday" : "", ds === todayStr ? "today" : ""].join(" ");
     const defLoc = locationFor(ds);
+    const lk = !isAdmin && isLocked(ds), dis = lk ? " disabled" : "";
+    const plan = planOn(ds);
     rows.forEach((s, i) => {
       const n = rows.length;
       html += `<tr class="${cls}" data-date="${ds}" data-id="${s ? s.id : ""}">`;
       if (i === 0) html += `<td class="datecell" rowspan="${n}"><div class="greg">📅 ${dmy(d)}</div><div class="heb">${esc(hebDate(d))}</div></td><td rowspan="${n}" title="יום ${DAYS[d.getDay()]}"><b>${DAYL[d.getDay()]}</b></td>`;
-      html += `<td><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-f="in" value="${s ? esc(s.in) : ""}"></td>`;
-      html += `<td><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-f="out" value="${s ? esc(s.out) : ""}"></td>`;
+      html += `<td><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-f="in" value="${s ? esc(s.in) : ""}"${dis}></td>`;
+      html += `<td><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" data-f="out" value="${s ? esc(s.out) : ""}"${dis}></td>`;
       html += `<td class="hours" data-hours>${hoursCell(s)}</td>`;
       if (i === 0) html += `<td class="daytotal" rowspan="${n}" data-daytotal="${ds}">${hoursOnDate(ds) ? fmtHM(hoursOnDate(ds)) : ""}</td>`;
-      html += `<td><input class="loc" list="loc-list" data-f="location" value="${esc(s && s.location ? s.location : defLoc)}" placeholder="דירה / מיקום"></td>`;
-      html += `<td><div class="notecell">${i === 0 && notes.length ? `<span class="holtxt">${esc(notes.map(x => x.text).join(" · "))}</span>` : ""}<input class="note" data-f="notes" value="${s ? esc(s.notes) : ""}" placeholder=""></div></td>`;
-      html += `<td><div class="rowacts">
+      html += `<td><input class="loc" list="loc-list" data-f="location" value="${esc(s && s.location ? s.location : defLoc)}" placeholder="דירה / מיקום"${dis}></td>`;
+      html += `<td><div class="notecell">${i === 0 && plan.length ? `<span class="planbadge" title="${esc(plan.map(p => p.note).filter(Boolean).join(" · "))}">🗓️ מתוכנן ${plan.map(p => `${rng(p.in, p.out)}${p.location ? " · " + esc(p.location) : ""}`).join(", ")}</span>` : ""}${i === 0 && notes.length ? `<span class="holtxt">${esc(notes.map(x => x.text).join(" · "))}</span>` : ""}<input class="note" data-f="notes" value="${s ? esc(s.notes) : ""}" placeholder=""${dis}></div></td>`;
+      html += lk ? `<td><span class="muted">🔒 נעול</span></td></tr>` : `<td><div class="rowacts">
         <button class="mini fixb" data-act="fixed" title="מלא שעות קבועות ליום ${DAYS[d.getDay()]}">⚡ שעות</button>
         <button class="mini clr" data-act="clear" title="איפוס השורה">✕ איפוס</button>
         <button class="mini add" data-act="add" title="הוסף משמרת לאותו יום">+</button>
@@ -572,13 +662,14 @@ function renderTable(){
   html += `<tr class="monthrow"><td colspan="9" id="month-sum"></td></tr>`;
   tb.innerHTML = html;
   refreshWeekRows();
-  $("loc-list").innerHTML = [...new Set([...settings.locations.map(l => l.address), ...[...shifts.values()].map(s => s.location).filter(Boolean)])].map(a => `<option value="${esc(a)}">`).join("");
+  $("loc-list").innerHTML = [...new Set([...(globalCfg.apartments || []).map(a => a.name), ...settings.locations.map(l => l.address), ...[...shifts.values()].map(s => s.location).filter(Boolean)])].map(a => `<option value="${esc(a)}">`).join("");
 }
 
 function hoursCell(s){
   if (s && s.live && !s.out) return `<span class="up">⏱ במשמרת</span>`;
   if (!s || !shiftHours(s)) return "";
-  return fmtHM(shiftHours(s)) + (isNightShift(s) ? `<span class="nightbadge" title="כולל שעות לילה">🌙 לילה</span>` : "");
+  return fmtHM(shiftHours(s)) + (isNightShift(s) ? `<span class="nightbadge" title="כולל שעות לילה">🌙 לילה</span>` : "")
+    + (s.approved === false ? (isAdmin ? `<button class="mini apv" data-act="approve" title="אשר את המשמרת">✔ אשר</button>` : `<span class="pendbadge" title="ממתין לאישור המנהל">⏳ ממתין</span>`) : "");
 }
 const noteOf = k => (settings.notes || {})[k] || "";
 function noteHtml(k){
@@ -588,7 +679,7 @@ function noteHtml(k){
 function openNote(k){
   if (!isAdmin) return;
   const [type, key] = [k.slice(0, 1), k.slice(2)];
-  const title = type === "w" ? `לשבוע ${dm(parseYmd(key))}–${dm(addDays(parseYmd(key), 6))}` : `לחודש ${MONTHS[+key.split("-")[1] - 1]} ${key.split("-")[0]}`;
+  const title = type === "w" ? `לשבוע \u2066${dm(parseYmd(key))}–${dm(addDays(parseYmd(key), 6))}\u2069` : `לחודש ${MONTHS[+key.split("-")[1] - 1]} ${key.split("-")[0]}`;
   const m = modal(`<h3>📝 הוראות ${title} ${closeX}</h3>
     <div class="muted" style="margin-bottom:8px">ההוראות יופיעו בשורת הסיכום אצל ${esc(settings.name || viewEmail)}.</div>
     <textarea id="nt-text" rows="4" style="width:100%">${esc(noteOf(k))}</textarea>
@@ -597,14 +688,63 @@ function openNote(k){
   m.querySelector("#nt-save").onclick = () => save(m.querySelector("#nt-text").value.trim());
   const del = m.querySelector("#nt-del"); if (del) del.onclick = () => save("");
 }
+const planOn = ds => userPlan.filter(p => p.date === ds).sort((a, b) => a.in.localeCompare(b.in));
+async function monthAction(act){
+  if (!isAdmin) return;
+  const [f, t] = monthRange(cur.y, cur.m), mk = monthKey(cur.y, cur.m);
+  try {
+    if (act === "lock") {
+      const locks = { ...userLocks }; if (locks[mk]) delete locks[mk]; else locks[mk] = true;
+      await DB.putUser(viewEmail, { locks }); userLocks = locks; renderAll();
+      toast(locks[mk] ? `🔒 ${MONTHS[cur.m]} ננעל – העובד לא יכול לשנות שעות` : "🔓 הנעילה הוסרה");
+    } else if (act === "approveall") {
+      const list = shiftsInRange(f, t).filter(x => x.approved === false).map(x => ({ ...x, approved: true }));
+      await DB.putMany(list); renderAll(); toast(`אושרו ${list.length} משמרות ✔`);
+    }
+  } catch (e) { toast("שגיאה: " + (e.code || e.message)); }
+}
+// ---- תזכורות, הוראות הדירה והתראות מנהל ----
+function aptFor(loc){ const n = norm(loc); if (!n) return null; return (globalCfg.apartments || []).find(a => norm(a.name) === n || (a.address && norm(a.address) === n)) || null; }
+let adminAlerts = { alerts: [], pending: 0, unread: 0 };
+function renderNotices(){
+  const box = $("notices"); if (!box) return;
+  const out = [], now = new Date(), ds = ymd(now), nowM = now.getHours() * 60 + now.getMinutes();
+  if (viewEmail === me) {
+    const fx = settings.fixed?.[now.getDay()], pl = planOn(ds)[0];
+    const expIn = pl?.in || fx?.in, expOut = pl?.out || fx?.out;
+    const todayShifts = shiftsOn(ds), live = openLive();
+    if (expIn && !todayShifts.some(x => x.in) && !live && nowM > toMin(expIn) + 10 && (!expOut || nowM < toMin(expOut) || toMin(expOut) < toMin(expIn)))
+      out.push(`<div class="notice warn">⏰ עדיין לא נרשמה כניסה היום (השעה המתוכננת ${esc(expIn)}). <button class="b-green" data-nact="in">▶ כניסה עכשיו</button></div>`);
+    if (live && expOut) { const o = toMin(expOut), st = toMin(live.in); const end = o > st ? o : o + 1440, curM = live.date === ds ? nowM : nowM + 1440; if (curM > end + 30) out.push(`<div class="notice warn">⏰ אתה עדיין במשמרת מאז ${esc(live.in)} – לא שכחת ללחוץ יציאה? <button class="b-red" data-nact="out">⏹ יציאה עכשיו</button></div>`); }
+  }
+  const apt = aptFor(locationFor(ds));
+  if (apt && apt.instructions) out.push(`<div class="notice info">🏠 הוראות הדירה – ${esc(apt.name)}${apt.address && apt.address !== apt.name ? ` (${esc(apt.address)})` : ""}: <span style="font-weight:500">${esc(apt.instructions)}</span></div>`);
+  if (isAdmin && (adminAlerts.alerts.length || adminAlerts.pending || adminAlerts.unread)) {
+    const parts = [];
+    if (adminAlerts.alerts.length) parts.push(`⚠️ ${adminAlerts.alerts.length} התראות`);
+    if (adminAlerts.pending) parts.push(`⏳ ${adminAlerts.pending} משמרות ממתינות לאישור`);
+    if (adminAlerts.unread) parts.push(`✉️ ${adminAlerts.unread} הודעות חדשות`);
+    out.push(`<div class="notice admin">${parts.join(" &nbsp;·&nbsp; ")} <button class="b-gray" data-nact="alerts">פתח</button>${adminAlerts.unread ? `<button class="b-gray" data-nact="inbox">הודעות</button>` : ""}</div>`);
+  }
+  box.innerHTML = out.join("");
+  box.querySelectorAll("[data-nact]").forEach(b => b.onclick = () => {
+    const a = b.dataset.nact;
+    if (a === "in") $("punch-in")?.click(); else if (a === "out") $("punch-out")?.click();
+    else if (a === "alerts") openSettings("board"); else if (a === "inbox") openSettings("inbox");
+  });
+}
 function refreshMonthRow(){
   const el = $("month-sum"); if (!el) return;
   const [f, t] = monthRange(cur.y, cur.m), h = hoursInRange(f, t), p = calcPay(shiftsInRange(f, t)), adj = adjFor(cur.y, cur.m);
+  const pend = shiftsInRange(f, t).filter(x => x.approved === false).length;
   el.innerHTML = `📊 סיכום חודש ${MONTHS[cur.m]} ${cur.y}: &nbsp; <b>${h.toFixed(2)}</b> שעות (${fmtHM(h)}) · ${workDays(f, t)} ימי עבודה
     &nbsp;|&nbsp; ☀️ שעות יום ${fmtHM(p.dayH)} = ${money(p.dayPay)}
     &nbsp;|&nbsp; 🌙 ${p.nights} לילות = ${money(p.nightPay)}
     ${adj.map(a => ` &nbsp;|&nbsp; 🎁 ${esc(a.label)} ${+a.amount < 0 ? "−" : "+"}${money(Math.abs(+a.amount))}`).join("")}
-    &nbsp;|&nbsp; 💰 סה"כ לתשלום: <span class="g">${money(p.total + adjSum(adj))}</span> ${noteHtml("m:" + monthKey(cur.y, cur.m))}`;
+    &nbsp;|&nbsp; 💰 סה"כ לתשלום: <span class="g">${money(p.total + adjSum(adj))}</span>
+    ${pend ? ` &nbsp;|&nbsp; ⏳ ${pend} ממתינות לאישור` : ""}${isLocked(f) ? " &nbsp;|&nbsp; 🔒 החודש נעול" : ""}
+    ${isAdmin ? `${pend ? `<button class="mbtn" data-mact="approveall">✔ אשר הכול (${pend})</button>` : ""}<button class="mbtn" data-mact="lock">${isLocked(f) ? "🔓 פתח נעילה" : "🔒 נעל חודש"}</button>` : ""}
+    ${noteHtml("m:" + monthKey(cur.y, cur.m))}`;
 }
 function refreshWeekRows(){
   refreshMonthRow();
@@ -644,10 +784,14 @@ async function onFieldChange(e){
 
 async function onRowAction(e){
   const nb = e.target.closest("[data-note]"); if (nb) { openNote(nb.dataset.note); return; }
+  const mb = e.target.closest("[data-mact]"); if (mb) { monthAction(mb.dataset.mact); return; }
   const btn = e.target.closest("[data-act]");
   if (!btn) { const wr = e.target.closest("tr.weekrow"); if (wr) { weekStart = parseYmd(wr.dataset.week); document.querySelectorAll("tr.weekrow").forEach(r => r.classList.toggle("active", r === wr)); renderCharts(); } return; }
   const tr = btn.closest("tr"), ds = tr.dataset.date, act = btn.dataset.act;
   try {
+    if (act === "approve") {
+      await DB.putShift({ ...shifts.get(tr.dataset.id), approved: true }); refreshComputed(tr); toast("המשמרת אושרה ✔"); return;
+    }
     if (act === "add") {
       await DB.putShift({ id: newId(), date: ds, in: "", out: "", location: "", notes: "" });
       renderAll();
@@ -663,7 +807,7 @@ async function onRowAction(e){
       if (!fx || !fx.in || !fx.out) { toast(`לא הוגדרו שעות קבועות ליום ${DAYS[wd]}. לחץ על "⏱ שעות קבועות" למעלה.`); return; }
       const s = tr.dataset.id ? { ...shifts.get(tr.dataset.id) } : { id: newId(), date: ds, in: "", out: "", location: "", notes: "" };
       s.in = fx.in; s.out = fx.out;
-      await DB.putShift(s); renderAll(); toast(`מולאו שעות קבועות: ${fx.in}–${fx.out}`);
+      await DB.putShift(s); renderAll(); toast(`מולאו שעות קבועות: \u2066${fx.in}–${fx.out}\u2069`);
     }
   } catch (err) { toast("שגיאה: " + (err.code || err.message)); }
 }
@@ -687,6 +831,7 @@ function renderSummary(){
     <div class="paybox">
       ☀️ שעות יום: <b>${fmtHM(p.dayH)}</b> × ${money(p.R.day)} = <b>${money(p.dayPay)}</b><br>
       🌙 לילות: <b>${p.nights}</b> × ${money(p.R.nightFlat)} = <b>${money(p.nightPay)}</b><br>
+      ${p.premH ? `✡️ תוספת שבת/חג: <b>${fmtHM(p.premH)}</b> שעות × ${p.pct}% = <b>+${money(p.premPay)}</b> <span class="muted">(כלול בשעות היום)</span><br>` : ""}
       ${adj.map(a => `🎁 <span${isAdmin ? ` title="${esc(a.reason)}"` : ""}>${esc(a.label)}</span>: <b class="${+a.amount < 0 ? "down" : "up"}">${+a.amount < 0 ? "−" : "+"}${money(Math.abs(+a.amount))}</b><br>`).join("")}
       <span style="font-size:15px">💰 שכר החודש: <b style="color:var(--green)">${money(p.total + adjSum(adj))}</b></span>
     </div>`;
@@ -694,13 +839,24 @@ function renderSummary(){
   const nh = nextHoliday();
   const perDay = {}; list.forEach(s => perDay[s.date] = (perDay[s.date] || 0) + shiftHours(s));
   const bestDay = Object.entries(perDay).sort((a, b) => b[1] - a[1])[0];
-  $("tiles").innerHTML = [
+  const np = userPlan.filter(x => x.date >= ymd(new Date())).sort((a, b) => (a.date + a.in).localeCompare(b.date + b.in))[0];
+  const pend = list.filter(x => x.approved === false).length;
+  let tgt = "";
+  if (target) {
+    const left = Math.max(0, target - h), daysLeft = cur.y === today.getFullYear() && cur.m === today.getMonth() ? new Date(cur.y, cur.m + 1, 0).getDate() - today.getDate() + 1 : 0;
+    tgt = `<div class="tile target"><div class="l">🎯 היעד החודשי שלי</div><div class="v">${fmtHM(h)} <span class="muted" style="font-size:14px">מתוך ${target} שעות</span></div>
+      <div class="bar"><div style="width:${Math.min(100, h / target * 100)}%"></div></div>
+      <div class="s">${h >= target ? `<span class="up">🎉 עמדת ביעד! (${Math.round(h / target * 100)}%)</span>` : `${Math.round(h / target * 100)}% · נשארו <b>${fmtHM(left)}</b> שעות${daysLeft ? ` · ${daysLeft} ימים עד סוף החודש` : ""}`}</div></div>`;
+  }
+  $("tiles").innerHTML = tgt + [
     ["📆 ימי עבודה", wd, `${nShifts} משמרות`],
     ["⏳ ממוצע למשמרת", nShifts ? fmtHM(h / nShifts) : "—", "שעות:דקות"],
     ["🌙 לילות החודש", p.nights, `${fmtHM(p.nightH)} שעות לילה`],
     ["📈 לעומת חודש קודם", `<span style="font-size:17px">${cmp(h, ph, fmtHM)}</span>`, `שכר: ${cmp(p.total + adjSum(adj), pp.total + adjSum(adjFor(cur.y, cur.m - 1)), money)}`],
     ["🏆 היום החזק", bestDay ? fmtHM(bestDay[1]) : "—", bestDay ? `${DAYS[parseYmd(bestDay[0]).getDay()]} ${dm(parseYmd(bestDay[0]))}` : "אין עדיין"],
-    ["🕎 החג הקרוב", nh ? `<span style="font-size:17px">${esc(nh.text)}</span>` : "—", nh ? `בעוד ${nh.days} ימים · ${dm(nh.d)}` : ""]
+    ["🕎 החג הקרוב", nh ? `<span style="font-size:17px">${esc(nh.text)}</span>` : "—", nh ? `בעוד ${nh.days} ימים · ${dm(nh.d)}` : ""],
+    ["🗓️ המשמרת הבאה", np ? `<span style="font-size:17px">${rng(np.in, np.out)}</span>` : "—", np ? `${DAYS[parseYmd(np.date).getDay()]} ${dm(parseYmd(np.date))}${np.location ? " · " + esc(np.location) : ""}` : "לא תוכננה"],
+    ...(pend ? [["⏳ ממתין לאישור", pend, "משמרות שעוד לא אושרו"]] : [])
   ].map(([l, v, s]) => `<div class="tile"><div class="l">${l}</div><div class="v">${v}</div><div class="s muted">${s}</div></div>`).join("");
 }
 
@@ -783,7 +939,7 @@ function renderCharts(){
   const days = [...Array(7)].map((_, i) => addDays(weekStart, i));
   const wd = days.map(d => +hoursOnDate(ymd(d)).toFixed(2));
   const best = wd.indexOf(Math.max(...wd));
-  $("week-title").textContent = `השבוע ${dm(days[0])} – ${dm(days[6])}`;
+  $("week-title").textContent = `השבוע \u2066${dm(days[0])} – ${dm(days[6])}\u2069`;
   $("week-best").textContent = Math.max(...wd) > 0 ? `היום החזק: יום ${DAYS[best]} (${fmtHM(wd[best])} שעות) · סה"כ ${fmtHM(wd.reduce((a,b)=>a+b,0))}` : "אין שעות בשבוע הזה";
   weekChart = barChart(weekChart, $("week-chart"), days.map(d => DAYS[d.getDay()]), wd, Math.max(...wd) > 0 ? best : -1, it => `יום ${DAYS[it[0].dataIndex]} ${dmy(days[it[0].dataIndex])}`);
 }
@@ -872,6 +1028,9 @@ function openMe(){
     <h4>⏱ שעות קבועות</h4>
     <button class="b-blue" id="me-fixed">פתח הגדרת שעות קבועות לימים</button>
 
+    <h4>📱 אפליקציה בטלפון</h4>
+    <button class="b-blue" id="me-install">📲 התקן את המערכת כאפליקציה</button>
+
     <h4>🎨 צבע המערכת</h4>
     <div class="swatches">${ACCENTS.map((a, i) => `<button data-acc="${i}" class="${i === acc ? "on" : ""}" style="background:${a[0]}" title="צבע ${i + 1}"></button>`).join("")}<button data-acc="-1" class="${acc < 0 ? "on" : ""}" style="background:linear-gradient(135deg,#2f6fdb 50%,#fff 50%)" title="ברירת מחדל"></button></div>
 
@@ -889,6 +1048,7 @@ function openMe(){
     settings.locations.push({ address, from }); await DB.putSettings(); renderAll(); openMe(); toast("הדירה נוספה ✔");
   };
   m.querySelector("#me-fixed").onclick = openFixed;
+  m.querySelector("#me-install").onclick = installApp;
   m.querySelectorAll("[data-acc]").forEach(b => b.onclick = () => {
     const i = +b.dataset.acc; try { localStorage.setItem("accent", i); } catch (e) {}
     applyAccent(i); renderCharts(); m.querySelectorAll("[data-acc]").forEach(x => x.classList.toggle("on", x === b));
@@ -897,22 +1057,22 @@ function openMe(){
 }
 
 // ---- הגדרות מנהל ----
-let settingsTab = "users";
+let settingsTab = "board";
 function openSettings(tab){
   if (!isAdmin) return toast("ההגדרות פתוחות למנהל בלבד");
   if (tab) settingsTab = tab;
-  const T = [["users","👥 עובדים ותעריפים"],["board","📋 לוח עובדים"],["adj","🎁 תוספות ובונוסים"],["rates","💰 תעריפים כלליים"],["backup","☁️ גיבוי"],["announce","📢 הודעה לעובדים"]];
+  const T = [["board","📋 לוח עובדים"],["users","👥 עובדים ותעריפים"],["schedule","🗓️ לוח משמרות"],["apts","🏠 דירות"],["inbox",`✉️ הודעות${adminAlerts.unread ? ` (${adminAlerts.unread})` : ""}`],["adj","🎁 תוספות ובונוסים"],["rates","💰 תעריפים"],["backup","☁️ גיבוי ודוחות"],["announce","📢 הודעה לעובדים"]];
   const m = modal(`<h3>⚙️ הגדרות מנהל ${closeX}</h3>
     <div class="tabs">${T.map(([k, n]) => `<button data-tab="${k}" class="${k === settingsTab ? "on" : ""}">${n}</button>`).join("")}</div>
     <div id="tab-body"></div>`);
   m.classList.add("wide");
   m.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => openSettings(b.dataset.tab));
   const body = m.querySelector("#tab-body");
-  ({ users: tabUsers, board: tabBoard, adj: tabAdj, rates: tabRates, backup: tabBackup, announce: tabAnnounce })[settingsTab](body, m);
+  ({ users: tabUsers, board: tabBoard, schedule: tabSchedule, apts: tabApts, inbox: tabInbox, adj: tabAdj, rates: tabRates, backup: tabBackup, announce: tabAnnounce })[settingsTab](body, m);
 }
 
 async function listUsers(){
-  if (DEMO) return [{ email: viewEmail, name: settings.name, role: "admin", rates: userRates }];
+  if (DEMO) return [{ email: viewEmail, name: settings.name, role: "admin", rates: userRates, adjustments: userAdj, locks: userLocks, plan: userPlan }];
   const q = await fb.f.getDocs(fb.f.collection(fb.db, "users"));
   return q.docs.map(d => ({ email: d.id, ...d.data() }));
 }
@@ -956,26 +1116,277 @@ async function renderUsers(body){
   });
 }
 
-async function tabBoard(body){
-  body.innerHTML = `<div class="muted" style="margin-bottom:8px">סיכום של כל העובדים לחודש ${MONTHS[cur.m]} ${cur.y}. לחיצה על "פתח" מציגה את המערכת של העובד.</div><div style="overflow-x:auto" id="board">טוען...</div>`;
-  try {
-    const users = await listUsers(), [f, t] = monthRange(cur.y, cur.m), rows = [];
-    for (const u of users) {
-      let list;
-      if (DEMO || u.email === viewEmail) list = shiftsInRange(f, t);
-      else { const q = await fb.f.getDocs(fb.f.collection(fb.db, "shifts", u.email, "items")); list = q.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.date >= f && s.date <= t); }
-      const p = calcPay(list, ratesFor(u.rates)), h = list.reduce((a, s) => a + shiftHours(s), 0), extra = adjSum(adjFor(cur.y, cur.m, DEMO ? userAdj : u.adjustments));
-      p.total += extra; p.extra = extra;
-      const last = list.filter(s => shiftHours(s) > 0).map(s => s.date).sort().pop();
-      const live = list.some(s => s.live && !s.out);
-      rows.push({ u, h, p, days: new Set(list.filter(s => shiftHours(s) > 0).map(s => s.date)).size, last, live });
+// ================== צוות: טעינת נתוני כל העובדים (מנהל) ==================
+async function loadTeam(){
+  if (DEMO) return [{ u: { email: viewEmail, name: settings.name, rates: userRates, adjustments: userAdj, locks: userLocks, plan: userPlan }, settings, shifts: [...shifts.values()] }];
+  const users = await listUsers(), out = [];
+  await Promise.all(users.map(async u => {
+    const [st, q] = await Promise.all([fb.f.getDoc(fb.f.doc(fb.db, "settings", u.email)), fb.f.getDocs(fb.f.collection(fb.db, "shifts", u.email, "items"))]);
+    out.push({ u, settings: st.exists() ? st.data() : defaultSettings(), shifts: q.docs.map(d => ({ id: d.id, ...d.data() })) });
+  }));
+  return out.sort((a, b) => (a.u.name || a.u.email).localeCompare(b.u.name || b.u.email));
+}
+function locForSettings(st, ds){ let loc = ""; [...(st?.locations || [])].sort((a, b) => a.from.localeCompare(b.from)).forEach(l => { if (l.from <= ds) loc = l.address; }); return loc; }
+function memberMonth(mem, y, m){
+  const [f, t] = monthRange(y, m), list = mem.shifts.filter(s => s.date >= f && s.date <= t);
+  const R = ratesFor(mem.u.rates), p = calcPay(list, R), adj = adjFor(y, m, mem.u.adjustments || []);
+  const h = list.reduce((a, s) => a + shiftHours(s), 0);
+  const planned = (mem.u.plan || []).filter(x => x.date >= f && x.date <= t).reduce((a, x) => a + shiftHours(x), 0);
+  return { list, R, p, adj, extra: adjSum(adj), total: p.total + adjSum(adj), h, planned,
+    days: new Set(list.filter(s => shiftHours(s) > 0).map(s => s.date)).size,
+    pending: list.filter(s => s.approved === false).length, locked: !!(mem.u.locks || {})[monthKey(y, m)],
+    live: mem.shifts.find(s => s.live && !s.out) };
+}
+function computeAlerts(team, y, m){
+  const [f, t] = monthRange(y, m), now = Date.now(), al = [], ivs = [];
+  for (const mem of team) {
+    const name = mem.u.name || mem.u.email;
+    for (const s of mem.shifts) {
+      const a = toMin(s.in), b = toMin(s.out);
+      if (s.live && !s.out && a != null) {
+        const st = parseYmd(s.date); st.setHours(0, a, 0, 0); const hrs = (now - st) / 36e5;
+        if (hrs > 12) al.push({ lvl: "red", text: `${name}: עדיין "במשמרת" כבר ${Math.floor(hrs)} שעות (מאז ${dm(parseYmd(s.date))} ${s.in}) – כנראה שכח ללחוץ יציאה` });
+        continue;
+      }
+      if (s.date < f || s.date > t) continue;
+      if (a != null && b == null && s.date < ymd(new Date())) al.push({ lvl: "amber", text: `${name}: חסרה שעת יציאה ב-${dm(parseYmd(s.date))} (כניסה ${s.in})` });
+      const h = shiftHours(s);
+      if (h > 12) al.push({ lvl: "amber", text: `${name}: משמרת ארוכה של ${fmtHM(h)} שעות ב-${dm(parseYmd(s.date))}` });
+      if (a != null && b != null && h > 0) {
+        const base = dayIdx(s.date) * 1440, S = base + a, E = base + (b < a ? b + 1440 : b);
+        ivs.push({ name, email: mem.u.email, loc: norm(s.location || locForSettings(mem.settings, s.date)), rawLoc: s.location || locForSettings(mem.settings, s.date), S, E, date: s.date, s });
+      }
     }
-    const tot = rows.reduce((a, r) => ({ h: a.h + r.h, pay: a.pay + r.p.total }), { h: 0, pay: 0 });
-    body.querySelector("#board").innerHTML = `<table class="otable"><thead><tr><th>עובד</th><th>מצב</th><th>ימים</th><th>שעות</th><th>לילות</th><th>שכר</th><th>משמרת אחרונה</th><th></th></tr></thead><tbody>
-      ${rows.map(r => `<tr><td><b>${esc(r.u.name || r.u.email)}</b></td><td>${r.live ? `<span class="up">🟢 במשמרת</span>` : `<span class="muted">—</span>`}</td><td>${r.days}</td><td>${fmtHM(r.h)}</td><td>${r.p.nights}</td><td><b>${money(r.p.total)}</b>${r.p.extra ? `<div class="muted" style="font-size:11px">כולל תוספות ${money(r.p.extra)}</div>` : ""}</td><td>${r.last ? dmy(parseYmd(r.last)) : "—"}</td><td><button class="mini fix" data-open="${esc(r.u.email)}">פתח</button></td></tr>`).join("")}
-      <tr><td><b>סה"כ</b></td><td></td><td></td><td><b>${fmtHM(tot.h)}</b></td><td></td><td><b>${money(tot.pay)}</b></td><td></td><td></td></tr></tbody></table>`;
+  }
+  for (let i = 0; i < ivs.length; i++) for (let j = i + 1; j < ivs.length; j++) {
+    const x = ivs[i], y2 = ivs[j];
+    if (x.email === y2.email || !x.loc || x.loc !== y2.loc) continue;
+    const ov = ovl(x.S, x.E, y2.S, y2.E);
+    if (ov > 0) al.push({ lvl: "red", text: `חפיפה בדירה ${x.rawLoc}: ${x.name} (\u2066${x.s.in}–${x.s.out}\u2069) ו-${y2.name} (\u2066${y2.s.in}–${y2.s.out}\u2069) ב-${dm(parseYmd(x.date))}` });
+  }
+  return al;
+}
+async function adminScan(){
+  if (!isAdmin) return;
+  try {
+    const team = await loadTeam(), alerts = computeAlerts(team, today.getFullYear(), today.getMonth());
+    const pending = team.reduce((a, mem) => a + mem.shifts.filter(s => s.approved === false).length, 0);
+    const unread = (await MSG.all()).filter(x => !x.read).length;
+    adminAlerts = { alerts, pending, unread };
+    const n = alerts.length + pending + unread;
+    $("settings-btn").innerHTML = `⚙️ הגדרות מנהל${n ? `<span class="badge-n">${n}</span>` : ""}`;
+    renderNotices();
+  } catch (e) { console.warn("scan", e); }
+}
+
+// ================== לוח עובדים (מנהל) ==================
+async function tabBoard(body){
+  body.innerHTML = `<div class="frow" style="justify-content:space-between"><span class="muted">כל העובדים לחודש <b>${MONTHS[cur.m]} ${cur.y}</b>.</span>
+    <span class="frow" style="margin:0"><button class="b-gray" id="bd-lockall">🔒 נעל את החודש לכולם</button><button class="b-gray" id="bd-slips">🧾 תלושים לכולם</button><button class="b-purple" id="bd-mail">📧 שלח סיכום לכל העובדים</button></span></div>
+    <div id="bd-alerts"></div><div style="overflow-x:auto" id="board">טוען...</div><div id="bd-msg" class="msg"></div>`;
+  let team;
+  const draw = async () => {
+    team = await loadTeam();
+    const rows = team.map(mem => ({ mem, r: memberMonth(mem, cur.y, cur.m) }));
+    const al = computeAlerts(team, cur.y, cur.m);
+    body.querySelector("#bd-alerts").innerHTML = al.length ? `<div class="notice admin" style="flex-direction:column;align-items:flex-start;margin-bottom:10px"><b>⚠️ התראות (${al.length})</b>${al.map(a => `<div style="font-weight:500">• ${esc(a.text)}</div>`).join("")}</div>` : `<div class="notice info" style="margin-bottom:10px">✔ אין התראות החודש</div>`;
+    const tot = rows.reduce((a, x) => ({ h: a.h + x.r.h, pay: a.pay + x.r.total, pl: a.pl + x.r.planned }), { h: 0, pay: 0, pl: 0 });
+    body.querySelector("#board").innerHTML = `<table class="otable"><thead><tr><th>עובד</th><th>מצב</th><th>ימים</th><th>שעות</th><th>מתוכנן</th><th>לילות</th><th>שבת/חג</th><th>שכר</th><th>אישור</th><th></th></tr></thead><tbody>
+      ${rows.map(({ mem, r }) => `<tr><td><b>${esc(mem.u.name || mem.u.email)}</b>${r.locked ? " 🔒" : ""}</td>
+        <td>${r.live ? `<span class="up">🟢 במשמרת</span>` : `<span class="muted">—</span>`}</td><td>${r.days}</td><td>${fmtHM(r.h)}</td>
+        <td>${r.planned ? `${fmtHM(r.planned)}<div class="${r.h >= r.planned ? "up" : "down"}" style="font-size:11px">${r.h >= r.planned ? "+" : "−"}${fmtHM(Math.abs(r.h - r.planned))}</div>` : "—"}</td>
+        <td>${r.p.nights}</td><td>${r.p.premH ? fmtHM(r.p.premH) : "—"}</td>
+        <td><b>${money(r.total)}</b>${r.extra ? `<div class="muted" style="font-size:11px">כולל תוספות ${money(r.extra)}</div>` : ""}</td>
+        <td>${r.pending ? `<button class="mini apv" data-apv="${esc(mem.u.email)}">✔ אשר ${r.pending}</button>` : `<span class="up">✔</span>`}</td>
+        <td style="white-space:nowrap"><button class="mini fix" data-open="${esc(mem.u.email)}">פתח</button> <button class="mini fix" data-slip="${esc(mem.u.email)}">🧾</button> <button class="mini fix" data-lk="${esc(mem.u.email)}">${r.locked ? "🔓" : "🔒"}</button></td></tr>`).join("")}
+      <tr><td><b>סה"כ</b></td><td></td><td></td><td><b>${fmtHM(tot.h)}</b></td><td>${tot.pl ? fmtHM(tot.pl) : ""}</td><td></td><td></td><td><b>${money(tot.pay)}</b></td><td></td><td></td></tr></tbody></table>`;
+    const byEmail = e => team.find(x => x.u.email === e);
     body.querySelectorAll("[data-open]").forEach(b => b.onclick = async () => { closeModal(); if (!DEMO) { await openSystem(b.dataset.open); $("view-user").value = b.dataset.open; } });
-  } catch (e) { body.querySelector("#board").textContent = "שגיאה בטעינה: " + (e.code || e.message); }
+    body.querySelectorAll("[data-slip]").forEach(b => b.onclick = () => exportSlips([byEmail(b.dataset.slip)], cur.y, cur.m));
+    body.querySelectorAll("[data-lk]").forEach(b => b.onclick = async () => { const mem = byEmail(b.dataset.lk), locks = { ...(mem.u.locks || {}) }, mk = monthKey(cur.y, cur.m); if (locks[mk]) delete locks[mk]; else locks[mk] = true; await DB.putUser(mem.u.email, { locks }); if (mem.u.email === viewEmail) { userLocks = locks; renderAll(); } toast(locks[mk] ? "החודש ננעל 🔒" : "הנעילה הוסרה 🔓"); draw(); });
+    body.querySelectorAll("[data-apv]").forEach(b => b.onclick = async () => {
+      const mem = byEmail(b.dataset.apv), [f, t] = monthRange(cur.y, cur.m);
+      const list = mem.shifts.filter(s => s.date >= f && s.date <= t && s.approved === false);
+      if (mem.u.email === viewEmail || DEMO) await DB.putMany(list.map(s => ({ ...s, approved: true })));
+      else { const bt = fb.f.writeBatch(fb.db); list.forEach(s => bt.update(fb.f.doc(fb.db, "shifts", mem.u.email, "items", s.id), { approved: true })); await bt.commit(); }
+      renderAll(); toast(`אושרו ${list.length} משמרות ✔`); draw(); adminScan();
+    });
+  };
+  body.querySelector("#bd-lockall").onclick = async () => {
+    if (!confirm(`לנעול את ${MONTHS[cur.m]} ${cur.y} לכל העובדים? הם לא יוכלו לשנות שעות בחודש הזה.`)) return;
+    const mk = monthKey(cur.y, cur.m);
+    for (const mem of team) { const locks = { ...(mem.u.locks || {}), [mk]: true }; await DB.putUser(mem.u.email, { locks }); if (mem.u.email === viewEmail) userLocks = locks; }
+    renderAll(); toast("החודש ננעל לכל העובדים 🔒"); draw();
+  };
+  body.querySelector("#bd-slips").onclick = () => exportSlips(team, cur.y, cur.m);
+  body.querySelector("#bd-mail").onclick = async () => { if (!confirm(`לשלוח לכל עובד במייל את הסיכום של ${MONTHS[cur.m]} ${cur.y}?`)) return; await sendMonthlyReports(cur.y, cur.m, team, m => setMsg("bd-msg", m, true)); };
+  try { await draw(); } catch (e) { body.querySelector("#board").textContent = "שגיאה בטעינה: " + (e.code || e.message); }
+}
+
+// ================== תלוש שכר ==================
+function slipHtml(mem, y, m){
+  const r = memberMonth(mem, y, m), p = r.p, R = r.R, name = mem.u.name || mem.settings?.name || mem.u.email;
+  const td = "border:1px solid #ccc;padding:6px 8px;font-size:12.5px", th = td + ";background:#f0f2f6;font-weight:bold";
+  const rows = r.list.filter(s => shiftHours(s) > 0).sort((a, b) => (a.date + a.in).localeCompare(b.date + b.in))
+    .map(s => `<tr><td style="${td}">${dmy(parseYmd(s.date))}</td><td style="${td}">${DAYS[parseYmd(s.date).getDay()]}</td><td style="${td}">${rng(s.in, s.out)}</td><td style="${td}">${fmtHM(shiftHours(s))}</td><td style="${td}">${esc(s.location || locForSettings(mem.settings, s.date))}</td></tr>`).join("");
+  const line = (a, b) => `<tr><td style="${td}">${a}</td><td style="${td};text-align:left;font-weight:bold">${b}</td></tr>`;
+  return `<div dir="rtl" style="font-family:Arial,sans-serif;color:#000;background:#fff;padding:18px;width:760px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0f2542;padding-bottom:8px;margin-bottom:12px">
+      <div><div style="font-size:22px;font-weight:bold">תלוש שכר – ${MONTHS[m]} ${y}</div><div style="font-size:14px;margin-top:2px">${esc(name)} · ${esc(mem.u.email)}</div></div>
+      <div style="font-size:12px;color:#555;text-align:left">הופק ב-${dmy(new Date())}<br>${esc(hebDate(new Date()))}</div></div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+      ${line(`שעות יום: ${fmtHM(p.dayH)} × ${money(R.day)}`, money(p.dayPay - p.premPay))}
+      ${p.premH ? line(`תוספת שבת/חג: ${fmtHM(p.premH)} שעות × ${p.pct - 100}%`, "+" + money(p.premPay)) : ""}
+      ${line(`לילות (${rng(R.nightStart, R.nightEnd)}): ${p.nights} × ${money(R.nightFlat)}`, money(p.nightPay))}
+      ${r.adj.map(a => line(`${esc(a.label)}`, (+a.amount < 0 ? "−" : "+") + money(Math.abs(+a.amount)))).join("")}
+      <tr><td style="${td};background:#0f2542;color:#fff;font-size:15px;font-weight:bold">סה"כ לתשלום</td><td style="${td};background:#0f2542;color:#fff;font-size:16px;font-weight:bold;text-align:left">${money(r.total)}</td></tr>
+    </table>
+    <div style="font-size:13px;margin-bottom:6px"><b>${r.days}</b> ימי עבודה · <b>${fmtHM(r.h)}</b> שעות${r.pending ? ` · ${r.pending} משמרות ממתינות לאישור` : ""}${r.locked ? " · החודש נעול" : ""}</div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr><th style="${th}">תאריך</th><th style="${th}">יום</th><th style="${th}">שעות</th><th style="${th}">סה"כ</th><th style="${th}">דירה</th></tr></thead><tbody>${rows || `<tr><td colspan="5" style="${td}">אין משמרות</td></tr>`}</tbody></table>
+  </div>`;
+}
+async function exportSlips(members, y, m){
+  members = (members || []).filter(Boolean); if (!members.length) return;
+  toast("מכין תלוש שכר...");
+  try { await loadScript("https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"); } catch (e) { return toast("לא ניתן לטעון את רכיב ה-PDF"); }
+  for (const mem of members) {
+    const el = document.createElement("div"); el.innerHTML = slipHtml(mem, y, m);
+    await html2pdf().set({ margin: 8, filename: `תלוש-${mem.u.name || mem.u.email}-${MONTHS[m]}-${y}.pdf`, image: { type: "jpeg", quality: 0.95 }, html2canvas: { scale: 2, backgroundColor: "#ffffff" }, jsPDF: { unit: "mm", format: "a4", orientation: "portrait" } }).from(el.firstElementChild).save();
+  }
+  toast(members.length > 1 ? `ירדו ${members.length} תלושים ✔` : "התלוש ירד ✔");
+}
+const selfMember = () => ({ u: { email: viewEmail, name: settings.name, rates: userRates, adjustments: userAdj, locks: userLocks, plan: userPlan }, settings, shifts: [...shifts.values()] });
+
+// ================== סיכום חודשי במייל ==================
+function summaryText(mem, y, m){
+  const r = memberMonth(mem, y, m), p = r.p;
+  return `סיכום חודש ${MONTHS[m]} ${y} – ${mem.u.name || mem.u.email}\n\n` +
+    `ימי עבודה: ${r.days}\nסה"כ שעות: ${fmtHM(r.h)}\nשעות יום: ${fmtHM(p.dayH)} = ${money(p.dayPay)}\n` +
+    (p.premH ? `מתוכן תוספת שבת/חג: ${fmtHM(p.premH)} שעות = +${money(p.premPay)}\n` : "") +
+    `לילות: ${p.nights} = ${money(p.nightPay)}\n` + r.adj.map(a => `${a.label}: ${money(+a.amount)}\n`).join("") +
+    `\nסה"כ לתשלום: ${money(r.total)}\n` + ((mem.settings?.notes || {})["m:" + monthKey(y, m)] ? `\nהוראות לחודש: ${(mem.settings.notes)["m:" + monthKey(y, m)]}\n` : "");
+}
+async function sendMonthlyReports(y, m, team, progress = () => {}){
+  if (DEMO) { progress("במצב הדגמה לא נשלחים מיילים"); return false; }
+  team = team || await loadTeam();
+  emailjs.init(CFG.emailjs.key);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let n = 0, all = "";
+  for (const mem of team) {
+    const txt = summaryText(mem, y, m); all += txt + "\n------------------------------\n";
+    if (mem.u.email === CFG.admin) continue;
+    try { await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { to_email: mem.u.email, name: mem.u.name || mem.u.email, to_name: mem.u.email, subject: `סיכום שעות ושכר – ${MONTHS[m]} ${y}`, message: `שלום ${mem.u.name || ""},\n\n${txt}\nלצפייה בפרטים: ${location.origin}${location.pathname}` }); n++; progress(`נשלח ל-${n} עובדים...`); await wait(1200); }
+    catch (e) { console.warn(e); }
+  }
+  const tot = team.reduce((a, mem) => a + memberMonth(mem, y, m).total, 0);
+  await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { to_email: CFG.admin, name: "מערכת השעות", to_name: CFG.admin, subject: `סיכום חודשי לכל העובדים – ${MONTHS[m]} ${y}`, message: `סיכום כל העובדים לחודש ${MONTHS[m]} ${y}\nסה"כ לתשלום לכולם: ${money(tot)}\n\n${all}` });
+  progress(`הסיכום נשלח ל-${n} עובדים ואליך ✔`);
+  return true;
+}
+async function maybeMonthlyReport(){
+  if (!isAdmin || DEMO || !globalCfg.monthly.auto) return;
+  const pm = new Date(today.getFullYear(), today.getMonth() - 1, 1), key = monthKey(pm.getFullYear(), pm.getMonth());
+  if (globalCfg.monthly.lastSent === key) return;
+  globalCfg.monthly.lastSent = key; await DB.putGlobal();
+  const ok = await sendMonthlyReports(pm.getFullYear(), pm.getMonth());
+  if (ok) toast(`📧 נשלח סיכום חודש ${MONTHS[pm.getMonth()]} לכל העובדים`);
+}
+
+// ================== לוח משמרות מתוכנן (מנהל) ==================
+async function tabSchedule(body){
+  body.innerHTML = `<div class="muted" style="margin-bottom:10px">קבע מראש מי עובד מתי ובאיזו דירה. העובד רואה את זה בטבלה שלו ("🗓️ מתוכנן") ובכרטיס "המשמרת הבאה", ומקבל תזכורת אם לא נכנס בזמן. ב"לוח עובדים" רואים מתוכנן מול בוצע.</div>
+    <div class="frow"><label>עובד</label><select id="pl-user" style="flex:1"></select></div>
+    <div class="frow"><label>תאריך</label><input type="date" id="pl-date" value="${ymd(addDays(new Date(), 1))}"><label style="min-width:auto">משעה</label><input class="tm" id="pl-in" placeholder="--:--" maxlength="5"><label style="min-width:auto">עד</label><input class="tm" id="pl-out" placeholder="--:--" maxlength="5"></div>
+    <div class="frow"><label>דירה</label><input id="pl-loc" list="loc-list" style="flex:1" placeholder="דירה / מיקום"><label style="min-width:auto">חזרה</label><select id="pl-rep"><option value="1">פעם אחת</option><option value="4">כל שבוע – 4 שבועות</option><option value="8">כל שבוע – 8 שבועות</option></select></div>
+    <div class="frow"><label>הערה</label><input id="pl-note" style="flex:1" placeholder="לא חובה"><button class="b-green" id="pl-add">＋ הוסף למשמרות</button></div>
+    <h4>משמרות מתוכננות</h4><div id="pl-list">טוען...</div>`;
+  const users = await listUsers(), sel = body.querySelector("#pl-user");
+  sel.innerHTML = users.map(u => `<option value="${esc(u.email)}">${esc(u.name || u.email)}</option>`).join("");
+  sel.value = users.some(u => u.email === viewEmail) ? viewEmail : users[0]?.email;
+  const planOf = e => e === viewEmail ? userPlan : (users.find(u => u.email === e)?.plan || []);
+  const save = async (e, plan) => { await DB.putUser(e, { plan }); const u = users.find(x => x.email === e); if (u) u.plan = plan; renderAll(); draw(); };
+  const draw = () => {
+    const e = sel.value, list = planOf(e).filter(x => x.date >= ymd(addDays(new Date(), -7))).sort((a, b) => (a.date + a.in).localeCompare(b.date + b.in));
+    body.querySelector("#pl-list").innerHTML = list.length ? list.map(x => `<div class="list-item"><span><b>${DAYS[parseYmd(x.date).getDay()]} ${dmy(parseYmd(x.date))}</b> · ${rng(x.in, x.out)}${x.location ? ` · 🏠 ${esc(x.location)}` : ""}${x.note ? ` <span class="muted">· ${esc(x.note)}</span>` : ""}</span><button class="mini del" data-rmpl="${esc(x.id)}">מחק</button></div>`).join("") : `<div class="muted">אין משמרות מתוכננות לעובד הזה</div>`;
+    body.querySelectorAll("[data-rmpl]").forEach(b => b.onclick = () => save(sel.value, planOf(sel.value).filter(x => x.id !== b.dataset.rmpl)));
+  };
+  sel.onchange = draw; draw();
+  body.querySelectorAll(".tm").forEach(i => i.addEventListener("change", () => i.value = normTime(i.value)));
+  body.querySelector("#pl-add").onclick = async () => {
+    const e = sel.value, date = body.querySelector("#pl-date").value, inn = normTime(body.querySelector("#pl-in").value), out = normTime(body.querySelector("#pl-out").value);
+    if (!date || !inn || !out) return toast("מלא תאריך, שעת התחלה ושעת סיום");
+    const rep = +body.querySelector("#pl-rep").value, add = [];
+    for (let i = 0; i < rep; i++) add.push({ id: newId(), date: ymd(addDays(parseYmd(date), 7 * i)), in: inn, out, location: body.querySelector("#pl-loc").value.trim(), note: body.querySelector("#pl-note").value.trim() });
+    try { await save(e, [...planOf(e), ...add]); toast(`נוספו ${add.length} משמרות מתוכננות ✔`); } catch (er) { toast("שגיאה: " + (er.code || er.message)); }
+  };
+}
+
+// ================== ניהול דירות (מנהל) ==================
+function tabApts(body){
+  const A = globalCfg.apartments || [];
+  body.innerHTML = `<div class="muted" style="margin-bottom:10px">רשימת כל הדירות עם הוראות קבועות. עובד שעובד בדירה רואה את ההוראות שלה בראש המסך. אפשר גם לשייך עובד לדירה מתאריך מסוים.</div>
+    <div id="ap-list">${A.length ? A.map((a, i) => `<div class="list-item" style="flex-direction:column;align-items:stretch" data-ap="${i}">
+      <div class="frow" style="margin:0"><input class="ap-name" value="${esc(a.name)}" placeholder="שם הדירה" style="flex:1"><input class="ap-addr" value="${esc(a.address || "")}" placeholder="כתובת" style="flex:1"></div>
+      <textarea class="ap-ins" rows="2" style="width:100%;margin-top:6px" placeholder="הוראות קבועות לדירה">${esc(a.instructions || "")}</textarea>
+      <div class="frow" style="margin:6px 0 0"><button class="mini add ap-save">שמור</button><button class="mini del ap-del">מחק</button></div></div>`).join("") : `<div class="muted">עדיין אין דירות</div>`}</div>
+    <h4>＋ דירה חדשה</h4>
+    <div class="frow"><input id="ap-name" placeholder="שם הדירה, למשל ז'בוטינסקי 107" style="flex:1"><input id="ap-addr" placeholder="כתובת מלאה (לא חובה)" style="flex:1"></div>
+    <textarea id="ap-ins" rows="2" style="width:100%" placeholder="הוראות קבועות, למשל: קוד כניסה 1234, תרופות בשעה 8:00, לסגור את הגז"></textarea>
+    <div class="frow" style="margin-top:6px"><button class="b-green" id="ap-add">＋ הוסף דירה</button></div>
+    <h4>🔗 שיוך עובד לדירה</h4>
+    <div class="frow"><select id="as-user" style="flex:1"></select><select id="as-apt" style="flex:1">${A.map((a, i) => `<option value="${i}">${esc(a.name)}</option>`).join("")}</select><label style="min-width:auto">מתאריך</label><input type="date" id="as-from" value="${ymd(today)}"><button class="b-blue" id="as-go">שייך</button></div>`;
+  const save = async () => { await DB.putGlobal(); renderAll(); tabApts(body); };
+  body.querySelectorAll("[data-ap]").forEach(row => {
+    const i = +row.dataset.ap;
+    row.querySelector(".ap-save").onclick = async () => { globalCfg.apartments[i] = { ...globalCfg.apartments[i], name: row.querySelector(".ap-name").value.trim(), address: row.querySelector(".ap-addr").value.trim(), instructions: row.querySelector(".ap-ins").value.trim() }; await save(); toast("הדירה נשמרה ✔"); };
+    row.querySelector(".ap-del").onclick = async () => { if (!confirm("למחוק את הדירה?")) return; globalCfg.apartments.splice(i, 1); await save(); };
+  });
+  body.querySelector("#ap-add").onclick = async () => {
+    const name = body.querySelector("#ap-name").value.trim(); if (!name) return toast("כתוב שם לדירה");
+    globalCfg.apartments = [...A, { id: newId(), name, address: body.querySelector("#ap-addr").value.trim(), instructions: body.querySelector("#ap-ins").value.trim() }];
+    await save(); toast("הדירה נוספה ✔");
+  };
+  listUsers().then(users => { const s2 = body.querySelector("#as-user"); if (s2) { s2.innerHTML = users.map(u => `<option value="${esc(u.email)}">${esc(u.name || u.email)}</option>`).join(""); s2.value = users.some(u => u.email === viewEmail) ? viewEmail : users[0]?.email; } });
+  body.querySelector("#as-go").onclick = async () => {
+    const e = body.querySelector("#as-user").value, apt = A[+body.querySelector("#as-apt").value], from = body.querySelector("#as-from").value;
+    if (!e || !apt || !from) return toast("בחר עובד, דירה ותאריך");
+    const entry = { address: apt.name, from };
+    if (e === viewEmail || DEMO) { settings.locations = [...(settings.locations || []), entry]; await DB.putSettings(); renderAll(); }
+    else { const st = await fb.f.getDoc(fb.f.doc(fb.db, "settings", e)); const locs = [...((st.exists() && st.data().locations) || []), entry]; await fb.f.setDoc(fb.f.doc(fb.db, "settings", e), { locations: locs }, { merge: true }); }
+    toast(`שויך לדירה ${apt.name} מ-${dmy(parseYmd(from))} ✔`);
+  };
+}
+
+// ================== הודעות ==================
+async function tabInbox(body){
+  body.innerHTML = `<div class="muted" style="margin-bottom:10px">הודעות ודיווחים שהעובדים שלחו לך. אפשר לענות, והעובד יראה את התשובה.</div><div id="ib-list">טוען...</div>`;
+  const list = await MSG.all();
+  body.querySelector("#ib-list").innerHTML = list.length ? list.map(x => `<div class="list-item" style="flex-direction:column;align-items:stretch${x.read ? "" : ";border-color:var(--red)"}" data-mid="${esc(x.id)}">
+    <div><b>${esc(x.fromName || x.from)}</b> <span class="muted">· ${new Date(x.at).toLocaleString("he-IL")}</span>${x.read ? "" : ` <span class="badge-n">חדש</span>`}</div>
+    <div style="margin:6px 0;white-space:pre-wrap">${esc(x.text)}</div>
+    ${x.reply ? `<div class="muted">↩ התשובה שלך: ${esc(x.reply)}</div>` : ""}
+    <div class="frow" style="margin:6px 0 0"><input class="ib-reply" placeholder="כתוב תשובה..." style="flex:1"><button class="mini add ib-send">שלח תשובה</button><button class="mini del ib-del">מחק</button></div></div>`).join("") : `<div class="muted">אין הודעות</div>`;
+  body.querySelectorAll("[data-mid]").forEach(row => {
+    const id = row.dataset.mid;
+    row.querySelector(".ib-send").onclick = async () => { const t = row.querySelector(".ib-reply").value.trim(); if (!t) return; await MSG.update(id, { reply: t, replyAt: Date.now(), read: true }); toast("התשובה נשלחה ✔"); tabInbox(body); };
+    row.querySelector(".ib-del").onclick = async () => { if (!confirm("למחוק את ההודעה?")) return; await MSG.remove(id); tabInbox(body); };
+  });
+  for (const x of list.filter(x => !x.read)) await MSG.update(x.id, { read: true }).catch(() => {});
+  adminScan();
+}
+async function openMessages(){
+  if (isAdmin) return openSettings("inbox");
+  const m = modal(`<h3>✉️ הודעה למנהל ${closeX}</h3>
+    <div class="muted" style="margin-bottom:8px">דיווח, בקשה או עדכון – למשל "חסר ציוד בדירה". המנהל יקבל את ההודעה ויוכל לענות לך כאן.</div>
+    <textarea id="mg-text" rows="4" style="width:100%" placeholder="כתוב כאן..."></textarea>
+    <div class="frow" style="margin-top:8px"><button class="b-green" id="mg-send">שלח</button></div>
+    <h4>ההודעות שלי</h4><div id="mg-list">טוען...</div>`);
+  const draw = async () => {
+    const list = await MSG.mine().catch(() => []);
+    m.querySelector("#mg-list").innerHTML = list.length ? list.map(x => `<div class="list-item" style="flex-direction:column;align-items:stretch"><div class="muted">${new Date(x.at).toLocaleString("he-IL")} ${x.read ? "· נקרא ✔" : "· נשלח"}</div><div style="white-space:pre-wrap">${esc(x.text)}</div>${x.reply ? `<div class="up" style="margin-top:4px">↩ תשובת המנהל: ${esc(x.reply)}</div>` : ""}</div>`).join("") : `<div class="muted">עדיין לא שלחת הודעות</div>`;
+  };
+  m.querySelector("#mg-send").onclick = async () => { const t = m.querySelector("#mg-text").value.trim(); if (!t) return; try { await MSG.send(t); m.querySelector("#mg-text").value = ""; toast("ההודעה נשלחה למנהל ✔"); draw(); } catch (e) { toast("שגיאה: " + (e.code || e.message)); } };
+  draw();
 }
 
 async function tabAdj(body){
@@ -1024,9 +1435,19 @@ function tabRates(body){
     <div class="frow"><label>שעות הלילה</label>מ-<input id="r-ns" type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" value="${esc(R.nightStart)}"> עד <input id="r-ne" type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off" value="${esc(R.nightEnd)}"></div>
     <div class="frow"><label>לילה חלקי</label><select id="r-part"><option value="prop" ${R.partial !== "full" ? "selected" : ""}>לפי החלק שעבד (יחסי)</option><option value="full" ${R.partial === "full" ? "selected" : ""}>הסכום המלא על כל לילה</option></select></div>
     <div class="muted" style="margin:6px 0 12px;font-size:12.5px">דוגמה: משמרת 22:00–07:00 = שעות יום 22:00–00:00 ו-06:30–07:00 (2.5 שעות × ${money(R.day)}) + לילה אחד מלא (${money(R.nightFlat)}).</div>
+    <h4>✡️ תוספת שבת וחג</h4>
+    <div class="frow"><label>תעריף בשבת/חג</label><input id="r-pct" type="number" min="100" step="5" value="${R.restPct}" style="width:90px">% <span class="muted">(100 = בלי תוספת, 150 = תוספת של 50%)</span></div>
+    <div class="frow"><label>שבת/חג מתחיל</label>בערב שבת/חג בשעה <input id="r-rs" class="tm" maxlength="5" value="${esc(R.restStart)}"> ונגמר במוצאי שבת/חג בשעה <input id="r-re" class="tm" maxlength="5" value="${esc(R.restEnd)}"></div>
+    <div class="frow"><label style="min-width:auto"><input type="checkbox" id="r-rn" ${R.restNight ? "checked" : ""}> להחיל את התוספת גם על סכום הלילה בליל שבת/חג</label></div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px">החגים נקבעים אוטומטית לפי לוח השנה העברי (ראש השנה, יום כיפור, סוכות, שמחת תורה, פסח, שבועות).</div>
+    <h4>✔ אישור שעות</h4>
+    <div class="frow"><label style="min-width:auto"><input type="checkbox" id="r-apv" ${globalCfg.approval ? "checked" : ""}> שעות שעובד רושם מסומנות "ממתין לאישור" עד שאני מאשר</label></div>
     <button class="b-green" id="r-save">שמור תעריפים</button>`;
   body.querySelector("#r-save").onclick = async () => {
-    globalCfg.rates = { day: +body.querySelector("#r-day").value || 0, nightFlat: +body.querySelector("#r-night").value || 0, nightStart: body.querySelector("#r-ns").value || "00:00", nightEnd: body.querySelector("#r-ne").value || "06:30", partial: body.querySelector("#r-part").value };
+    const q = id => body.querySelector(id);
+    globalCfg.rates = { day: +q("#r-day").value || 0, nightFlat: +q("#r-night").value || 0, nightStart: normTime(q("#r-ns").value) || "00:00", nightEnd: normTime(q("#r-ne").value) || "06:30", partial: q("#r-part").value,
+      restPct: Math.max(100, +q("#r-pct").value || 100), restStart: normTime(q("#r-rs").value) || "18:00", restEnd: normTime(q("#r-re").value) || "20:00", restNight: q("#r-rn").checked };
+    globalCfg.approval = q("#r-apv").checked;
     try { await DB.putGlobal(); renderAll(); toast("התעריפים נשמרו ✔"); } catch (e) { toast("שגיאה: " + (e.code || e.message)); }
   };
 }
@@ -1046,6 +1467,9 @@ function tabBackup(body){
     <div class="frow"><label style="min-width:auto"><input type="checkbox" id="bk-auto" ${B.auto ? "checked" : ""}> שלח לי גיבוי אוטומטי למייל פעם בשבוע</label></div>
     <div class="muted" style="font-size:12.5px">גיבוי אחרון למייל: ${B.last ? new Date(B.last).toLocaleString("he-IL") : "עדיין לא נשלח"} · המייל נשלח אל ${esc(CFG.admin)}</div>
     <div id="bk-msg" class="msg"></div>
+    <h4>📊 סיכום חודשי אוטומטי</h4>
+    <div class="frow"><label style="min-width:auto"><input type="checkbox" id="mo-auto" ${globalCfg.monthly.auto ? "checked" : ""}> בתחילת כל חודש: לשלוח לכל עובד במייל את הסיכום של החודש שעבר, ולי סיכום של כולם</label></div>
+    <div class="muted" style="font-size:12.5px">נשלח לאחרונה עבור: ${globalCfg.monthly.lastSent ? esc(globalCfg.monthly.lastSent) : "עדיין לא"} · הסיכום נשלח בפעם הראשונה שאתה נכנס למערכת בחודש החדש.</div>
     <h4>♻️ שחזור מגיבוי</h4>
     <p class="muted">אפשר לבחור קובץ גיבוי (.json) או להדביק את הטקסט מהמייל. משמרות מהגיבוי יתווספו או יעודכנו, ושום דבר לא יימחק.</p>
     <input type="file" id="bk-file" accept=".json,application/json,.txt">
@@ -1053,6 +1477,7 @@ function tabBackup(body){
     <button class="b-gray" id="bk-paste-go" style="margin-top:6px">שחזר מהטקסט</button>`;
   body.querySelector("#bk-mail").onclick = () => doFullBackup({ email: true, download: false });
   body.querySelector("#bk-down").onclick = () => doFullBackup({ email: false, download: true });
+  body.querySelector("#mo-auto").onchange = async e => { globalCfg.monthly.auto = e.target.checked; await DB.putGlobal(); toast(e.target.checked ? "סיכום חודשי אוטומטי הופעל ✔" : "הסיכום החודשי האוטומטי כבוי"); };
   body.querySelector("#bk-auto").onchange = async e => { globalCfg.backup.auto = e.target.checked; await DB.putGlobal(); toast(e.target.checked ? "גיבוי שבועי אוטומטי הופעל ✔" : "הגיבוי האוטומטי כבוי"); };
   body.querySelector("#bk-file").onchange = async e => { const f = e.target.files[0]; if (f) doRestore(await f.text()); };
   body.querySelector("#bk-paste-go").onclick = () => doRestore(body.querySelector("#bk-paste").value);
@@ -1167,7 +1592,7 @@ async function exportPDF(){
   const td = "border:1px solid #ccc;padding:4px 5px;text-align:center;font-size:11px";
   let rows = "";
   for (const r of monthRows()) {
-    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי ${dm(r.ws)}–${dm(r.we)}: ${fmtHM(r.h)} שעות · ${money(r.pay)}${noteOf("w:" + ymd(r.ws)) ? ` · הוראות: ${esc(noteOf("w:" + ymd(r.ws)))}` : ""}</td></tr>`; continue; }
+    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי \u2066${dm(r.ws)}–${dm(r.we)}\u2069: ${fmtHM(r.h)} שעות · ${money(r.pay)}${noteOf("w:" + ymd(r.ws)) ? ` · הוראות: ${esc(noteOf("w:" + ymd(r.ws)))}` : ""}</td></tr>`; continue; }
     const s = r.s, bg = "";
     rows += `<tr style="${bg}"><td style="${td}">${r.first ? `${dmy(r.d)}<br><span style="color:#666">${esc(hebDate(r.d))}</span>` : ""}</td><td style="${td}">${r.first ? DAYS[r.d.getDay()] : ""}</td>
       <td style="${td}">${esc(s?.in || "")}</td><td style="${td}">${esc(s?.out || "")}</td><td style="${td}">${s && shiftHours(s) ? fmtHM(shiftHours(s)) : ""}</td>
@@ -1197,7 +1622,7 @@ async function exportExcel(){
   const aoa = [[`מערכת ניהול שעות ונוכחות – ${settings.name || viewEmail}`], [`חודש ${MONTHS[cur.m]} ${cur.y}`], [],
     ["תאריך", "תאריך עברי", "יום", "כניסה", "יציאה", "שעות", "סה\"כ יומי", "דירה / מיקום", "הוראות"]];
   for (const r of monthRows()) {
-    if (r.type === "week") { aoa.push([`סיכום שבועי ${dm(r.ws)}–${dm(r.we)}`, "", "", "", "", r2(r.h), "", `שכר: ${r2(r.pay)} ₪`, ""]); continue; }
+    if (r.type === "week") { aoa.push([`סיכום שבועי \u2066${dm(r.ws)}–${dm(r.we)}\u2069`, "", "", "", "", r2(r.h), "", `שכר: ${r2(r.pay)} ₪`, ""]); continue; }
     const s = r.s;
     aoa.push([dmy(r.d), hebDate(r.d), DAYS[r.d.getDay()], s?.in || "", s?.out || "", s ? r2(shiftHours(s)) : "", r.first ? r2(r.dayTotal) : "", r.loc, [...(r.first ? r.notes : []), s?.notes].filter(Boolean).join(" · ")]);
   }
@@ -1247,7 +1672,8 @@ async function openSystem(email, fallbackName){
   if (!settings.name && fallbackName) settings.name = fallbackName;
   updateHeader(); show("app"); setMonth(cur.y, cur.m); renderGreeting();
   ["settings-btn", "report-btn"].forEach(id => $(id).classList.toggle("hidden", !isAdmin));
-  if (isAdmin) { fillUserSwitcher(); setTimeout(maybeAutoBackup, 4000); }
+  $("msg-btn").textContent = isAdmin ? "✉️ הודעות מעובדים" : "✉️ הודעה למנהל";
+  if (isAdmin) { fillUserSwitcher(); setTimeout(maybeAutoBackup, 4000); setTimeout(maybeMonthlyReport, 9000); adminScan(); }
 }
 function updateHeader(){
   $("who-name").textContent = settings.name || viewEmail;
@@ -1375,6 +1801,8 @@ function wire(){
   $("sel-month").onchange = () => { const v = $("sel-month").value; if (v) { const [y, m] = v.split("-").map(Number); setMonth(y, m - 1); } };
   $("report-btn").onclick = () => doFullBackup({ email: true });
   $("me-btn").onclick = openMe;
+  $("slip-btn").onclick = () => exportSlips([selfMember()], cur.y, cur.m);
+  $("msg-btn").onclick = openMessages;
   $("locs-btn").onclick = openMe;
   $("prev-month").onclick = () => setMonth(cur.y, cur.m - 1);
   $("next-month").onclick = () => setMonth(cur.y, cur.m + 1);
@@ -1394,6 +1822,19 @@ function wire(){
 }
 function markWeek(){ document.querySelectorAll("tr.weekrow").forEach(r => r.classList.toggle("active", r.dataset.week === ymd(weekStart))); }
 
+// ================== אפליקציה בטלפון ==================
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; });
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+async function installApp(){
+  if (installEvt) { installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null; if (r && r.outcome === "accepted") toast("האפליקציה הותקנה ✔"); return; }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  modal(`<h3>📱 התקנה בטלפון ${closeX}</h3>${ios
+    ? `<ol style="line-height:1.9"><li>פתח את האתר ב-<b>Safari</b>.</li><li>לחץ על כפתור השיתוף <b>⬆️</b> בתחתית המסך.</li><li>בחר <b>"הוסף למסך הבית"</b> ואז <b>"הוסף"</b>.</li></ol>`
+    : `<ol style="line-height:1.9"><li>פתח את האתר ב-<b>Chrome</b> בטלפון.</li><li>לחץ על <b>⋮</b> (שלוש הנקודות למעלה).</li><li>בחר <b>"התקנת אפליקציה"</b> או <b>"הוספה למסך הבית"</b>.</li></ol>`}
+    <div class="muted">אחרי זה יופיע אייקון "שעות עבודה" במסך הבית, שנפתח ישר למערכת.</div>`);
+}
+
 // ================== הפעלה ==================
 (async function start(){
   let t = "light"; try { t = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); } catch (e) {}
@@ -1402,6 +1843,8 @@ function markWeek(){ document.querySelectorAll("tr.weekrow").forEach(r => r.clas
   await loadHebcal();
   try { const ac = localStorage.getItem("accent"); if (ac != null) applyAccent(+ac); } catch (e) {}
   setInterval(() => { if (!$("app").classList.contains("hidden")) { renderGreeting(); tickLive(); } }, 1000);
+  setInterval(() => { if (!$("app").classList.contains("hidden")) renderNotices(); }, 60000);
+  setInterval(() => { if (!$("app").classList.contains("hidden") && isAdmin) adminScan(); }, 600000);
   if (DEMO) { $("demo-flag").classList.remove("hidden"); me = viewEmail = "demo@example.com"; isAdmin = true; await openSystem(me); return; }
   try { await initFirebase(); }
   catch (e) { show("login-screen"); setMsg("login-msg", "שגיאה בחיבור לשרת. בדוק את האינטרנט ורענן.", false); }
