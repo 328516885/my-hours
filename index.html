@@ -55,6 +55,16 @@
         <p id="login-error" class="msg error"></p>
     </div>
 
+    <!-- מסך בחירת סיסמה חדשה (נפתח מהקישור שבמייל האיפוס) -->
+    <div id="reset-screen" style="display: none; max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
+        <h2>בחירת סיסמה חדשה</h2>
+        <p>עבור: <b id="reset-email"></b></p>
+        <input type="password" id="reset-pass1" placeholder="סיסמה חדשה (לפחות 6 תווים)..." autocomplete="new-password" style="width: 90%; margin-bottom: 15px;">
+        <input type="password" id="reset-pass2" placeholder="הקלד שוב את הסיסמה החדשה..." autocomplete="new-password" style="width: 90%; margin-bottom: 15px;">
+        <button id="reset-btn" onclick="confirmNewPassword()" class="btn-success" style="width: 95%;">שמור סיסמה והתחבר</button>
+        <p id="reset-msg" class="msg"></p>
+    </div>
+
     <!-- מסך ראשי של המערכת -->
     <div id="main-app" class="container" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -132,7 +142,8 @@
     import {
         getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
         signOut, sendPasswordResetEmail, sendEmailVerification, updatePassword,
-        reauthenticateWithCredential, EmailAuthProvider
+        reauthenticateWithCredential, EmailAuthProvider,
+        verifyPasswordResetCode, confirmPasswordReset, applyActionCode
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
         getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, addDoc, query, orderBy
@@ -169,7 +180,10 @@
         el.className = "msg " + (ok ? "ok" : "error");
         el.innerText = text;
     }
+    let resetMode = false;       // האם אנחנו במסך בחירת סיסמה חדשה
     function showScreen(name) {
+        if (resetMode && name !== "reset") return;
+        $("reset-screen").style.display = name === "reset" ? "block" : "none";
         $("loading").style.display = name === "loading" ? "block" : "none";
         $("login-screen").style.display = name === "login" ? "block" : "none";
         $("main-app").style.display = name === "app" ? "block" : "none";
@@ -264,12 +278,72 @@
         const email = norm($("login-email").value);
         if (!email) { setMsg("login-error", "הזן תחילה את כתובת המייל שלך בשדה המייל למעלה.", false); return; }
         try {
+            // המנהל הראשי עוד לא רשום? יוצרים לו חשבון עם סיסמה אקראית, ואת הסיסמה האמיתית הוא יבחר דרך המייל
+            if (email === MASTER_ADMIN) {
+                try {
+                    const rnd = crypto.getRandomValues(new Uint32Array(4)).join("") + "Aa!";
+                    await createUserWithEmailAndPassword(secondaryAuth, email, rnd);
+                    await signOut(secondaryAuth);
+                } catch (e) {
+                    if (e.code !== "auth/email-already-in-use") throw e;
+                }
+            }
             await sendPasswordResetEmail(auth, email, { url: location.origin + location.pathname });
-            setMsg("login-error", "אם המייל רשום במערכת, נשלח אליו קישור לאיפוס סיסמה (בדוק גם בספאם).", true);
+            setMsg("login-error", "נשלח מייל לאיפוס סיסמה ל-" + email + ". פתח את המייל, לחץ על הקישור ובחר סיסמה חדשה. (אם לא מופיע תוך דקה - בדוק בתיקיית ספאם)", true);
         } catch (err) {
             setMsg("login-error", authErrorText(err), false);
         }
     };
+
+    // ===== קישורים מהמייל (איפוס סיסמה / אימות מייל) =====
+    let resetCode = null;
+    async function handleEmailAction() {
+        const p = new URLSearchParams(location.search);
+        const mode = p.get("mode"), code = p.get("oobCode");
+        if (!mode || !code) return;
+        history.replaceState(null, "", location.pathname);
+        if (mode === "resetPassword") {
+            resetMode = true;
+            showScreen("reset");
+            try {
+                const email = await verifyPasswordResetCode(auth, code);
+                resetCode = code;
+                $("reset-email").innerText = email;
+            } catch (e) {
+                resetMode = false;
+                showScreen("login");
+                setMsg("login-error", "הקישור לאיפוס פג תוקף או כבר נוצל. לחץ שוב על \"שכחת סיסמה\" לקבלת קישור חדש.", false);
+            }
+        } else if (mode === "verifyEmail") {
+            try {
+                await applyActionCode(auth, code);
+                if (auth.currentUser) await auth.currentUser.reload();
+                setMsg("login-error", "המייל אומת בהצלחה! עכשיו אפשר להתחבר.", true);
+            } catch (e) {
+                setMsg("login-error", "קישור האימות פג תוקף. התחבר שוב כדי לקבל קישור חדש.", false);
+            }
+        }
+    }
+
+    window.confirmNewPassword = async function () {
+        const p1 = $("reset-pass1").value, p2 = $("reset-pass2").value;
+        if (p1.length < 6) { setMsg("reset-msg", "הסיסמה חייבת להכיל לפחות 6 תווים.", false); return; }
+        if (p1 !== p2) { setMsg("reset-msg", "שתי הסיסמאות אינן זהות.", false); return; }
+        $("reset-btn").disabled = true;
+        try {
+            const email = $("reset-email").innerText;
+            await confirmPasswordReset(auth, resetCode, p1);
+            resetMode = false;
+            setMsg("reset-msg", "הסיסמה נשמרה! מתחבר...", true);
+            $("login-email").value = email;
+            await signInWithEmailAndPassword(auth, email, p1);
+        } catch (err) {
+            setMsg("reset-msg", authErrorText(err), false);
+        } finally {
+            $("reset-btn").disabled = false;
+        }
+    };
+    handleEmailAction();
 
     // ===== מסך ראשי =====
     async function loadApp() {
