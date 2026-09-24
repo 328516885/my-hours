@@ -49,10 +49,12 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
 #app{width:100%;margin:0;padding:12px 18px}
 @media(max-width:600px){#app{padding:10px}}
 .hero .greet{font-size:13.5px;opacity:.9;margin-top:6px}
-.hero-clock{position:absolute;right:18px;top:50%;transform:translateY(-50%);text-align:right;z-index:2;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 14px;line-height:1.35}
+.hero-clock{position:absolute;right:18px;top:50%;transform:translateY(-50%);text-align:right;z-index:2;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px 14px;line-height:1.35;display:flex;gap:12px;align-items:center}
+.hero-clock svg{width:74px;height:74px;flex:none}
+.hero-clock .shab{font-size:12px;margin-top:4px;background:rgba(255,200,90,.16);border:1px solid rgba(255,200,90,.35);color:#ffe2a6;border-radius:8px;padding:2px 8px;display:inline-block;font-variant-numeric:tabular-nums}
 .hero-clock .t{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px}
 .hero-clock .d{font-size:12.5px;opacity:.9}
-@media(max-width:1250px){.hero-clock{position:static;transform:none;display:inline-block;text-align:center;margin-bottom:8px}}
+@media(max-width:1250px){.hero-clock{position:static;transform:none;display:inline-flex;text-align:right;margin-bottom:8px}}
 .wnote{display:inline-block;margin-inline-start:14px;color:var(--amber);font-weight:700}
 tr.monthrow .wnote{color:#ffd57a}
 .planbadge{display:inline-block;background:#e6f0ff;color:#1f4fa8;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:600;white-space:nowrap}
@@ -241,7 +243,15 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
       <select id="view-user" class="hidden" title="צפייה במערכת של עובד"></select>
       <button id="logout-btn">🚪 יציאה</button>
     </div>
-    <div class="hero-clock" id="hero-clock"><div class="t" id="hc-time"></div><div class="d" id="hc-date"></div><div class="d" id="hc-heb"></div></div>
+    <div class="hero-clock" id="hero-clock">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.55)" stroke-width="3"/>
+        <g id="hc-ticks"></g>
+        <line id="hc-h" x1="50" y1="50" x2="50" y2="27" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+        <line id="hc-m" x1="50" y1="50" x2="50" y2="15" stroke="#cfe0ff" stroke-width="3.5" stroke-linecap="round"/>
+        <line id="hc-s" x1="50" y1="58" x2="50" y2="12" stroke="#ffb454" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="50" cy="50" r="4" fill="#ffb454"/></svg>
+      <div><div class="t" id="hc-time"></div><div class="d" id="hc-date"></div><div class="d" id="hc-heb"></div><div class="shab hidden" id="hc-shab"></div></div>
+    </div>
     <div class="name" id="who-name"></div>
     <div class="sub">מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם <span id="demo-flag" class="demo-flag hidden">מצב הדגמה</span></div>
     <div class="greet" id="greet"></div>
@@ -896,7 +906,46 @@ function renderGreeting(){
   $("hc-time").textContent = `${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   $("hc-date").textContent = `יום ${DAYS[d.getDay()]} · ${dmy(d)}`;
   $("hc-heb").textContent = hebDate(d);
-  $("greet").innerHTML = `${w}${first && viewEmail === me ? ", " + esc(first) : ""} 👋 &nbsp;·&nbsp; יום ${DAYS[d.getDay()]}, ${esc(hebDate(d))} &nbsp;·&nbsp; ${dmy(d)} &nbsp;·&nbsp; <span class="clock">${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}</span>`;
+  $("greet").innerHTML = `${w}${first && viewEmail === me ? ", " + esc(first) : ""} 👋`;
+  const hand = (id, deg) => $(id).setAttribute("transform", `rotate(${deg} 50 50)`);
+  hand("hc-h", (h % 12) * 30 + d.getMinutes() * .5); hand("hc-m", d.getMinutes() * 6 + d.getSeconds() * .1); hand("hc-s", d.getSeconds() * 6);
+  if (!$("hc-ticks").childElementCount) $("hc-ticks").innerHTML = [...Array(12)].map((_, i) => `<line x1="50" y1="${i % 3 ? 8 : 6}" x2="50" y2="${i % 3 ? 12 : 15}" stroke="rgba(255,255,255,${i % 3 ? .5 : .95})" stroke-width="${i % 3 ? 2 : 3.5}" stroke-linecap="round" transform="rotate(${i * 30} 50 50)"/>`).join("");
+  renderShabbat(d);
+}
+// ---- ספירה לאחור לכניסת שבת / חג (לפי זמני תל אביב) ----
+let shabCache = null;
+function shabbatTimes(){
+  const now = Date.now();
+  if (shabCache && shabCache.until > now) return shabCache;
+  shabCache = { until: now + 30 * 60000, list: [] };
+  if (!hebcal) return shabCache;
+  try {
+    const loc = hebcal.Location.lookup("Tel Aviv");
+    const evs = hebcal.HebrewCalendar.calendar({ start: addDays(new Date(), -2), end: addDays(new Date(), 9), candlelighting: true, location: loc, il: true, locale: "he-x-NoNikud", noHolidays: false });
+    for (const ev of evs) {
+      const desc = ev.getDesc ? ev.getDesc() : "";
+      const t = ev.eventTime || (ev.eventTimeStr ? null : null);
+      if (!t) continue;
+      if (desc === "Candle lighting") shabCache.list.push({ type: "in", t: +t });
+      else if (desc === "Havdalah") shabCache.list.push({ type: "out", t: +t });
+    }
+    shabCache.list.sort((a, b) => a.t - b.t);
+  } catch (e) { console.warn("shabbat", e); }
+  return shabCache;
+}
+function renderShabbat(d){
+  const el = $("hc-shab"); if (!el) return;
+  const L = shabbatTimes().list, now = +d;
+  if (!L.length) { el.classList.add("hidden"); return; }
+  const lastIn = [...L].reverse().find(x => x.type === "in" && x.t <= now), nextOut = L.find(x => x.type === "out" && x.t > now), nextIn = L.find(x => x.type === "in" && x.t > now);
+  const hm = t => { const x = new Date(t); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+  let txt = "";
+  if (lastIn && nextOut && (!nextIn || nextOut.t < nextIn.t)) txt = `🕯️ שבת שלום · צאת ${hm(nextOut.t)}`;
+  else if (nextIn) {
+    let s = Math.floor((nextIn.t - now) / 1000); const dd = Math.floor(s / 86400); s %= 86400;
+    txt = `🕯️ כניסת שבת/חג ${hm(nextIn.t)} · בעוד ${dd ? dd + " ימים " : ""}${Math.floor(s / 3600)}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`;
+  }
+  el.textContent = txt; el.classList.toggle("hidden", !txt);
 }
 function renderAnnounce(){
   const t = (globalCfg.announce || "").trim();
@@ -1672,7 +1721,7 @@ async function openSystem(email, fallbackName){
   if (!settings.name && fallbackName) settings.name = fallbackName;
   updateHeader(); show("app"); setMonth(cur.y, cur.m); renderGreeting();
   ["settings-btn", "report-btn"].forEach(id => $(id).classList.toggle("hidden", !isAdmin));
-  $("msg-btn").textContent = isAdmin ? "✉️ הודעות מעובדים" : "✉️ הודעה למנהל";
+  $("msg-btn").classList.toggle("hidden", isAdmin);
   if (isAdmin) { fillUserSwitcher(); setTimeout(maybeAutoBackup, 4000); setTimeout(maybeMonthlyReport, 9000); adminScan(); }
 }
 function updateHeader(){
@@ -1845,7 +1894,7 @@ async function installApp(){
   setInterval(() => { if (!$("app").classList.contains("hidden")) { renderGreeting(); tickLive(); } }, 1000);
   setInterval(() => { if (!$("app").classList.contains("hidden")) renderNotices(); }, 60000);
   setInterval(() => { if (!$("app").classList.contains("hidden") && isAdmin) adminScan(); }, 600000);
-  if (DEMO) { $("demo-flag").classList.remove("hidden"); me = viewEmail = "demo@example.com"; isAdmin = true; await openSystem(me); return; }
+  if (DEMO) { $("demo-flag").classList.remove("hidden"); me = viewEmail = "demo@example.com"; isAdmin = !new URLSearchParams(location.search).has("worker"); await openSystem(me); return; }
   try { await initFirebase(); }
   catch (e) { show("login-screen"); setMsg("login-msg", "שגיאה בחיבור לשרת. בדוק את האינטרנט ורענן.", false); }
 })();
