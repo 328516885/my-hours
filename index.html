@@ -2,15 +2,14 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>מערכת ניהול מתקדמת ודוחות אוטומטיים</title>
-    <!-- טעינת ספרית EmailJS לשליחת מיילים אוטומטיים -->
+    <!-- EmailJS לשליחת דוחות נוכחות במייל -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <!-- טעינת ספרית Chart.js עבור הגרפים -->
+    <!-- Chart.js עבור הגרפים -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="text/javascript">
-        (function(){
-            emailjs.init("6G0YaH5dH_TKKk_hu");
-        })();
+        emailjs.init("6G0YaH5dH_TKKk_hu");
     </script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; direction: rtl; text-align: right; }
@@ -20,6 +19,7 @@
         input, button, select { padding: 8px 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
         button { background-color: #007bff; color: white; border: none; cursor: pointer; width: auto; }
         button:hover { background-color: #0056b3; }
+        button:disabled { opacity: 0.6; cursor: wait; }
         .btn-danger { background-color: #dc3545; }
         .btn-danger:hover { background-color: #a71d2a; }
         .btn-success { background-color: #28a745; }
@@ -34,18 +34,25 @@
         th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
         th { background-color: #e9ecef; }
         .chart-container { position: relative; margin: auto; height: 250px; width: 100%; max-width: 500px; }
+        .msg { font-size: 13px; margin-top: 8px; min-height: 16px; }
+        .msg.error { color: #dc3545; }
+        .msg.ok { color: #28a745; }
+        #loading { text-align: center; margin-top: 120px; color: #666; }
+        @media (max-width: 600px) { body { padding: 10px; } #login-screen { margin: 40px auto; padding: 20px; } }
     </style>
 </head>
 <body>
 
+    <div id="loading">טוען את המערכת...</div>
+
     <!-- מסך התחברות -->
-    <div id="login-screen">
+    <div id="login-screen" style="display: none;">
         <h2>התחברות למערכת</h2>
-        <input type="email" id="login-email" placeholder="הכנס מייל / שם משתמש...">
-        <input type="password" id="login-password" placeholder="הכנס סיסמה...">
-        <button onclick="login()">התחבר</button>
-        <button onclick="handleForgotPassword()" class="btn-warning" style="width: 95%; margin-top: 8px;">שכחת סיסמה? (שליחה אוטומטית למייל)</button>
-        <p id="login-error" style="color: red; font-size: 13px; margin-top: 10px;"></p>
+        <input type="email" id="login-email" placeholder="הכנס מייל..." autocomplete="username">
+        <input type="password" id="login-password" placeholder="הכנס סיסמה..." autocomplete="current-password">
+        <button id="login-btn" onclick="login()">התחבר</button>
+        <button onclick="handleForgotPassword()" class="btn-warning" style="width: 95%; margin-top: 8px;">שכחת סיסמה? (קישור לאיפוס יישלח למייל)</button>
+        <p id="login-error" class="msg error"></p>
     </div>
 
     <!-- מסך ראשי של המערכת -->
@@ -59,29 +66,28 @@
         <!-- ניהול משתמשים (מנהל ראשי בלבד) -->
         <div id="admin-management-section" class="section" style="display: none;">
             <h3>👥 ניהול משתמשים וגישה למערכת (מנהל ראשי בלבד)</h3>
-            <p style="font-size: 13px; color: #666;">הוסף משתמשים חדשים באמצעות מייל וסיסמה.</p>
-            
+            <p style="font-size: 13px; color: #666;">הוסף משתמשים חדשים באמצעות מייל וסיסמה (לפחות 6 תווים). המשתמשים יוכלו להתחבר מכל מחשב וטלפון.</p>
+
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <input type="email" id="new-user-email" placeholder="מייל משתמש חדש..." style="flex: 2; width: auto;">
-                <input type="password" id="new-user-pass" placeholder="סיסמה חדשה..." style="flex: 1; width: auto;">
+                <input type="email" id="new-user-email" placeholder="מייל משתמש חדש..." style="flex: 2; width: auto; min-width: 180px;">
+                <input type="password" id="new-user-pass" placeholder="סיסמה חדשה..." style="flex: 1; width: auto; min-width: 120px;">
                 <button onclick="addNewUser()" class="btn-success">+ הוסף משתמש</button>
             </div>
+            <p id="admin-msg" class="msg"></p>
 
-            <div id="users-list-container" style="margin-top: 15px;">
-                <!-- רשימת משתמשים -->
-            </div>
+            <div id="users-list-container" style="margin-top: 15px;"></div>
         </div>
 
         <!-- שינוי סיסמה אישי -->
         <div class="section">
             <h3>🔒 שינוי סיסמה אישית</h3>
             <input type="password" id="current-password-input" placeholder="הכנס סיסמה נוכחית...">
-            <input type="password" id="new-password-input" placeholder="הכנס סיסמה אישית חדשה...">
+            <input type="password" id="new-password-input" placeholder="הכנס סיסמה אישית חדשה (לפחות 6 תווים)...">
             <button onclick="changeMyPassword()">שמור סיסמה חדשה</button>
-            <p id="password-msg" style="font-size: 13px; margin-top: 5px;"></p>
+            <p id="password-msg" class="msg"></p>
         </div>
 
-        <!-- אזור נוכחות ודוחות אוטומטיים במייל -->
+        <!-- נוכחות ודוחות -->
         <div class="section">
             <h3>⏱️ דיווח נוכחות ודוחות אוטומטיים</h3>
             <p>בצע רישום כניסה ויציאה, צפה בנתונים ושלח דו"ח מלא ישירות למייל שלך.</p>
@@ -89,9 +95,9 @@
                 <button onclick="markAttendance('כניסה')" class="btn-success" style="flex: 1;">דווח כניסה</button>
                 <button onclick="markAttendance('יציאה')" class="btn-danger" style="flex: 1;">דווח יציאה</button>
             </div>
-            <button onclick="sendAutomatedEmailReport()" style="background-color: #6f42c1; width: 100%;">שלח דו"ח נוכחות אוטומטי למייל שלי (EmailJS)</button>
+            <button onclick="sendAutomatedEmailReport()" style="background-color: #6f42c1; width: 100%;">שלח דו"ח נוכחות אוטומטי למייל שלי</button>
+            <p id="attendance-msg" class="msg"></p>
 
-            <!-- גרף חזותי לנוכחות -->
             <div style="margin-top: 20px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd;">
                 <h4 style="text-align: center; margin-top: 0;">ניתוח גרפי של פעילות הנוכחות</h4>
                 <div class="chart-container">
@@ -107,324 +113,365 @@
                         <th>תאריך ושעה</th>
                     </tr>
                 </thead>
-                <tbody id="user-attendance-table-body">
-                    <!-- היסטוריה -->
-                </tbody>
+                <tbody id="user-attendance-table-body"></tbody>
             </table>
         </div>
 
-        <!-- אזור הנתונים האישיים -->
+        <!-- נתונים אישיים -->
         <div class="section">
             <h3>📂 הנתונים האישיים שלי במערכת</h3>
             <p>כאן מוצגים הנתונים השייכים אך ורק למשתמש הנוכחי שמוצג למעלה.</p>
             <textarea id="user-data-input" rows="4" style="width: 100%; box-sizing: border-box;" placeholder="הקלד כאן הערות או נתונים אישיים לשמירה..."></textarea>
             <button onclick="saveUserData()">שמור נתונים</button>
+            <p id="data-msg" class="msg"></p>
         </div>
     </div>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+        getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+        signOut, sendPasswordResetEmail, sendEmailVerification, updatePassword,
+        reauthenticateWithCredential, EmailAuthProvider
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+        getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, addDoc, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ===== הגדרות =====
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbV-fL24MDakGqST4JhrX8C5RRayZTvqI",
+        authDomain: "my-hours-b5a06.firebaseapp.com",
+        projectId: "my-hours-b5a06",
+        messagingSenderId: "869467101665",
+        appId: "1:869467101665:web:fbe5f713c1d3ed93e0daa0"
+    };
     const MASTER_ADMIN = "ay0533115854@gmail.com";
+    const EMAILJS_SERVICE = "service_nybca58";
+    const EMAILJS_TEMPLATE = "template_gzcqacc";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    auth.languageCode = "he";
+    const db = getFirestore(app);
+    // מופע משני - כדי שהמנהל יוכל ליצור משתמשים בלי להתנתק בעצמו
+    const secondaryAuth = getAuth(initializeApp(firebaseConfig, "secondary"));
+
+    let currentUser = null;      // מייל המשתמש המחובר
+    let currentRecords = [];     // רשומות הנוכחות של המשתמש
     let myChartInstance = null;
 
-    function initStorage() {
-        if (!localStorage.getItem('system_users')) {
-            const defaultUsers = {
-                "ay0533115854@gmail.com": "123456",
-                "sb0534149238@gmail.com": "123456"
-            };
-            localStorage.setItem('system_users', JSON.stringify(defaultUsers));
-        }
+    // ===== עזרים =====
+    const $ = id => document.getElementById(id);
+    const norm = e => (e || "").trim().toLowerCase();
+    function setMsg(id, text, ok) {
+        const el = $(id);
+        el.className = "msg " + (ok ? "ok" : "error");
+        el.innerText = text;
+    }
+    function showScreen(name) {
+        $("loading").style.display = name === "loading" ? "block" : "none";
+        $("login-screen").style.display = name === "login" ? "block" : "none";
+        $("main-app").style.display = name === "app" ? "block" : "none";
+    }
+    function authErrorText(err) {
+        const map = {
+            "auth/invalid-email": "כתובת המייל לא תקינה.",
+            "auth/invalid-credential": "מייל או סיסמה שגויים.",
+            "auth/wrong-password": "מייל או סיסמה שגויים.",
+            "auth/user-not-found": "מייל או סיסמה שגויים.",
+            "auth/weak-password": "הסיסמה חלשה מדי (לפחות 6 תווים).",
+            "auth/email-already-in-use": "המייל כבר רשום במערכת.",
+            "auth/too-many-requests": "יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.",
+            "auth/network-request-failed": "בעיית חיבור לאינטרנט.",
+            "auth/requires-recent-login": "יש להתחבר מחדש ולנסות שוב."
+        };
+        return map[err && err.code] || ("שגיאה: " + (err && (err.code || err.message)));
+    }
+    // המרת תאריך בפורמט he-IL (למשל "24.9.2026, 6:05:12") למספר לצורך מיון
+    function parseHeDate(s) {
+        const m = String(s).match(/(\d{1,2})\.(\d{1,2})\.(\d{4}),?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (!m) return 0;
+        return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0)).getTime();
     }
 
-    function login() {
-        initStorage();
-        const email = document.getElementById('login-email').value.trim();
-        const pass = document.getElementById('login-password').value.trim();
-        const users = JSON.parse(localStorage.getItem('system_users'));
-
-        if (users[email] && users[email] === pass) {
-            localStorage.setItem('logged_in_user', email);
-            document.getElementById('login-error').innerText = '';
-            loadApp();
-        } else {
-            document.getElementById('login-error').innerText = 'שם משתמש או סיסמה שגויים.';
+    // ===== התחברות =====
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { currentUser = null; showScreen("login"); return; }
+        const email = norm(user.email);
+        try {
+            if (email === MASTER_ADMIN && !user.emailVerified) {
+                await user.reload();
+                if (!auth.currentUser.emailVerified) {
+                    try { await sendEmailVerification(auth.currentUser, { url: location.origin + location.pathname }); } catch (e) { console.warn(e); }
+                    await signOut(auth);
+                    setMsg("login-error", "נשלח אליך מייל אימות. לחץ על הקישור שבו ואז התחבר שוב.", true);
+                    return;
+                }
+            }
+            let userDoc = await getDoc(doc(db, "users", email));
+            if (!userDoc.exists() && email === MASTER_ADMIN) {
+                await setDoc(doc(db, "users", email), { email, role: "admin", createdAt: Date.now() });
+                userDoc = await getDoc(doc(db, "users", email));
+            }
+            if (!userDoc.exists()) {
+                await signOut(auth);
+                setMsg("login-error", "אין לך הרשאת גישה למערכת. פנה למנהל.", false);
+                return;
+            }
+            currentUser = email;
+            await loadApp();
+        } catch (err) {
+            console.error(err);
+            await signOut(auth);
+            setMsg("login-error", "שגיאה בטעינת המערכת: " + (err.code || err.message), false);
         }
+    });
+
+    window.login = async function () {
+        const email = norm($("login-email").value);
+        const pass = $("login-password").value;
+        if (!email || !pass) { setMsg("login-error", "אנא הזן מייל וסיסמה.", false); return; }
+        $("login-btn").disabled = true;
+        setMsg("login-error", "", true);
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (err) {
+            // הפעלה ראשונה: המנהל הראשי עדיין לא רשום - יוצרים לו חשבון עם הסיסמה שהזין
+            if (email === MASTER_ADMIN && ["auth/invalid-credential", "auth/user-not-found"].includes(err.code)) {
+                try {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                    // מייל האימות נשלח אוטומטית ב-onAuthStateChanged
+                } catch (err2) {
+                    setMsg("login-error", err2.code === "auth/email-already-in-use" ? "מייל או סיסמה שגויים." : authErrorText(err2), false);
+                }
+            } else {
+                setMsg("login-error", authErrorText(err), false);
+            }
+        } finally {
+            $("login-btn").disabled = false;
+        }
+    };
+
+    window.logout = async function () {
+        await signOut(auth);
+        $("login-email").value = "";
+        $("login-password").value = "";
+        setMsg("login-error", "", true);
+    };
+
+    window.handleForgotPassword = async function () {
+        const email = norm($("login-email").value);
+        if (!email) { setMsg("login-error", "הזן תחילה את כתובת המייל שלך בשדה המייל למעלה.", false); return; }
+        try {
+            await sendPasswordResetEmail(auth, email, { url: location.origin + location.pathname });
+            setMsg("login-error", "אם המייל רשום במערכת, נשלח אליו קישור לאיפוס סיסמה (בדוק גם בספאם).", true);
+        } catch (err) {
+            setMsg("login-error", authErrorText(err), false);
+        }
+    };
+
+    // ===== מסך ראשי =====
+    async function loadApp() {
+        showScreen("app");
+        $("current-user-display").innerText = currentUser;
+        const isAdmin = currentUser === MASTER_ADMIN;
+        $("admin-management-section").style.display = isAdmin ? "block" : "none";
+        if (isAdmin) renderUsersList();
+
+        const dataSnap = await getDoc(doc(db, "userdata", currentUser));
+        $("user-data-input").value = dataSnap.exists() ? (dataSnap.data().text || "") : "";
+
+        await migrateLocalRecords();
+        await refreshAttendance();
     }
 
-    function logout() {
-        localStorage.removeItem('logged_in_user');
-        document.getElementById('main-app').style.display = 'none';
-        document.getElementById('login-screen').style.display = 'block';
-        document.getElementById('login-email').value = '';
-        document.getElementById('login-password').value = '';
+    // העברה חד-פעמית של רשומות נוכחות ישנות מהדפדפן (localStorage) לענן
+    async function migrateLocalRecords() {
+        try {
+            const flag = "migrated_to_cloud_" + currentUser;
+            if (localStorage.getItem(flag)) return;
+            const old = JSON.parse(localStorage.getItem("attendance_records_" + currentUser) || "[]");
+            for (const r of old) {
+                await addDoc(collection(db, "attendance", currentUser, "records"), {
+                    type: r.type, time: r.time, ts: parseHeDate(r.time) || Date.now(), migrated: true
+                });
+            }
+            localStorage.setItem(flag, "1");
+        } catch (e) { console.warn("migration skipped", e); }
     }
 
-    function loadApp() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        if (!currentUser) {
-            logout();
-            return;
-        }
-
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = 'block';
-        document.getElementById('current-user-display').innerText = currentUser;
-
-        if (currentUser === MASTER_ADMIN) {
-            document.getElementById('admin-management-section').style.display = 'block';
-            renderUsersList();
-        } else {
-            document.getElementById('admin-management-section').style.display = 'none';
-        }
-
-        const userData = localStorage.getItem('data_' + currentUser) || '';
-        document.getElementById('user-data-input').value = userData;
-
-        renderUserAttendanceHistory(currentUser);
-        updateAttendanceChart(currentUser);
+    async function refreshAttendance() {
+        const q = query(collection(db, "attendance", currentUser, "records"), orderBy("ts", "desc"));
+        const snap = await getDocs(q);
+        currentRecords = snap.docs.map(d => d.data());
+        renderUserAttendanceHistory();
+        updateAttendanceChart();
     }
 
-    function renderUsersList() {
-        const users = JSON.parse(localStorage.getItem('system_users'));
-        const container = document.getElementById('users-list-container');
-        container.innerHTML = '';
-
-        for (let email in users) {
-            let row = document.createElement('div');
-            row.className = 'user-row';
-            
-            let textSpan = document.createElement('span');
-            textSpan.innerHTML = `מייל: <b>${email}</b>`;
+    async function renderUsersList() {
+        const container = $("users-list-container");
+        container.innerHTML = "טוען משתמשים...";
+        const snap = await getDocs(collection(db, "users"));
+        container.innerHTML = "";
+        snap.forEach(d => {
+            const email = d.id;
+            const row = document.createElement("div");
+            row.className = "user-row";
+            const textSpan = document.createElement("span");
+            textSpan.innerHTML = "מייל: <b></b>";
+            textSpan.querySelector("b").innerText = email;
             row.appendChild(textSpan);
-
             if (email !== MASTER_ADMIN) {
-                let deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-danger';
-                deleteBtn.innerText = 'מחק משתמש';
-                deleteBtn.onclick = function() { deleteUser(email); };
+                const deleteBtn = document.createElement("button");
+                deleteBtn.className = "btn-danger";
+                deleteBtn.innerText = "מחק משתמש";
+                deleteBtn.onclick = () => deleteUser(email);
                 row.appendChild(deleteBtn);
             } else {
-                let adminBadge = document.createElement('span');
-                adminBadge.style.color = '#28a745';
-                adminBadge.style.fontWeight = 'bold';
-                adminBadge.innerText = '(מנהל ראשי)';
-                row.appendChild(adminBadge);
+                const badge = document.createElement("span");
+                badge.style.color = "#28a745";
+                badge.style.fontWeight = "bold";
+                badge.innerText = "(מנהל ראשי)";
+                row.appendChild(badge);
             }
             container.appendChild(row);
-        }
+        });
     }
 
-    function addNewUser() {
-        const email = document.getElementById('new-user-email').value.trim();
-        const pass = document.getElementById('new-user-pass').value.trim();
-
-        if (!email || !pass) {
-            alert('אנא הזן מייל וסיסמה תקינים.');
-            return;
+    window.addNewUser = async function () {
+        const email = norm($("new-user-email").value);
+        const pass = $("new-user-pass").value;
+        if (!email || !pass) { setMsg("admin-msg", "אנא הזן מייל וסיסמה.", false); return; }
+        if (pass.length < 6) { setMsg("admin-msg", "הסיסמה חייבת להכיל לפחות 6 תווים.", false); return; }
+        const existing = await getDoc(doc(db, "users", email));
+        if (existing.exists()) { setMsg("admin-msg", "המשתמש כבר קיים במערכת!", false); return; }
+        let note = "";
+        try {
+            await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+            await signOut(secondaryAuth);
+        } catch (err) {
+            if (err.code === "auth/email-already-in-use") {
+                // משתמש שנמחק בעבר - החשבון קיים, נשלח לו קישור לקביעת סיסמה
+                await sendPasswordResetEmail(auth, email);
+                note = " (המשתמש היה רשום בעבר - נשלח אליו קישור לקביעת סיסמה חדשה)";
+            } else {
+                setMsg("admin-msg", authErrorText(err), false);
+                return;
+            }
         }
-
-        let users = JSON.parse(localStorage.getItem('system_users'));
-        if (users[email]) {
-            alert('המשתמש כבר קיים במערכת!');
-            return;
-        }
-
-        users[email] = pass;
-        localStorage.setItem('system_users', JSON.stringify(users));
-        
-        document.getElementById('new-user-email').value = '';
-        document.getElementById('new-user-pass').value = '';
+        await setDoc(doc(db, "users", email), { email, role: "user", createdAt: Date.now() });
+        $("new-user-email").value = "";
+        $("new-user-pass").value = "";
+        setMsg("admin-msg", "המשתמש נוסף בהצלחה!" + note, true);
         renderUsersList();
-        alert('המשתמש נוסף בהצלחה!');
-    }
+    };
 
-    function deleteUser(email) {
-        if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${email}?`)) {
-            let users = JSON.parse(localStorage.getItem('system_users'));
-            delete users[email];
-            localStorage.setItem('system_users', JSON.stringify(users));
-            localStorage.removeItem('data_' + email);
-            localStorage.removeItem('attendance_records_' + email);
-            renderUsersList();
+    async function deleteUser(email) {
+        if (!confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${email}?`)) return;
+        try {
+            const recs = await getDocs(collection(db, "attendance", email, "records"));
+            for (const r of recs.docs) await deleteDoc(r.ref);
+            await deleteDoc(doc(db, "userdata", email));
+            await deleteDoc(doc(db, "users", email));
+            setMsg("admin-msg", "המשתמש נמחק ואין לו יותר גישה למערכת.", true);
+        } catch (err) {
+            setMsg("admin-msg", "שגיאה במחיקה: " + (err.code || err.message), false);
         }
+        renderUsersList();
     }
 
-    function changeMyPassword() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        const currentPassInput = document.getElementById('current-password-input').value.trim();
-        const newPassInput = document.getElementById('new-password-input').value.trim();
-        let users = JSON.parse(localStorage.getItem('system_users'));
-
-        const msgEl = document.getElementById('password-msg');
-
-        if (users[currentUser] !== currentPassInput) {
-            msgEl.style.color = 'red';
-            msgEl.innerText = 'הסיסמה הנוכחית שהקשת שגויה.';
-            return;
+    window.changeMyPassword = async function () {
+        const currentPass = $("current-password-input").value;
+        const newPass = $("new-password-input").value;
+        if (!newPass || newPass.length < 6) { setMsg("password-msg", "אנא הזן סיסמה חדשה תקינה (לפחות 6 תווים).", false); return; }
+        try {
+            const cred = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+            await reauthenticateWithCredential(auth.currentUser, cred);
+            await updatePassword(auth.currentUser, newPass);
+            $("current-password-input").value = "";
+            $("new-password-input").value = "";
+            setMsg("password-msg", "הסיסמה שונתה בהצלחה!", true);
+        } catch (err) {
+            setMsg("password-msg", ["auth/invalid-credential", "auth/wrong-password"].includes(err.code) ? "הסיסמה הנוכחית שהקשת שגויה." : authErrorText(err), false);
         }
+    };
 
-        if (!newPassInput || newPassInput.length < 4) {
-            msgEl.style.color = 'red';
-            msgEl.innerText = 'אנא הזן סיסמה חדשה תקינה (לפחות 4 תווים).';
-            return;
+    window.saveUserData = async function () {
+        try {
+            await setDoc(doc(db, "userdata", currentUser), { text: $("user-data-input").value, updatedAt: Date.now() });
+            setMsg("data-msg", "הנתונים האישיים נשמרו בהצלחה.", true);
+        } catch (err) {
+            setMsg("data-msg", "שגיאה בשמירה: " + (err.code || err.message), false);
         }
+    };
 
-        users[currentUser] = newPassInput;
-        localStorage.setItem('system_users', JSON.stringify(users));
-        
-        document.getElementById('current-password-input').value = '';
-        document.getElementById('new-password-input').value = '';
-        msgEl.style.color = 'green';
-        msgEl.innerText = 'הסיסמה שונתה בהצלחה!';
-    }
-
-    function saveUserData() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        const data = document.getElementById('user-data-input').value;
-        localStorage.setItem('data_' + currentUser, data);
-        alert('הנתונים האישיים נשמרו בהצלחה עבור ' + currentUser);
-    }
-
-    function markAttendance(actionType) {
-        const currentUser = localStorage.getItem('logged_in_user');
-        if (!currentUser) return;
-
-        const storageKey = `attendance_records_${currentUser}`;
-        let records = JSON.parse(localStorage.getItem(storageKey)) || [];
-
+    window.markAttendance = async function (actionType) {
         const now = new Date();
-        const timeString = now.toLocaleString('he-IL');
+        const timeString = now.toLocaleString("he-IL");
+        try {
+            await addDoc(collection(db, "attendance", currentUser, "records"), { type: actionType, time: timeString, ts: now.getTime() });
+            await refreshAttendance();
+            setMsg("attendance-msg", `דווח בהצלחה: ${actionType} בתאריך ${timeString}`, true);
+        } catch (err) {
+            setMsg("attendance-msg", "שגיאה בדיווח: " + (err.code || err.message), false);
+        }
+    };
 
-        records.unshift({ type: actionType, time: timeString });
-        localStorage.setItem(storageKey, JSON.stringify(records));
-
-        renderUserAttendanceHistory(currentUser);
-        updateAttendanceChart(currentUser);
-        alert(`דווח בהצלחה: ${actionType} בתאריך ${timeString}`);
-    }
-
-    function renderUserAttendanceHistory(userEmail) {
-        const storageKey = `attendance_records_${userEmail}`;
-        const records = JSON.parse(localStorage.getItem(storageKey)) || [];
-        const tbody = document.getElementById('user-attendance-table-body');
-        tbody.innerHTML = '';
-
-        if (records.length === 0) {
+    function renderUserAttendanceHistory() {
+        const tbody = $("user-attendance-table-body");
+        tbody.innerHTML = "";
+        if (currentRecords.length === 0) {
             tbody.innerHTML = `<tr><td colspan="2">אין עדיין רשומות נוכחות במערכת.</td></tr>`;
             return;
         }
-
-        records.forEach(rec => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td><b>${rec.type}</b></td><td>${rec.time}</td>`;
+        currentRecords.forEach(rec => {
+            const tr = document.createElement("tr");
+            const td1 = document.createElement("td"); td1.innerHTML = "<b></b>"; td1.firstChild.innerText = rec.type;
+            const td2 = document.createElement("td"); td2.innerText = rec.time;
+            tr.append(td1, td2);
             tbody.appendChild(tr);
         });
     }
 
-    function updateAttendanceChart(userEmail) {
-        const storageKey = `attendance_records_${userEmail}`;
-        const records = JSON.parse(localStorage.getItem(storageKey)) || [];
-
-        let entryCount = records.filter(r => r.type === 'כניסה').length;
-        let exitCount = records.filter(r => r.type === 'יציאה').length;
-
-        const ctx = document.getElementById('attendanceChart').getContext('2d');
-        
-        if (myChartInstance) {
-            myChartInstance.destroy();
-        }
-
+    function updateAttendanceChart() {
+        const entryCount = currentRecords.filter(r => r.type === "כניסה").length;
+        const exitCount = currentRecords.filter(r => r.type === "יציאה").length;
+        const ctx = $("attendanceChart").getContext("2d");
+        if (myChartInstance) myChartInstance.destroy();
         myChartInstance = new Chart(ctx, {
-            type: 'bar',
+            type: "bar",
             data: {
-                labels: ['כניסות', 'יציאות'],
-                datasets: [{
-                    label: 'כמות דיווחים',
-                    data: [entryCount, exitCount],
-                    backgroundColor: ['#28a745', '#dc3545'],
-                    borderWidth: 1
-                }]
+                labels: ["כניסות", "יציאות"],
+                datasets: [{ label: "כמות דיווחים", data: [entryCount, exitCount], backgroundColor: ["#28a745", "#dc3545"], borderWidth: 1 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
 
-    // שחזור סיסמה הכולל את שם המשתמש עבור התגית {{name}}
-    function handleForgotPassword() {
-        initStorage();
-        const emailInput = document.getElementById('login-email').value.trim();
-        if (!emailInput) {
-            alert('אנא הזן תחילה את כתובת האימייל שלך בשדה המייל למעלה לצורך שחזור.');
-            return;
-        }
-
-        const users = JSON.parse(localStorage.getItem('system_users')) || {};
-        if (!users[emailInput]) {
-            alert('כתובת האימייל הזו אינה רשומה במערכת.');
-            return;
-        }
-
-        const emailParams = {
-            to_email: emailInput,
-            name: emailInput,
-            to_name: emailInput, // שולח את המייל/שם אל התגית {{name}} בתבנית
-            subject: 'שחזור סיסמה למערכת ניהול מתקדמת',
-            message: `הסיסמה שלך למערכת היא: ${users[emailInput]}`
-        };
-
-        emailjs.send('service_nybca58', 'template_gzcqacc', emailParams)
-            .then(function(response) {
-                alert('פרטי שחזור הסיסמה נשלחו בהצלחה לתיבת המייל של: ' + emailInput);
-            }, function(error) {
-                alert('שגיאה בשליחת המייל האוטומטי: ' + JSON.stringify(error));
-            });
-    }
-
-    // שליחת דו"ח נוכחות הכולל את שם המשתמש עבור התגית {{name}}
-    function sendAutomatedEmailReport() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        if (!currentUser) return;
-
-        const storageKey = `attendance_records_${currentUser}`;
-        const records = JSON.parse(localStorage.getItem(storageKey)) || [];
-        
-        let recordsText = records.map(r => `- ${r.type} בתאריך: ${r.time}`).join('\n');
-        if (!recordsText) recordsText = 'אין רשומות נוכחות פעילות כרגע.';
-
-        let entryCount = records.filter(r => r.type === 'כניסה').length;
-        let exitCount = records.filter(r => r.type === 'יציאה').length;
-
+    window.sendAutomatedEmailReport = async function () {
+        let recordsText = currentRecords.map(r => `- ${r.type} בתאריך: ${r.time}`).join("\n");
+        if (!recordsText) recordsText = "אין רשומות נוכחות פעילות כרגע.";
+        const entryCount = currentRecords.filter(r => r.type === "כניסה").length;
+        const exitCount = currentRecords.filter(r => r.type === "יציאה").length;
         const emailParams = {
             to_email: currentUser,
             name: currentUser,
-            to_name: currentUser, // שולח את שם המשתמש אל התגית {{name}} בתבנית
+            to_name: currentUser,
             subject: 'דו"ח נוכחות ונתונים מופק אוטומטית',
             message: `סיכום נתוני הנוכחות שלך במערכת:\n- סך כניסות: ${entryCount}\n- סך יציאות: ${exitCount}\n\nפירוט מלא:\n${recordsText}`
         };
-
-        emailjs.send('service_nybca58', 'template_gzcqacc', emailParams)
-            .then(function(response) {
-                alert('דו"ח הנוכחות נשלח בהצלחה רבה לכתובת המייל שלך: ' + currentUser);
-            }, function(error) {
-                alert('שגיאה בשליחת הדו"ח דרך EmailJS: ' + JSON.stringify(error));
-            });
-    }
-
-    window.onload = function() {
-        initStorage();
-        if (localStorage.getItem('logged_in_user')) {
-            loadApp();
+        setMsg("attendance-msg", "שולח דו\"ח...", true);
+        try {
+            await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, emailParams);
+            setMsg("attendance-msg", "דו\"ח הנוכחות נשלח בהצלחה למייל: " + currentUser, true);
+        } catch (error) {
+            setMsg("attendance-msg", "שגיאה בשליחת הדו\"ח: " + (error.text || JSON.stringify(error)), false);
         }
     };
+
+    // Enter בשדה הסיסמה = התחברות
+    $("login-password").addEventListener("keydown", e => { if (e.key === "Enter") window.login(); });
 </script>
 
 </body>
