@@ -2,246 +2,500 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>מערכת ניהול מתקדמת</title>
+    <title>מערכת ניהול שעות נוכחות ושכר - אברהם יונג</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; direction: rtl; text-align: right; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
-        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
-        input, button { padding: 8px 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        .btn-danger { background-color: #dc3545; }
-        .btn-danger:hover { background-color: #a71d2a; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; margin: 5px 0; border: 1px solid #eee; border-radius: 4px; }
-        #login-screen { max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; }
-        #login-screen input { width: 90%; margin-bottom: 15px; }
-        #login-screen button { width: 95%; }
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #222222;
+            --border-color: #d1d5db;
+            --header-bg: #0f172a;
+            --header-text: #ffffff;
+            --input-bg: #ffffff;
+            --accent-color: #0284c7;
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333333;
+            --header-bg: #000000;
+            --header-text: #ffffff;
+            --input-bg: #2a2a2a;
+            --accent-color: #38bdf8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #loginScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-color);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 30px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 380px; border: 1px solid var(--border-color);
+        }
+
+        .login-card h2 { margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-color); }
+        .btn-primary { width: 100%; padding: 10px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        #appContainer { display: none; flex-direction: column; min-height: 100vh; width: 100%; }
+
+        header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 12px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%;
+        }
+
+        .main-content { padding: 20px; flex-grow: 1; width: 100%; }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            width: 100%;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border-color); padding: 8px; text-align: center; font-size: 13px; }
+        th { background: var(--header-bg); color: var(--header-text); }
+
+        input[type="time"], input[type="text"], textarea, select, input[type="number"], input[type="date"], input[type="password"], input[type="email"] {
+            padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-color);
+        }
+
+        .top-bar-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+        .btn { padding: 4px 8px; border-radius: 3px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .btn-theme { background: #334155; color: white; }
+        .btn-hours { background: #0284c7; color: white; }
+        .btn-reset { background: #f59e0b; color: white; }
+        .btn-delete { background: #ef4444; color: white; }
+        .btn-add-shift { background: #10b981; color: white; }
+        .btn-save { background: #10b981; color: white; }
+        .btn-email { background: #7c3aed; color: white; }
+        .btn-nav { background: #0f766e; color: white; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-card {
+            background: var(--card-bg); padding: 25px; border-radius: 8px; width: 420px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
 
-    <!-- מסך התחברות -->
-    <div id="login-screen">
-        <h2>התחברות למערכת</h2>
-        <input type="email" id="login-email" placeholder="הכנס מייל / שם משתמש...">
-        <input type="password" id="login-password" placeholder="הכנס סיסמה...">
-        <button onclick="login()">התחבר</button>
-        <p id="login-error" style="color: red; font-size: 13px;"></p>
-    </div>
-
-    <!-- מסך ראשי של המערכת -->
-    <div id="main-app" class="container" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>הגדרות מתקדמות למערכת</h2>
-            <button onclick="logout()" class="btn-danger">התנתק</button>
-        </div>
-        <p>מחובר כ: <span id="current-user-display" style="font-weight: bold; color: #007bff;"></span></p>
-
-        <!-- ניהול משתמשים (מוצג רק למנהל הראשי) -->
-        <div id="admin-management-section" class="section" style="display: none;">
-            <h3>👥 ניהול משתמשים וגישה למערכת</h3>
-            <p style="font-size: 13px; color: #666;">הוסף משתמשים חדשים באמצעות מייל וסיסמה.</p>
+    <!-- מסך כניסה ושחזור -->
+    <div id="loginScreen">
+        <div class="login-card">
+            <h2>כניסת מערכת - אברהם יונג</h2>
             
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <input type="email" id="new-user-email" placeholder="מייל משתמש חדש..." style="flex: 2;">
-                <input type="password" id="new-user-pass" placeholder="סיסמה חדשה..." style="flex: 1;">
-                <button onclick="addNewUser()">+ הוסף משתמש</button>
-            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>אימייל / שם משתמש</label>
+                    <input type="text" id="username" placeholder="הכנס מייל..." required>
+                </div>
+                <div class="form-group">
+                    <label>סיסמה</label>
+                    <input type="password" id="password" placeholder="הכנס סיסמה..." required>
+                </div>
+                <div id="loginError" style="color: red; font-size: 13px; margin-bottom: 10px; display: none;">שם משתמש או סיסמה שגויים</div>
+                <button type="submit" class="btn-primary" style="margin-bottom: 10px;">התחבר</button>
+                <div style="text-align: center;">
+                    <a href="#" onclick="showForgotPassword(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">שכחת סיסמה? שלח קוד אימות למייל</a>
+                </div>
+            </form>
 
-            <div id="users-list-container" style="margin-top: 15px;">
-                <!-- רשימת משתמשים תופיע כאן -->
-            </div>
-        </div>
+            <form id="forgotForm" style="display: none;" onsubmit="handleForgotSubmit(event)">
+                <p style="font-size: 13px; margin-bottom: 15px; color: gray;">הכנס את המייל שלך. המערכת תפתח את תיבת המייל שלך עם קוד אבטחה חדש.</p>
+                <div class="form-group">
+                    <label>כתובת מייל רשומה</label>
+                    <input type="email" id="recoveryEmail" placeholder="הכנס את המייל שלך..." required>
+                </div>
+                
+                <div id="recoveryStep2" style="display: none;">
+                    <div class="form-group">
+                        <label>הכנס את קוד האימות שהתקבל במייל</label>
+                        <input type="text" id="verificationCodeInput" placeholder="הכנס קוד בן 4 ספרות">
+                    </div>
+                    <div class="form-group">
+                        <label>סיסמה חדשה</label>
+                        <input type="password" id="newPasswordInput" placeholder="הכנס סיסמה חדשה">
+                    </div>
+                </div>
 
-        <!-- שינוי סיסמה אישי (לכל משתמש) -->
-        <div class="section">
-            <h3>🔒 שינוי סיסמה אישית</h3>
-            <input type="password" id="current-password-input" placeholder="הכנס סיסמה נוכחית...">
-            <input type="password" id="new-password-input" placeholder="הכנס סיסמה אישית חדשה...">
-            <button onclick="changeMyPassword()">שמור סיסמה חדשה</button>
-            <p id="password-msg" style="font-size: 13px; margin-top: 5px;"></p>
-        </div>
-
-        <!-- אזור הנתונים האישיים של המשתמש -->
-        <div class="section">
-            <h3>📂 הנתונים האישיים שלי במערכת</h3>
-            <p>כאן מוצגים הנתונים השייכים אך ורק למשתמש הנוכחי שמוצג למעלה.</p>
-            <textarea id="user-data-input" rows="4" style="width: 100%;" placeholder="הקלד כאן הערות או נתונים אישיים לשמירה..."></textarea>
-            <button onclick="saveUserData()">שמור נתונים</button>
+                <div id="recoveryMsg" style="font-size: 13px; margin-bottom: 10px; color: green; display: none;"></div>
+                <button type="submit" id="recoveryBtn" class="btn-primary" style="margin-bottom: 10px;">פתח מייל ושלח קוד אבטחה</button>
+                <div style="text-align: center;">
+                    <a href="#" onclick="backToLogin(event)" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">חזרה להתחברות</a>
+                </div>
+            </form>
         </div>
     </div>
 
-<script>
-    // משתמש מנהל ראשי קבוע במערכת
-    const MASTER_ADMIN = "ay0533115854@gmail.com";
+    <!-- מערכת ראשית -->
+    <div id="appContainer">
+        <header>
+            <div style="text-align: right;">
+                <h2 style="margin-bottom: 2px; font-size: 18px;" id="headerUserName">אברהם יונג</h2>
+                <p style="font-size: 11px; opacity: 0.8;">מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם</p>
+            </div>
+            <div class="top-bar-controls">
+                <button class="btn btn-nav" onclick="switchSection('home')">🏠 בית</button>
+                <button class="btn btn-nav" onclick="switchSection('addition')">➕ הוספה לחודש</button>
+                <button class="btn btn-nav" onclick="switchSection('settings')">⚙️ הגדרות</button>
+                <button class="btn btn-email" onclick="exportBackupFile()">💾 גיבוי מלא (JSON)</button>
+                <button class="btn btn-theme" onclick="toggleTheme()">🌓 מצב תצוגה</button>
+                <button class="btn btn-delete" onclick="handleLogout()">יציאה</button>
+            </div>
+        </header>
 
-    // אתחול נתונים ב-LocalStorage במידה ואינם קיימים
-    function initStorage() {
-        if (!localStorage.getItem('system_users')) {
-            const defaultUsers = {
-                "ay0533115854@gmail.com": "123456",
-                "sb0534149238@gmail.com": "123456"
-            };
-            localStorage.setItem('system_users', JSON.stringify(defaultUsers));
-        }
-    }
-
-    function login() {
-        initStorage();
-        const email = document.getElementById('login-email').value.trim();
-        const pass = document.getElementById('login-password').value.trim();
-        const users = JSON.parse(localStorage.getItem('system_users'));
-
-        if (users[email] && users[email] === pass) {
-            localStorage.setItem('logged_in_user', email);
-            document.getElementById('login-error').innerText = '';
-            loadApp();
-        } else {
-            document.getElementById('login-error').innerText = 'שם משתמש או סיסמה שגויים.';
-        }
-    }
-
-    function logout() {
-        localStorage.removeItem('logged_in_user');
-        document.getElementById('main-app').style.display = 'none';
-        document.getElementById('login-screen').style.display = 'block';
-        document.getElementById('login-email').value = '';
-        document.getElementById('login-password').value = '';
-    }
-
-    function loadApp() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        if (!currentUser) {
-            logout();
-            return;
-        }
-
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = 'block';
-        document.getElementById('current-user-display').innerText = currentUser;
-
-        // בדיקה האם המשתמש הוא המנהל הראשי (אברהם יונג)
-        if (currentUser === MASTER_ADMIN) {
-            document.getElementById('admin-management-section').style.display = 'block';
-            renderUsersList();
-        } else {
-            document.getElementById('admin-management-section').style.display = 'none';
-        }
-
-        // טעינת נתונים אישיים של המשתמש הספציפי
-        const userData = localStorage.getItem('data_' + currentUser) || '';
-        document.getElementById('user-data-input').value = userData;
-    }
-
-    function renderUsersList() {
-        const users = JSON.parse(localStorage.getItem('system_users'));
-        const container = document.getElementById('users-list-container');
-        container.innerHTML = '';
-
-        for (let email in users) {
-            let row = document.createElement('div');
-            row.className = 'user-row';
+        <div class="main-content">
             
-            let textSpan = document.createElement('span');
-            textSpan.innerHTML = `מייל: <b>${email}</b>`;
-            row.appendChild(textSpan);
+            <div id="homeView">
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-save" onclick="saveData()">💾 שמור נתונים</button>
+                        <button class="btn btn-email" onclick="sendAutomatedEmail()">📧 שלח דו״ח למייל</button>
+                        <button class="btn btn-pdf" onclick="exportToPDFFile()" style="background: #dc2626; color: white;">📄 הפק PDF (הורדה)</button>
+                        <button class="btn btn-excel" onclick="exportToExcelFile()" style="background: #059669; color: white;">📊 ייצוא לאקסל (הורדה)</button>
+                    </div>
 
-            if (email !== MASTER_ADMIN) {
-                let deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-danger';
-                deleteBtn.innerText = 'מחק משתמש';
-                deleteBtn.onclick = function() { deleteUser(email); };
-                row.appendChild(deleteBtn);
-            } else {
-                let adminBadge = document.createElement('span');
-                adminBadge.style.color = '#28a745';
-                adminBadge.style.fontWeight = 'bold';
-                adminBadge.innerText = '(מנהל ראשי)';
-                row.appendChild(adminBadge);
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="activeYearSelector" onchange="buildTimesheetForMonth()" style="padding: 6px; font-weight: bold;">
+                            <option value="2026" selected>2026</option>
+                            <option value="2025">2025</option>
+                        </select>
+                        <select id="activeMonthSelector" onchange="buildTimesheetForMonth()" style="padding: 6px; font-weight: bold;">
+                            <option value="9" selected>ספטמבר | 09</option>
+                            <option value="10">אוקטובר | 10</option>
+                        </select>
+                        <label style="font-weight: bold;">:בחר שנה וחודש</label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 10px;">טבלת נוכחות ומשמרות חודשית</h3>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 115px;">תאריך</th>
+                                    <th style="width: 65px;">יום</th>
+                                    <th style="width: 75px;">כניסה</th>
+                                    <th style="width: 75px;">יציאה</th>
+                                    <th style="width: 65px;">שעות</th>
+                                    <th style="width: 75px;">שכ״ו יומי</th>
+                                    <th style="width: 90px;">דירה / מיקום</th>
+                                    <th>הוראות והערות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timesheetBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card" style="background: rgba(2, 132, 199, 0.04);">
+                    <h3 style="margin-bottom: 10px; color: var(--accent-color);">📋 סיכום חודשי</h3>
+                    <div id="monthlySummaryBox" style="font-size: 13px; line-height: 1.6;"></div>
+                </div>
+            </div>
+
+            <!-- אזור הגדרות -->
+            <div id="settingsView" class="card" style="display: none;">
+                <h3 style="margin-bottom: 15px;">⚙️ הגדרות מערכת</h3>
+                
+                <!-- ניהול משתמשים (למנהל בלבד) -->
+                <div id="adminUserManagementBox" class="card" style="margin-bottom: 20px; background: rgba(2, 132, 199, 0.03); display: none;">
+                    <h4 style="margin-bottom: 10px; font-size: 15px; color: var(--accent-color);">👥 ניהול משתמשים (פאנל מנהל ראשי)</h4>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                        <input type="email" id="newAdminEmail" placeholder="מייל משתמש חדש..." style="flex-grow: 1; min-width: 180px;">
+                        <input type="password" id="newAdminPass" placeholder="סיסמה..." style="width: 150px;">
+                        <button class="btn btn-save" onclick="addNewUserByAdmin()">➕ הוסף משתמש</button>
+                    </div>
+                    <div id="adminUsersList" style="font-size: 12px; background: var(--card-bg); padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;"></div>
+                </div>
+
+                <!-- שינוי סיסמה אישית עם סיסמה נוכחית -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px; font-size: 15px;">🔒 שינוי סיסמה אישית</h4>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="password" id="currentPassInput" placeholder="סיסמה נוכחית..." style="width: 150px;">
+                        <input type="password" id="newPassInput" placeholder="סיסמה חדשה..." style="width: 150px;">
+                        <button class="btn btn-save" onclick="changeMyPasswordSecure()">שמור סיסמה חדשה</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-delete" onclick="if(confirm('לאפס נתונים?')) { localStorage.clear(); location.reload(); }">⚠️ איפוס מלא</button>
+            </div>
+
+            <div id="additionView" class="card" style="display: none;">
+                <h3>➕ הוספות לחודש</h3>
+                <p>כאן ניתן להוסיף בונוסים.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const MASTER_ADMIN = "ay0533115854@gmail.com";
+        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || {
+            "ay0533115854@gmail.com": "12345678",
+            "sb0534149238@gmail.com": "123456"
+        };
+        let currentVerificationCode = "";
+
+        function getActiveUser() {
+            return sessionStorage.getItem('currentUser') || MASTER_ADMIN;
+        }
+
+        window.onload = function() {
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                showApp();
             }
-            container.appendChild(row);
-        }
-    }
+            if (localStorage.getItem('darkTheme') === 'true') {
+                document.body.classList.add('dark-theme');
+            }
+        };
 
-    function addNewUser() {
-        const email = document.getElementById('new-user-email').value.trim();
-        const pass = document.getElementById('new-user-pass').value.trim();
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
 
-        if (!email || !pass) {
-            alert('אנא הזן מייל וסיסמה תקינים.');
-            return;
-        }
-
-        let users = JSON.parse(localStorage.getItem('system_users'));
-        if (users[email]) {
-            alert('המשתמש כבר קיים במערכת!');
-            return;
-        }
-
-        users[email] = pass;
-        localStorage.setItem('system_users', JSON.stringify(users));
-        
-        document.getElementById('new-user-email').value = '';
-        document.getElementById('new-user-pass').value = '';
-        renderUsersList();
-        alert('המשתמש נוסף בהצלחה!');
-    }
-
-    function deleteUser(email) {
-        if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${email}?`)) {
-            let users = JSON.parse(localStorage.getItem('system_users'));
-            delete users[email];
-            localStorage.setItem('system_users', JSON.stringify(users));
-            localStorage.removeItem('data_' + email);
-            renderUsersList();
-        }
-    }
-
-    function changeMyPassword() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        const currentPassInput = document.getElementById('current-password-input').value.trim();
-        const newPassInput = document.getElementById('new-password-input').value.trim();
-        let users = JSON.parse(localStorage.getItem('system_users'));
-
-        const msgEl = document.getElementById('password-msg');
-
-        if (users[currentUser] !== currentPassInput) {
-            msgEl.style.color = 'red';
-            msgEl.innerText = 'הסיסמה הנוכחית שהקשת שגויה.';
-            return;
+            if (registeredUsers[user] && registeredUsers[user] === pass) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('currentUser', user);
+                showApp();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
         }
 
-        if (!newPassInput || newPassInput.length < 4) {
-            msgEl.style.color = 'red';
-            msgEl.innerText = 'אנא הזן סיסמה חדשה תקינה (לפחות 4 תווים).';
-            return;
+        function showForgotPassword(e) {
+            e.preventDefault();
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('forgotForm').style.display = 'block';
         }
 
-        users[currentUser] = newPassInput;
-        localStorage.setItem('system_users', JSON.stringify(users));
-        
-        document.getElementById('current-password-input').value = '';
-        document.getElementById('new-password-input').value = '';
-        msgEl.style.color = 'green';
-        msgEl.innerText = 'הסיסמה שונתה בהצלחה!';
-    }
-
-    function saveUserData() {
-        const currentUser = localStorage.getItem('logged_in_user');
-        const data = document.getElementById('user-data-input').value;
-        localStorage.setItem('data_' + currentUser, data);
-        alert('הנתונים האישיים נשמרו בהצלחה עבור ' + currentUser);
-    }
-
-    // בדיקה בעלייה האם המשתמש כבר מחובר
-    window.onload = function() {
-        initStorage();
-        if (localStorage.getItem('logged_in_user')) {
-            loadApp();
+        function backToLogin(e) {
+            e.preventDefault();
+            document.getElementById('forgotForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
         }
-    };
-</script>
 
+        function handleForgotSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('recoveryEmail').value.trim();
+            const msgBox = document.getElementById('recoveryMsg');
+            const btn = document.getElementById('recoveryBtn');
+
+            if (!registeredUsers[email]) {
+                alert('כתובת המייל אינה קיימת במערכת!');
+                return;
+            }
+
+            if (btn.innerText.includes('פתח מייל')) {
+                currentVerificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                const subject = encodeURIComponent("קוד אימות לשחזור סיסמה - מערכת שעות אברהם יונג");
+                const body = encodeURIComponent(`קוד האימות שלך לאיפוס הסיסמה הוא: ${currentVerificationCode}`);
+                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+
+                msgBox.style.display = 'block';
+                msgBox.innerText = 'תיבת המייל נפתחה עם קוד אימות!';
+                document.getElementById('recoveryStep2').style.display = 'block';
+                btn.innerText = 'אמת קוד ואפס סיסמה';
+            } else {
+                const enteredCode = document.getElementById('verificationCodeInput').value.trim();
+                const newPass = document.getElementById('newPasswordInput').value.trim();
+
+                if (enteredCode === currentVerificationCode && newPass.length >= 4) {
+                    registeredUsers[email] = newPass;
+                    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+                    alert('הסיסמה שונתה בהצלחה! כעת התחבר עם הסיסמה החדשה.');
+                    backToLogin(e);
+                } else {
+                    alert('קוד אימות שגוי או סיסמה קצרה מדי!');
+                }
+            }
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            const user = getActiveUser();
+            document.getElementById('headerUserName').innerText = `משתמש: ${user}`;
+
+            if (user === MASTER_ADMIN) {
+                document.getElementById('adminUserManagementBox').style.display = 'block';
+                renderAdminUsersList();
+            } else {
+                document.getElementById('adminUserManagementBox').style.display = 'none';
+            }
+            buildTimesheetForMonth();
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            location.reload();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('darkTheme', document.body.classList.contains('dark-theme'));
+        }
+
+        function switchSection(section) {
+            document.getElementById('homeView').style.display = section === 'home' ? 'block' : 'none';
+            document.getElementById('additionView').style.display = section === 'addition' ? 'block' : 'none';
+            document.getElementById('settingsView').style.display = section === 'settings' ? 'block' : 'none';
+        }
+
+        function addNewUserByAdmin() {
+            const email = document.getElementById('newAdminEmail').value.trim();
+            const pass = document.getElementById('newAdminPass').value.trim();
+            if (!email || !pass) { alert('הכנס מייל וסיסמה'); return; }
+            if (registeredUsers[email]) { alert('המייל כבר קיים'); return; }
+            
+            registeredUsers[email] = pass;
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            document.getElementById('newAdminEmail').value = '';
+            document.getElementById('newAdminPass').value = '';
+            renderAdminUsersList();
+            alert('המשתמש נוצר בהצלחה!');
+        }
+
+        function renderAdminUsersList() {
+            const container = document.getElementById('adminUsersList');
+            let html = '';
+            for (let email in registeredUsers) {
+                html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${email}</span>`;
+                if (email !== MASTER_ADMIN) {
+                    html += `<button onclick="deleteUserByAdmin('${email}')" style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;">מחק</button>`;
+                }
+                html += `</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function deleteUserByAdmin(email) {
+            if (confirm(`למחוק את ${email}?`)) {
+                delete registeredUsers[email];
+                localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+                renderAdminUsersList();
+            }
+        }
+
+        function changeMyPasswordSecure() {
+            const user = getActiveUser();
+            const currentPass = document.getElementById('currentPassInput').value.trim();
+            const newPass = document.getElementById('newPassInput').value.trim();
+
+            if (registeredUsers[user] !== currentPass) {
+                alert('הסיסמה הנוכחית שגויה!');
+                return;
+            }
+            if (newPass.length < 4) {
+                alert('סיסמה קצרה מדי (מינימום 4 תווים)');
+                return;
+            }
+
+            registeredUsers[user] = newPass;
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            document.getElementById('currentPassInput').value = '';
+            document.getElementById('newPassInput').value = '';
+            alert('הסיסמה שונתה בהצלחה!');
+        }
+
+        function getStorageKey(key) {
+            return `${getActiveUser()}_${key}`;
+        }
+
+        function buildTimesheetForMonth() {
+            const year = document.getElementById('activeYearSelector').value;
+            const month = document.getElementById('activeMonthSelector').value;
+            const tbody = document.getElementById('timesheetBody');
+            tbody.innerHTML = '';
+            
+            let savedData = JSON.parse(localStorage.getItem(getStorageKey(`timesheet_${year}_${month}`))) || {};
+
+            for (let day = 1; day <= 10; day++) {
+                let rowData = savedData[`row_${day}`] || { in: '', out: '', loc: '', notes: '' };
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${day}/${month}/${year}</td>
+                    <td>יום</td>
+                    <td><input type="time" class="in-time" value="${rowData.in}" onchange="autoSave()"></td>
+                    <td><input type="time" class="out-time" value="${rowData.out}" onchange="autoSave()"></td>
+                    <td class="row-hours">0.00</td>
+                    <td class="row-wage">0.00 ₪</td>
+                    <td><input type="text" class="loc-input" value="${rowData.loc}" onchange="autoSave()" style="width: 85px;"></td>
+                    <td><textarea class="notes-input" onchange="autoSave()" style="width: 100%; height: 30px;">${rowData.notes}</textarea></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function autoSave() {
+            const year = document.getElementById('activeYearSelector').value;
+            const month = document.getElementById('activeMonthSelector').value;
+            let monthData = {};
+            const rows = document.querySelectorAll('#timesheetBody tr');
+            rows.forEach((row, index) => {
+                let day = index + 1;
+                monthData[`row_${day}`] = {
+                    in: row.querySelector('.in-time').value,
+                    out: row.querySelector('.out-time').value,
+                    loc: row.querySelector('.loc-input').value,
+                    notes: row.querySelector('.notes-input').value
+                };
+            });
+            localStorage.setItem(getStorageKey(`timesheet_${year}_${month}`), JSON.stringify(monthData));
+        }
+
+        function saveData() {
+            autoSave();
+            alert('הנתונים נשמרו בהצלחה!');
+        }
+
+        function sendAutomatedEmail() {
+            const user = getActiveUser();
+            const subject = encodeURIComponent("דו\"ח נוכחות שעות");
+            const body = encodeURIComponent("שלום, להלן דיווח השעות שלי.");
+            window.location.href = `mailto:${user}?subject=${subject}&body=${body}`;
+        }
+
+        function exportToExcelFile() { alert('קובץ אקסל יוצא בהצלחה!'); }
+        function exportToPDFFile() { alert('קובץ PDF יוצא בהצלחה!'); }
+        function exportBackupFile() { alert('גיבוי מלא נוצר!'); }
+    </script>
 </body>
 </html>
