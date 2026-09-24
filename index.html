@@ -358,7 +358,7 @@
         });
     }
 
-    // שחזור סיסמה אוטומטי למייל (לוקח את המייל שהוזן במסך ההתחברות)
+    // שחזור סיסמה אוטומטי למייל
     function handleForgotPassword() {
         initStorage();
         const emailInput = document.getElementById('login-email').value.trim();
@@ -375,8 +375,8 @@
 
         const emailParams = {
             to_email: emailInput,
-            title: 'שחזור סיסמה למערכת ניהול מתקדמת',
-            name: emailInput,
+            subject: 'שחזור סיסמה למערכת ניהול מתקדמת',
+            to_name: emailInput,
             message: `פרטי הגישה שלך למערכת הם:\nאימייל: ${emailInput}\nסיסמה נוכחית: ${users[emailInput]}`
         };
 
@@ -388,7 +388,7 @@
             });
     }
 
-    // שליחת דו"ח נוכחות אוטומטי למייל של המשתמש המחובר כרגע
+    // שליחת דו"ח נוכחות אוטומטי למייל של המשתמש המחובר
     function sendAutomatedEmailReport() {
         const currentUser = localStorage.getItem('logged_in_user');
         if (!currentUser) return;
@@ -404,8 +404,8 @@
 
         const emailParams = {
             to_email: currentUser,
-            title: 'דו"ח נוכחות ונתונים מופק אוטומטית',
-            name: currentUser,
+            subject: 'דו"ח נוכחות ונתונים מופק אוטומטית',
+            to_name: currentUser,
             message: `סיכום נתוני הנוכחות שלך במערכת:\n- סך כניסות: ${entryCount}\n- סך יציאות: ${exitCount}\n\nפירוט מלא:\n${recordsText}`
         };
 
