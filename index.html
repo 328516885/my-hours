@@ -38,7 +38,7 @@
 </head>
 <body>
 
-    <!-- מסך התחברות יחיד ונקי -->
+    <!-- מסך התחברות -->
     <div id="login-screen">
         <h2>התחברות למערכת</h2>
         <input type="email" id="login-email" placeholder="הכנס מייל / שם משתמש...">
@@ -56,7 +56,7 @@
         </div>
         <p>מחובר כ: <span id="current-user-display" style="font-weight: bold; color: #007bff;"></span></p>
 
-        <!-- ניהול משתמשים (מוצג אך ורק למנהל הראשי) -->
+        <!-- ניהול משתמשים (מנהל ראשי בלבד) -->
         <div id="admin-management-section" class="section" style="display: none;">
             <h3>👥 ניהול משתמשים וגישה למערכת (מנהל ראשי בלבד)</h3>
             <p style="font-size: 13px; color: #666;">הוסף משתמשים חדשים באמצעות מייל וסיסמה.</p>
@@ -68,11 +68,11 @@
             </div>
 
             <div id="users-list-container" style="margin-top: 15px;">
-                <!-- רשימת משתמשים תופיע כאן -->
+                <!-- רשימת משתמשים -->
             </div>
         </div>
 
-        <!-- שינוי סיסמה אישי (לכל משתמש) -->
+        <!-- שינוי סיסמה אישי -->
         <div class="section">
             <h3>🔒 שינוי סיסמה אישית</h3>
             <input type="password" id="current-password-input" placeholder="הכנס סיסמה נוכחית...">
@@ -108,12 +108,12 @@
                     </tr>
                 </thead>
                 <tbody id="user-attendance-table-body">
-                    <!-- היסטוריה תופיע כאן -->
+                    <!-- היסטוריה -->
                 </tbody>
             </table>
         </div>
 
-        <!-- אזור הנתונים האישיים של המשתמש -->
+        <!-- אזור הנתונים האישיים -->
         <div class="section">
             <h3>📂 הנתונים האישיים שלי במערכת</h3>
             <p>כאן מוצגים הנתונים השייכים אך ורק למשתמש הנוכחי שמוצג למעלה.</p>
@@ -358,7 +358,7 @@
         });
     }
 
-    // שחזור סיסמה אוטומטי למייל
+    // שחזור סיסמה הכולל את שם המשתמש עבור התגית {{name}}
     function handleForgotPassword() {
         initStorage();
         const emailInput = document.getElementById('login-email').value.trim();
@@ -375,20 +375,20 @@
 
         const emailParams = {
             to_email: emailInput,
+            to_name: emailInput, // שולח את המייל/שם אל התגית {{name}} בתבנית
             subject: 'שחזור סיסמה למערכת ניהול מתקדמת',
-            to_name: emailInput,
-            message: `פרטי הגישה שלך למערכת הם:\nאימייל: ${emailInput}\nסיסמה נוכחית: ${users[emailInput]}`
+            message: `הסיסמה שלך למערכת היא: ${users[emailInput]}`
         };
 
         emailjs.send('service_nybca58', 'template_9e88gji', emailParams)
             .then(function(response) {
-                alert('הוראות שחזור ופרטי הסיסמה נשלחו בהצלחה רבה לתיבת המייל של: ' + emailInput);
+                alert('פרטי שחזור הסיסמה נשלחו בהצלחה לתיבת המייל של: ' + emailInput);
             }, function(error) {
                 alert('שגיאה בשליחת המייל האוטומטי: ' + JSON.stringify(error));
             });
     }
 
-    // שליחת דו"ח נוכחות אוטומטי למייל של המשתמש המחובר
+    // שליחת דו"ח נוכחות הכולל את שם המשתמש עבור התגית {{name}}
     function sendAutomatedEmailReport() {
         const currentUser = localStorage.getItem('logged_in_user');
         if (!currentUser) return;
@@ -404,8 +404,8 @@
 
         const emailParams = {
             to_email: currentUser,
+            to_name: currentUser, // שולח את שם המשתמש אל התגית {{name}} בתבנית
             subject: 'דו"ח נוכחות ונתונים מופק אוטומטית',
-            to_name: currentUser,
             message: `סיכום נתוני הנוכחות שלך במערכת:\n- סך כניסות: ${entryCount}\n- סך יציאות: ${exitCount}\n\nפירוט מלא:\n${recordsText}`
         };
 
