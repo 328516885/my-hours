@@ -1,552 +1,970 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>מערכת ניהול מתקדמת ודוחות אוטומטיים</title>
-    <!-- EmailJS לשליחת דוחות נוכחות במייל -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <!-- Chart.js עבור הגרפים -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="text/javascript">
-        emailjs.init("6G0YaH5dH_TKKk_hu");
-    </script>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; direction: rtl; text-align: right; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2, h3 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
-        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
-        input, button, select { padding: 8px 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; width: auto; }
-        button:hover { background-color: #0056b3; }
-        button:disabled { opacity: 0.6; cursor: wait; }
-        .btn-danger { background-color: #dc3545; }
-        .btn-danger:hover { background-color: #a71d2a; }
-        .btn-success { background-color: #28a745; }
-        .btn-success:hover { background-color: #218838; }
-        .btn-warning { background-color: #ffc107; color: #333; }
-        .btn-warning:hover { background-color: #e0a800; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; margin: 5px 0; border: 1px solid #eee; border-radius: 4px; }
-        #login-screen { max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; }
-        #login-screen input { width: 90%; margin-bottom: 15px; }
-        #login-screen button { width: 95%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-        th { background-color: #e9ecef; }
-        .chart-container { position: relative; margin: auto; height: 250px; width: 100%; max-width: 500px; }
-        .msg { font-size: 13px; margin-top: 8px; min-height: 16px; }
-        .msg.error { color: #dc3545; }
-        .msg.ok { color: #28a745; }
-        #loading { text-align: center; margin-top: 120px; color: #666; }
-        @media (max-width: 600px) { body { padding: 10px; } #login-screen { margin: 40px auto; padding: 20px; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מערכת ניהול שעות ונוכחות</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f3f5f9; --card:#ffffff; --ink:#1d2433; --muted:#6b7385; --line:#e3e7ef; --soft:#f7f9fc;
+  --accent:#2f6fdb; --accent-2:#1f4fa8; --green:#1f9d55; --green-soft:#e6f6ec; --red:#d64545; --purple:#7c4ddb; --amber:#b7791f;
+  --shabbat:#eef3ff; --holiday:#fff7e0; --week:#eef7f1; --input:#ffffff; --shadow:0 2px 10px rgba(20,30,60,.08);
+  color-scheme: light;
+}
+html[data-theme="dark"]{
+  --bg:#12151c; --card:#1b2029; --ink:#e7eaf0; --muted:#9aa3b5; --line:#2c3340; --soft:#20262f;
+  --accent:#5b8ff0; --accent-2:#8fb1f5; --green:#34b86b; --green-soft:#193326; --red:#e06060; --purple:#9a77ec; --amber:#e0a84a;
+  --shabbat:#1d2638; --holiday:#2e2818; --week:#18291f; --input:#141820; --shadow:0 2px 10px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+button{font:inherit;cursor:pointer;border:none;border-radius:8px;padding:8px 14px;background:var(--accent);color:#fff}
+button:disabled{opacity:.6;cursor:wait}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--input);border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
+.hidden{display:none!important}
+
+/* ---------- כניסה ---------- */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-card{width:100%;max-width:330px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:26px 24px;text-align:center}
+.login-card h2{margin:0 0 4px;font-size:19px}
+.login-card .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.login-card input{width:100%;margin-bottom:10px;padding:9px 10px}
+.login-card button{width:100%;margin-top:4px}
+.linkbtn{background:none;color:var(--accent);padding:6px;font-size:13px}
+.code-input{font-size:26px;letter-spacing:12px;text-align:center;direction:ltr}
+.msg{font-size:13px;min-height:18px;margin-top:8px}
+.msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+
+/* ---------- אפליקציה ---------- */
+#app{max-width:1250px;margin:0 auto;padding:14px}
+.hero{position:relative;background:linear-gradient(135deg,#0f2542,#1d3b66);color:#fff;border-radius:12px;box-shadow:var(--shadow);padding:18px 16px;margin-bottom:12px;text-align:center}
+.hero .name{font-size:26px;font-weight:800;letter-spacing:.5px}
+.hero .sub{font-size:13px;opacity:.85;margin-top:2px}
+.hero-actions{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;gap:6px;flex-wrap:wrap}
+.hero-actions button,.hero-actions select{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);padding:6px 10px;font-size:13px}
+.hero-actions select option{color:#000}
+@media(max-width:900px){.hero-actions{position:static;transform:none;justify-content:center;margin-top:10px}}
+.iconbtn{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.top2{display:grid;grid-template-columns:1fr 1.6fr;gap:10px;margin-bottom:12px}
+@media(max-width:850px){.top2{grid-template-columns:1fr}}
+.sumcard{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;text-align:center}
+.sumcard .lbl{color:var(--muted);font-size:13px}
+.sumcard .big{font-size:30px;font-weight:800;color:var(--accent-2);margin:4px 0}
+.progress{height:9px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 4px}
+.progress>div{height:100%;background:var(--accent);border-radius:6px;transition:width .3s}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;text-align:center}
+.minis .v{font-weight:700;font-size:16px}
+.minis .l{color:var(--muted);font-size:12px}
+.monthbadge{background:#0f2542;color:#fff;border-radius:7px;padding:6px 10px;font-weight:700;white-space:nowrap}
+.b-blue{background:#1f7ae0}
+.mini.delx{background:#e03131;color:#fff;font-weight:700}
+.sheet input[type=time],.sheet input.loc,.sheet input.note{border:none;background:transparent}
+.sheet input:focus{background:var(--input)}
+.sheet td{padding:7px 6px}
+.notecell{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.holtxt{color:var(--muted);white-space:nowrap}
+.sumcard,.chart-card,.toolbar.card{background:var(--soft);border:1px solid var(--line)}
+.mini.clr{background:#f0a020;color:#fff}
+.mini.fixb{background:#1f7ae0;color:#fff}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.monthnav{display:flex;gap:6px;align-items:center;background:var(--card);border-radius:10px;padding:6px;box-shadow:var(--shadow)}
+.monthnav select{padding:6px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.b-green{background:var(--green)} .b-red{background:var(--red)} .b-purple{background:var(--purple)} .b-excel{background:#217346} .b-gray{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px}
+.card .lbl{color:var(--muted);font-size:12.5px}
+.card .val{font-size:23px;font-weight:700;margin-top:2px}
+.card .note{font-size:12.5px;margin-top:2px}
+.up{color:var(--green)} .down{color:var(--red)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:850px){.charts{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px}
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px}
+.chart-head .t{font-weight:600}
+.chart-head .s{color:var(--muted);font-size:12.5px}
+.chart-box{position:relative;height:210px}
+.tablewrap{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto}
+table.sheet{width:100%;border-collapse:collapse;min-width:1050px}
+.sheet th{background:#0f2542;color:#fff;font-weight:600;font-size:12.5px;padding:9px 6px;border-bottom:1px solid var(--line);position:sticky;top:0}
+.sheet td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:center;vertical-align:middle}
+.sheet td.datecell{white-space:nowrap}
+.greg{font-weight:600}
+.heb{color:var(--muted);font-size:12px}
+.sheet input[type=time]{width:98px}
+.sheet input.loc{width:150px;text-align:center}
+.sheet input.note{width:100%;min-width:150px}
+.sheet tr.shabbat>td{background:var(--shabbat)}
+.sheet tr.holiday>td{background:var(--holiday)}
+.sheet tr.today td.datecell{box-shadow:inset -4px 0 0 var(--accent)}
+.badge{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;background:var(--soft);border:1px solid var(--line);margin:1px 2px;white-space:nowrap}
+.badge.hol{color:var(--amber);border-color:var(--amber)}
+.hours{font-weight:600}
+.daytotal{font-weight:700;color:var(--accent)}
+.rowacts{display:flex;gap:4px;justify-content:center}
+.mini{padding:4px 8px;font-size:13px;border-radius:6px}
+.mini.add{background:var(--green)} .mini.del{background:transparent;color:var(--red);border:1px solid var(--red)} .mini.fix{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+tr.weekrow td{background:var(--week);font-weight:600;cursor:pointer;text-align:right;padding:8px 12px}
+tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
+.muted{color:var(--muted)}
+
+/* ---------- חלונות ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;z-index:50;overflow:auto}
+.modal{background:var(--card);border-radius:14px;box-shadow:var(--shadow);width:100%;max-width:560px;padding:18px 20px}
+.modal h3{margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+.modal h4{margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.frow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.frow label{min-width:90px;color:var(--muted)}
+.list-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+.fixed-grid{display:grid;grid-template-columns:70px 1fr 1fr;gap:6px 10px;align-items:center}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:10px;z-index:99;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.show{opacity:1}
+#loading{text-align:center;margin-top:120px;color:var(--muted)}
+.demo-flag{background:var(--amber);color:#000;font-size:12px;padding:2px 8px;border-radius:8px}
+</style>
 </head>
 <body>
 
-    <div id="loading">טוען את המערכת...</div>
+<div id="loading">טוען את המערכת...</div>
 
-    <!-- מסך התחברות -->
-    <div id="login-screen" style="display: none;">
-        <h2>התחברות למערכת</h2>
-        <input type="email" id="login-email" placeholder="הכנס מייל..." autocomplete="username">
-        <input type="password" id="login-password" placeholder="הכנס סיסמה..." autocomplete="current-password">
-        <button id="login-btn" onclick="login()">התחבר</button>
-        <button onclick="handleForgotPassword()" class="btn-warning" style="width: 95%; margin-top: 8px;">שכחת סיסמה? (קישור לאיפוס יישלח למייל)</button>
-        <p id="login-error" class="msg error"></p>
+<!-- ===== כניסה ===== -->
+<div id="login-screen" class="hidden">
+  <div class="login-card">
+    <div id="login-view">
+      <h2>מערכת ניהול שעות ונוכחות</h2>
+      <div class="sub">כניסה למערכת</div>
+      <input type="email" id="login-email" placeholder="שם משתמש (מייל)" autocomplete="username">
+      <input type="password" id="login-password" placeholder="סיסמה" autocomplete="current-password">
+      <button id="login-btn">כניסה</button>
+      <button class="linkbtn" id="forgot-link">שכחתי סיסמה</button>
+      <div id="login-msg" class="msg"></div>
     </div>
-
-    <!-- מסך בחירת סיסמה חדשה (נפתח מהקישור שבמייל האיפוס) -->
-    <div id="reset-screen" style="display: none; max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
-        <h2>בחירת סיסמה חדשה</h2>
-        <p>עבור: <b id="reset-email"></b></p>
-        <input type="password" id="reset-pass1" placeholder="סיסמה חדשה (לפחות 6 תווים)..." autocomplete="new-password" style="width: 90%; margin-bottom: 15px;">
-        <input type="password" id="reset-pass2" placeholder="הקלד שוב את הסיסמה החדשה..." autocomplete="new-password" style="width: 90%; margin-bottom: 15px;">
-        <button id="reset-btn" onclick="confirmNewPassword()" class="btn-success" style="width: 95%;">שמור סיסמה והתחבר</button>
-        <p id="reset-msg" class="msg"></p>
+    <div id="forgot-view" class="hidden">
+      <h2>שחזור סיסמה</h2>
+      <div class="sub">נשלח קוד של 4 ספרות למייל שלך</div>
+      <input type="email" id="fp-email" placeholder="המייל שלך">
+      <button id="fp-send" class="b-green">שלח קוד</button>
+      <div id="fp-step2" class="hidden" style="margin-top:14px">
+        <div style="margin-bottom:6px;font-weight:600">הקש את 4 הספרות שקיבלת במייל</div>
+        <input id="fp-code" class="code-input" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="one-time-code">
+        <div id="fp-pass-box" class="hidden">
+          <div style="margin:4px 0 8px;font-weight:600">רשום את הסיסמה החדשה שלך</div>
+          <input type="password" id="fp-pass1" placeholder="סיסמה חדשה (לפחות 6 תווים)" autocomplete="new-password">
+          <input type="password" id="fp-pass2" placeholder="שוב את הסיסמה החדשה" autocomplete="new-password">
+          <button id="fp-save" class="b-green">שמור וכניסה</button>
+        </div>
+      </div>
+      <button class="linkbtn" id="fp-back">חזרה לכניסה</button>
+      <div id="fp-msg" class="msg"></div>
     </div>
+  </div>
+</div>
 
-    <!-- מסך ראשי של המערכת -->
-    <div id="main-app" class="container" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>ניהול מתקדם ודוחות מערכת</h2>
-            <button onclick="logout()" class="btn-danger">התנתק</button>
-        </div>
-        <p>מחובר כ: <span id="current-user-display" style="font-weight: bold; color: #007bff;"></span></p>
-
-        <!-- ניהול משתמשים (מנהל ראשי בלבד) -->
-        <div id="admin-management-section" class="section" style="display: none;">
-            <h3>👥 ניהול משתמשים וגישה למערכת (מנהל ראשי בלבד)</h3>
-            <p style="font-size: 13px; color: #666;">הוסף משתמשים חדשים באמצעות מייל וסיסמה (לפחות 6 תווים). המשתמשים יוכלו להתחבר מכל מחשב וטלפון.</p>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <input type="email" id="new-user-email" placeholder="מייל משתמש חדש..." style="flex: 2; width: auto; min-width: 180px;">
-                <input type="password" id="new-user-pass" placeholder="סיסמה חדשה..." style="flex: 1; width: auto; min-width: 120px;">
-                <button onclick="addNewUser()" class="btn-success">+ הוסף משתמש</button>
-            </div>
-            <p id="admin-msg" class="msg"></p>
-
-            <div id="users-list-container" style="margin-top: 15px;"></div>
-        </div>
-
-        <!-- שינוי סיסמה אישי -->
-        <div class="section">
-            <h3>🔒 שינוי סיסמה אישית</h3>
-            <input type="password" id="current-password-input" placeholder="הכנס סיסמה נוכחית...">
-            <input type="password" id="new-password-input" placeholder="הכנס סיסמה אישית חדשה (לפחות 6 תווים)...">
-            <button onclick="changeMyPassword()">שמור סיסמה חדשה</button>
-            <p id="password-msg" class="msg"></p>
-        </div>
-
-        <!-- נוכחות ודוחות -->
-        <div class="section">
-            <h3>⏱️ דיווח נוכחות ודוחות אוטומטיים</h3>
-            <p>בצע רישום כניסה ויציאה, צפה בנתונים ושלח דו"ח מלא ישירות למייל שלך.</p>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button onclick="markAttendance('כניסה')" class="btn-success" style="flex: 1;">דווח כניסה</button>
-                <button onclick="markAttendance('יציאה')" class="btn-danger" style="flex: 1;">דווח יציאה</button>
-            </div>
-            <button onclick="sendAutomatedEmailReport()" style="background-color: #6f42c1; width: 100%;">שלח דו"ח נוכחות אוטומטי למייל שלי</button>
-            <p id="attendance-msg" class="msg"></p>
-
-            <div style="margin-top: 20px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd;">
-                <h4 style="text-align: center; margin-top: 0;">ניתוח גרפי של פעילות הנוכחות</h4>
-                <div class="chart-container">
-                    <canvas id="attendanceChart"></canvas>
-                </div>
-            </div>
-
-            <h4 style="margin-top: 20px;">היסטוריית נוכחות אישית</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>סוג פעולה</th>
-                        <th>תאריך ושעה</th>
-                    </tr>
-                </thead>
-                <tbody id="user-attendance-table-body"></tbody>
-            </table>
-        </div>
-
-        <!-- נתונים אישיים -->
-        <div class="section">
-            <h3>📂 הנתונים האישיים שלי במערכת</h3>
-            <p>כאן מוצגים הנתונים השייכים אך ורק למשתמש הנוכחי שמוצג למעלה.</p>
-            <textarea id="user-data-input" rows="4" style="width: 100%; box-sizing: border-box;" placeholder="הקלד כאן הערות או נתונים אישיים לשמירה..."></textarea>
-            <button onclick="saveUserData()">שמור נתונים</button>
-            <p id="data-msg" class="msg"></p>
-        </div>
+<!-- ===== המערכת ===== -->
+<div id="app" class="hidden">
+  <div class="hero">
+    <div class="hero-actions">
+      <button id="theme-btn" title="מצב יום / לילה">🌙/☀️ מצב תצוגה</button>
+      <button id="backup-btn">📧 גיבוי ענן מאובטח</button>
+      <button id="settings-btn">⚙️ הגדרות</button>
+      <select id="view-user" class="hidden" title="צפייה במערכת של עובד"></select>
+      <button id="logout-btn">🚪 יציאה</button>
     </div>
+    <div class="name" id="who-name"></div>
+    <div class="sub">מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם <span id="demo-flag" class="demo-flag hidden">מצב הדגמה</span></div>
+  </div>
+
+  <div class="top2">
+    <div class="sumcard" id="sumcard"></div>
+    <div class="chart-card">
+      <div class="chart-head" style="justify-content:center"><div class="t">📈 גרף מעקב שנתי (לחץ על נקודה/חודש לפרטים)</div><span id="year-title" class="hidden"></span></div>
+      <div class="chart-box"><canvas id="year-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="toolbar card" style="padding:10px 12px">
+    <div class="monthnav" style="box-shadow:none;padding:0">
+      <span class="muted">בחר חודש:</span>
+      <input type="month" id="sel-month">
+      <span class="monthbadge" id="month-badge"></span>
+      <span class="hidden"><button id="prev-month"></button><button id="next-month"></button><button id="today-btn"></button></span>
+    </div>
+    <div class="actions">
+      <button class="b-green" id="add-date-btn">+ הוסף משמרת לפי תאריך</button>
+      <button class="b-blue" id="fixed-btn">⚙️ שעות קבועות לימים</button>
+      <button class="b-purple" id="report-btn">📧 גיבוי ענן למייל</button>
+      <button class="b-excel" id="excel-btn">📊 ייצוא לאקסל (Excel)</button>
+      <button class="b-red" id="pdf-btn">🔴 הדפסה / הפק PDF</button>
+    </div>
+  </div>
+
+  <span class="hidden"><span id="week-title"></span><span id="week-best"></span><button id="week-prev"></button><button id="week-next"></button><canvas id="week-chart"></canvas></span>
+
+  <div class="tablewrap">
+    <table class="sheet">
+      <thead><tr>
+        <th>תאריך</th><th>יום</th><th>כניסה</th><th>יציאה</th><th>סה"כ שעות</th><th>סה"כ יומי</th><th>דירה / מיקום</th><th>הוראות / הערות / חגים ושבתות</th><th>פעולות</th>
+      </tr></thead>
+      <tbody id="sheet-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast"></div>
+<datalist id="loc-list"></datalist>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-        getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-        signOut, sendPasswordResetEmail, sendEmailVerification, updatePassword,
-        reauthenticateWithCredential, EmailAuthProvider,
-        verifyPasswordResetCode, confirmPasswordReset, applyActionCode
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-        getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, addDoc, query, orderBy
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ================== הגדרות ==================
+const CFG = {
+  firebase: {
+    apiKey: "AIzaSyAbV-fL24MDakGqST4JhrX8C5RRayZTvqI",
+    authDomain: "my-hours-b5a06.firebaseapp.com",
+    projectId: "my-hours-b5a06",
+    messagingSenderId: "869467101665",
+    appId: "1:869467101665:web:fbe5f713c1d3ed93e0daa0"
+  },
+  admin: "ay0533115854@gmail.com",
+  emailjs: { service: "service_nybca58", template: "template_gzcqacc", key: "6G0YaH5dH_TKKk_hu" },
+  // כתובת סקריפט שליחת הקוד (Apps Script). ריק = שחזור בקוד עדיין לא הופעל
+  resetApi: ""
+};
+const FB_VER = "10.12.2";
+const DAYS = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const DAYL = ["א׳","ב׳","ג׳","ד׳","ה׳","ו׳","שבת"];
+const MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+const DEMO = new URLSearchParams(location.search).has("demo");
 
-    // ===== הגדרות =====
-    const firebaseConfig = {
-        apiKey: "AIzaSyAbV-fL24MDakGqST4JhrX8C5RRayZTvqI",
-        authDomain: "my-hours-b5a06.firebaseapp.com",
-        projectId: "my-hours-b5a06",
-        messagingSenderId: "869467101665",
-        appId: "1:869467101665:web:fbe5f713c1d3ed93e0daa0"
-    };
-    const MASTER_ADMIN = "ay0533115854@gmail.com";
-    const EMAILJS_SERVICE = "service_nybca58";
-    const EMAILJS_TEMPLATE = "template_gzcqacc";
+// ================== מצב ==================
+let fb = null;            // { auth, db, a:authMods, f:fsMods, secondaryAuth }
+let me = null;            // המשתמש המחובר
+let viewEmail = null;     // המערכת שמוצגת כרגע
+let isAdmin = false;
+let settings = defaultSettings();
+let shifts = new Map();   // id -> {id,date,in,out,location,notes}
+const today = new Date();
+let cur = { y: today.getFullYear(), m: today.getMonth() };
+let weekStart = startOfWeek(today);
+let hebcal = null;
+const holidayCache = {};
+let yearChart = null, weekChart = null;
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    auth.languageCode = "he";
-    const db = getFirestore(app);
-    // מופע משני - כדי שהמנהל יוכל ליצור משתמשים בלי להתנתק בעצמו
-    const secondaryAuth = getAuth(initializeApp(firebaseConfig, "secondary"));
+// ================== עזרים ==================
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+function startOfWeek(d){ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()-x.getDay()); return x; }
+const dmy = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+const dm = d => `${d.getDate()}/${d.getMonth()+1}`;
+const norm = e => (e || "").trim().toLowerCase();
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const toMin = t => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h*60 + m; };
+function shiftHours(s){ const a = toMin(s.in), b = toMin(s.out); if (a == null || b == null) return 0; let d = b - a; if (d <= 0) d += 1440; return d/60; }
+function fmtHM(h){ const t = Math.round(h*60); return `${Math.floor(t/60)}:${pad(t%60)}`; }
+const money = n => "₪" + (Math.round(n*100)/100).toLocaleString("he-IL", {maximumFractionDigits:2});
+function defaultSettings(){ return { name: "", hourlyRate: 0, locations: [], fixed: {} }; }
+function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2600); }
+function setMsg(id, text, ok){ const el = $(id); el.className = "msg " + (ok ? "ok" : "err"); el.textContent = text; }
+function show(name){ ["loading","login-screen","app"].forEach(x => $(x).classList.toggle("hidden", x !== name)); }
+function loadScript(src){ return new Promise((res, rej) => { if (document.querySelector(`script[src="${src}"]`)) return res(); const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("טעינה נכשלה: " + src)); document.head.appendChild(s); }); }
 
-    let currentUser = null;      // מייל המשתמש המחובר
-    let currentRecords = [];     // רשומות הנוכחות של המשתמש
-    let myChartInstance = null;
+function locationFor(dateStr){
+  let loc = "";
+  [...settings.locations].sort((a,b) => a.from.localeCompare(b.from)).forEach(l => { if (l.from <= dateStr) loc = l.address; });
+  return loc;
+}
+function shiftsOn(dateStr){ return [...shifts.values()].filter(s => s.date === dateStr).sort((a,b) => (toMin(a.in) ?? 9999) - (toMin(b.in) ?? 9999)); }
+function hoursOnDate(dateStr){ return shiftsOn(dateStr).reduce((t,s) => t + shiftHours(s), 0); }
+function hoursInRange(from, to){ let t = 0; for (const s of shifts.values()) if (s.date >= from && s.date <= to) t += shiftHours(s); return t; }
+function monthRange(y, m){ return [ymd(new Date(y, m, 1)), ymd(new Date(y, m+1, 0))]; }
+function workDays(from, to){ return new Set([...shifts.values()].filter(s => s.date >= from && s.date <= to && shiftHours(s) > 0).map(s => s.date)).size; }
 
-    // ===== עזרים =====
-    const $ = id => document.getElementById(id);
-    const norm = e => (e || "").trim().toLowerCase();
-    function setMsg(id, text, ok) {
-        const el = $(id);
-        el.className = "msg " + (ok ? "ok" : "error");
-        el.innerText = text;
+// ================== תאריך עברי וחגים ==================
+async function loadHebcal(){
+  if (hebcal !== null) return hebcal;
+  try { hebcal = await import("https://cdn.jsdelivr.net/npm/@hebcal/core@5.4.9/+esm"); }
+  catch (e) { console.warn("hebcal", e); hebcal = false; }
+  return hebcal;
+}
+const hebFmt = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { day: "numeric", month: "long", year: "numeric" });
+function hebDate(d){
+  if (hebcal) { try { return new hebcal.HDate(d).renderGematriya(true); } catch(e){} }
+  return hebFmt.format(d);
+}
+function holidaysOf(year){
+  if (holidayCache[year]) return holidayCache[year];
+  const map = {};
+  if (hebcal) {
+    try {
+      const evs = hebcal.HebrewCalendar.calendar({ year, isHebrewYear: false, il: true, sedrot: true, locale: "he-x-NoNikud" });
+      for (const ev of evs) {
+        const k = ymd(ev.getDate().greg());
+        const isSedra = ev.getDesc && /^Parashat/.test(ev.getDesc());
+        (map[k] ||= []).push({ text: ev.render("he-x-NoNikud"), hol: !isSedra });
+      }
+    } catch (e) { console.warn(e); }
+  }
+  return holidayCache[year] = map;
+}
+function dayNotes(d){
+  const list = [...(holidaysOf(d.getFullYear())[ymd(d)] || [])];
+  if (d.getDay() === 6 && !list.some(x => /^שבת/.test(x.text))) list.unshift({ text: "שבת", hol: false });
+  return list;
+}
+
+// ================== שכבת נתונים ==================
+const DB = {
+  async loadAll(email){
+    settings = defaultSettings(); shifts = new Map();
+    if (DEMO) {
+      const d = JSON.parse(localStorage.getItem("demo_data") || "null");
+      if (d) { settings = Object.assign(defaultSettings(), d.settings); (d.shifts || []).forEach(s => shifts.set(s.id, s)); }
+      else seedDemo();
+      return;
     }
-    let resetMode = false;       // האם אנחנו במסך בחירת סיסמה חדשה
-    function showScreen(name) {
-        if (resetMode && name !== "reset") return;
-        $("reset-screen").style.display = name === "reset" ? "block" : "none";
-        $("loading").style.display = name === "loading" ? "block" : "none";
-        $("login-screen").style.display = name === "login" ? "block" : "none";
-        $("main-app").style.display = name === "app" ? "block" : "none";
+    const { doc, getDoc, getDocs, collection } = fb.f;
+    const s = await getDoc(doc(fb.db, "settings", email));
+    if (s.exists()) settings = Object.assign(defaultSettings(), s.data());
+    const q = await getDocs(collection(fb.db, "shifts", email, "items"));
+    q.forEach(d => shifts.set(d.id, { id: d.id, ...d.data() }));
+  },
+  demoSave(){ localStorage.setItem("demo_data", JSON.stringify({ settings, shifts: [...shifts.values()] })); },
+  async putShift(s){
+    shifts.set(s.id, s);
+    if (DEMO) return this.demoSave();
+    const { id, ...data } = s;
+    await fb.f.setDoc(fb.f.doc(fb.db, "shifts", viewEmail, "items", id), data);
+  },
+  async delShift(id){
+    shifts.delete(id);
+    if (DEMO) return this.demoSave();
+    await fb.f.deleteDoc(fb.f.doc(fb.db, "shifts", viewEmail, "items", id));
+  },
+  async putSettings(){
+    if (DEMO) return this.demoSave();
+    await fb.f.setDoc(fb.f.doc(fb.db, "settings", viewEmail), settings);
+  },
+  async putMany(list){
+    list.forEach(s => shifts.set(s.id, s));
+    if (DEMO) return this.demoSave();
+    const { writeBatch, doc } = fb.f;
+    for (let i = 0; i < list.length; i += 400) {
+      const b = writeBatch(fb.db);
+      list.slice(i, i+400).forEach(s => { const { id, ...data } = s; b.set(doc(fb.db, "shifts", viewEmail, "items", id), data); });
+      await b.commit();
     }
-    function authErrorText(err) {
-        const map = {
-            "auth/invalid-email": "כתובת המייל לא תקינה.",
-            "auth/invalid-credential": "מייל או סיסמה שגויים.",
-            "auth/wrong-password": "מייל או סיסמה שגויים.",
-            "auth/user-not-found": "מייל או סיסמה שגויים.",
-            "auth/weak-password": "הסיסמה חלשה מדי (לפחות 6 תווים).",
-            "auth/email-already-in-use": "המייל כבר רשום במערכת.",
-            "auth/too-many-requests": "יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.",
-            "auth/network-request-failed": "בעיית חיבור לאינטרנט.",
-            "auth/requires-recent-login": "יש להתחבר מחדש ולנסות שוב."
-        };
-        return map[err && err.code] || ("שגיאה: " + (err && (err.code || err.message)));
-    }
-    // המרת תאריך בפורמט he-IL (למשל "24.9.2026, 6:05:12") למספר לצורך מיון
-    function parseHeDate(s) {
-        const m = String(s).match(/(\d{1,2})\.(\d{1,2})\.(\d{4}),?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-        if (!m) return 0;
-        return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0)).getTime();
-    }
+  }
+};
+function seedDemo(){
+  settings = { name: "אברהם יונג", hourlyRate: 45, locations: [{ address: "ז'בוטינסקי 107", from: "2020-01-01" }], fixed: { 0:{in:"03:00",out:"07:00"}, 2:{in:"15:00",out:"19:00"} } };
+  const base = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+  for (let d = new Date(base); d <= today; d = addDays(d, 1)) {
+    if (d.getDay() === 6 || Math.random() < .25) continue;
+    const st = 7 + Math.floor(Math.random()*4);
+    const id = newId();
+    shifts.set(id, { id, date: ymd(d), in: `${pad(st)}:00`, out: `${pad(st + 5 + Math.floor(Math.random()*4))}:30`, location: "", notes: "" });
+  }
+  DB.demoSave();
+}
 
-    // ===== התחברות =====
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) { currentUser = null; showScreen("login"); return; }
-        const email = norm(user.email);
-        try {
-            if (email === MASTER_ADMIN && !user.emailVerified) {
-                await user.reload();
-                if (!auth.currentUser.emailVerified) {
-                    try { await sendEmailVerification(auth.currentUser, { url: location.origin + location.pathname }); } catch (e) { console.warn(e); }
-                    await signOut(auth);
-                    setMsg("login-error", "נשלח אליך מייל אימות. לחץ על הקישור שבו ואז התחבר שוב.", true);
-                    return;
-                }
-            }
-            let userDoc = await getDoc(doc(db, "users", email));
-            if (!userDoc.exists() && email === MASTER_ADMIN) {
-                await setDoc(doc(db, "users", email), { email, role: "admin", createdAt: Date.now() });
-                userDoc = await getDoc(doc(db, "users", email));
-            }
-            if (!userDoc.exists()) {
-                await signOut(auth);
-                setMsg("login-error", "אין לך הרשאת גישה למערכת. פנה למנהל.", false);
-                return;
-            }
-            currentUser = email;
-            await loadApp();
-        } catch (err) {
-            console.error(err);
-            await signOut(auth);
-            setMsg("login-error", "שגיאה בטעינת המערכת: " + (err.code || err.message), false);
-        }
+// ================== טבלת החודש ==================
+function fillMonthSelectors(){}
+function setMonth(y, m){
+  const d = new Date(y, m, 1); cur = { y: d.getFullYear(), m: d.getMonth() };
+  $("sel-month").value = `${cur.y}-${pad(cur.m+1)}`;
+  $("month-badge").textContent = `${MONTHS[cur.m]} | ${pad(cur.m+1)}`;
+  const inMonth = weekStart.getMonth() === cur.m && weekStart.getFullYear() === cur.y;
+  if (!inMonth) weekStart = startOfWeek(today.getMonth() === cur.m && today.getFullYear() === cur.y ? today : new Date(cur.y, cur.m, 1));
+  renderAll();
+}
+
+function renderAll(){ renderTable(); renderSummary(); renderCharts(); }
+
+function renderTable(){
+  const tb = $("sheet-body");
+  const last = new Date(cur.y, cur.m + 1, 0).getDate();
+  const todayStr = ymd(today);
+  let html = "";
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(cur.y, cur.m, day), ds = ymd(d);
+    const list = shiftsOn(ds);
+    const rows = list.length ? list : [null];
+    const notes = dayNotes(d);
+    const isHol = notes.some(n => n.hol);
+    const cls = [d.getDay() === 6 ? "shabbat" : "", isHol ? "holiday" : "", ds === todayStr ? "today" : ""].join(" ");
+    const defLoc = locationFor(ds);
+    rows.forEach((s, i) => {
+      const n = rows.length;
+      html += `<tr class="${cls}" data-date="${ds}" data-id="${s ? s.id : ""}">`;
+      if (i === 0) html += `<td class="datecell" rowspan="${n}"><span class="greg">📅 ${dmy(d)}</span></td><td rowspan="${n}" title="יום ${DAYS[d.getDay()]}"><b>${DAYL[d.getDay()]}</b></td>`;
+      html += `<td><input type="time" data-f="in" value="${s ? esc(s.in) : ""}"></td>`;
+      html += `<td><input type="time" data-f="out" value="${s ? esc(s.out) : ""}"></td>`;
+      html += `<td class="hours" data-hours>${s && shiftHours(s) ? fmtHM(shiftHours(s)) : ""}</td>`;
+      if (i === 0) html += `<td class="daytotal" rowspan="${n}" data-daytotal="${ds}">${hoursOnDate(ds) ? fmtHM(hoursOnDate(ds)) : ""}</td>`;
+      html += `<td><input class="loc" list="loc-list" data-f="location" value="${esc(s && s.location ? s.location : defLoc)}" placeholder="דירה / מיקום"></td>`;
+      html += `<td><div class="notecell">${i === 0 && notes.length ? `<span class="holtxt">${esc(notes.map(x => x.text).join(" · "))}</span>` : ""}<input class="note" data-f="notes" value="${s ? esc(s.notes) : ""}" placeholder=""></div></td>`;
+      html += `<td><div class="rowacts">
+        <button class="mini fixb" data-act="fixed" title="מלא שעות קבועות ליום ${DAYS[d.getDay()]}">⚡ שעות</button>
+        <button class="mini clr" data-act="clear" title="איפוס השורה">✕ איפוס</button>
+        <button class="mini add" data-act="add" title="הוסף משמרת לאותו יום">+</button>
+        <button class="mini delx" data-act="del" title="מחק משמרת">X</button>
+      </div></td></tr>`;
     });
-
-    window.login = async function () {
-        const email = norm($("login-email").value);
-        const pass = $("login-password").value;
-        if (!email || !pass) { setMsg("login-error", "אנא הזן מייל וסיסמה.", false); return; }
-        $("login-btn").disabled = true;
-        setMsg("login-error", "", true);
-        try {
-            await signInWithEmailAndPassword(auth, email, pass);
-        } catch (err) {
-            // הפעלה ראשונה: המנהל הראשי עדיין לא רשום - יוצרים לו חשבון עם הסיסמה שהזין
-            if (email === MASTER_ADMIN && ["auth/invalid-credential", "auth/user-not-found"].includes(err.code)) {
-                try {
-                    await createUserWithEmailAndPassword(auth, email, pass);
-                    // מייל האימות נשלח אוטומטית ב-onAuthStateChanged
-                } catch (err2) {
-                    setMsg("login-error", err2.code === "auth/email-already-in-use" ? "מייל או סיסמה שגויים." : authErrorText(err2), false);
-                }
-            } else {
-                setMsg("login-error", authErrorText(err), false);
-            }
-        } finally {
-            $("login-btn").disabled = false;
-        }
-    };
-
-    window.logout = async function () {
-        await signOut(auth);
-        $("login-email").value = "";
-        $("login-password").value = "";
-        setMsg("login-error", "", true);
-    };
-
-    window.handleForgotPassword = async function () {
-        const email = norm($("login-email").value);
-        if (!email) { setMsg("login-error", "הזן תחילה את כתובת המייל שלך בשדה המייל למעלה.", false); return; }
-        try {
-            // המנהל הראשי עוד לא רשום? יוצרים לו חשבון עם סיסמה אקראית, ואת הסיסמה האמיתית הוא יבחר דרך המייל
-            if (email === MASTER_ADMIN) {
-                try {
-                    const rnd = crypto.getRandomValues(new Uint32Array(4)).join("") + "Aa!";
-                    await createUserWithEmailAndPassword(secondaryAuth, email, rnd);
-                    await signOut(secondaryAuth);
-                } catch (e) {
-                    if (e.code !== "auth/email-already-in-use") throw e;
-                }
-            }
-            await sendPasswordResetEmail(auth, email, { url: location.origin + location.pathname });
-            setMsg("login-error", "נשלח מייל לאיפוס סיסמה ל-" + email + ". פתח את המייל, לחץ על הקישור ובחר סיסמה חדשה. (אם לא מופיע תוך דקה - בדוק בתיקיית ספאם)", true);
-        } catch (err) {
-            setMsg("login-error", authErrorText(err), false);
-        }
-    };
-
-    // ===== קישורים מהמייל (איפוס סיסמה / אימות מייל) =====
-    let resetCode = null;
-    async function handleEmailAction() {
-        const p = new URLSearchParams(location.search);
-        const mode = p.get("mode"), code = p.get("oobCode");
-        if (!mode || !code) return;
-        history.replaceState(null, "", location.pathname);
-        if (mode === "resetPassword") {
-            resetMode = true;
-            showScreen("reset");
-            try {
-                const email = await verifyPasswordResetCode(auth, code);
-                resetCode = code;
-                $("reset-email").innerText = email;
-            } catch (e) {
-                resetMode = false;
-                showScreen("login");
-                setMsg("login-error", "הקישור לאיפוס פג תוקף או כבר נוצל. לחץ שוב על \"שכחת סיסמה\" לקבלת קישור חדש.", false);
-            }
-        } else if (mode === "verifyEmail") {
-            try {
-                await applyActionCode(auth, code);
-                if (auth.currentUser) await auth.currentUser.reload();
-                setMsg("login-error", "המייל אומת בהצלחה! עכשיו אפשר להתחבר.", true);
-            } catch (e) {
-                setMsg("login-error", "קישור האימות פג תוקף. התחבר שוב כדי לקבל קישור חדש.", false);
-            }
-        }
+    if (d.getDay() === 6 || day === last) {
+      const ws = startOfWeek(d);
+      html += `<tr class="weekrow ${ymd(ws) === ymd(weekStart) ? "active" : ""}" data-week="${ymd(ws)}"><td colspan="9" data-weeksum="${ymd(ws)}"></td></tr>`;
     }
+  }
+  tb.innerHTML = html;
+  refreshWeekRows();
+  $("loc-list").innerHTML = [...new Set([...settings.locations.map(l => l.address), ...[...shifts.values()].map(s => s.location).filter(Boolean)])].map(a => `<option value="${esc(a)}">`).join("");
+}
 
-    window.confirmNewPassword = async function () {
-        const p1 = $("reset-pass1").value, p2 = $("reset-pass2").value;
-        if (p1.length < 6) { setMsg("reset-msg", "הסיסמה חייבת להכיל לפחות 6 תווים.", false); return; }
-        if (p1 !== p2) { setMsg("reset-msg", "שתי הסיסמאות אינן זהות.", false); return; }
-        $("reset-btn").disabled = true;
-        try {
-            const email = $("reset-email").innerText;
-            await confirmPasswordReset(auth, resetCode, p1);
-            resetMode = false;
-            setMsg("reset-msg", "הסיסמה נשמרה! מתחבר...", true);
-            $("login-email").value = email;
-            await signInWithEmailAndPassword(auth, email, p1);
-        } catch (err) {
-            setMsg("reset-msg", authErrorText(err), false);
-        } finally {
-            $("reset-btn").disabled = false;
-        }
-    };
-    handleEmailAction();
+function refreshWeekRows(){
+  document.querySelectorAll("[data-weeksum]").forEach(td => {
+    const ws = parseYmd(td.dataset.weeksum), we = addDays(ws, 6);
+    const h = hoursInRange(ymd(ws), ymd(we));
+    td.innerHTML = `📖 סיכום שבועי: ${h ? `&nbsp; <b>${h.toFixed(2)}</b> שעות (${fmtHM(h)})${+settings.hourlyRate ? ` &nbsp;·&nbsp; ${money(h * settings.hourlyRate)}` : ""}` : ""}`;
+  });
+}
 
-    // ===== מסך ראשי =====
-    async function loadApp() {
-        showScreen("app");
-        $("current-user-display").innerText = currentUser;
-        const isAdmin = currentUser === MASTER_ADMIN;
-        $("admin-management-section").style.display = isAdmin ? "block" : "none";
-        if (isAdmin) renderUsersList();
+// עדכון החישובים בלי לבנות מחדש את הטבלה (כדי לא לאבד את מיקום ההקלדה)
+function refreshComputed(tr){
+  if (tr) {
+    const s = shifts.get(tr.dataset.id);
+    tr.querySelector("[data-hours]").textContent = s && shiftHours(s) ? fmtHM(shiftHours(s)) : "";
+    const dt = document.querySelector(`[data-daytotal="${tr.dataset.date}"]`);
+    if (dt) { const h = hoursOnDate(tr.dataset.date); dt.textContent = h ? fmtHM(h) : ""; }
+  }
+  refreshWeekRows(); renderSummary(); renderCharts();
+}
 
-        const dataSnap = await getDoc(doc(db, "userdata", currentUser));
-        $("user-data-input").value = dataSnap.exists() ? (dataSnap.data().text || "") : "";
+async function onFieldChange(e){
+  const inp = e.target; if (!inp.dataset.f) return;
+  const tr = inp.closest("tr"); const f = inp.dataset.f; let v = inp.value.trim();
+  let s = tr.dataset.id ? shifts.get(tr.dataset.id) : null;
+  if (f === "location" && v === locationFor(tr.dataset.date)) v = "";
+  if (!s) {
+    if (!v) return;
+    s = { id: newId(), date: tr.dataset.date, in: "", out: "", location: "", notes: "" };
+    tr.dataset.id = s.id;
+  } else s = { ...s };
+  s[f] = v;
+  try { await DB.putShift(s); refreshComputed(tr); }
+  catch (err) { toast("שגיאה בשמירה: " + (err.code || err.message)); }
+}
 
-        await migrateLocalRecords();
-        await refreshAttendance();
+async function onRowAction(e){
+  const btn = e.target.closest("[data-act]");
+  if (!btn) { const wr = e.target.closest("tr.weekrow"); if (wr) { weekStart = parseYmd(wr.dataset.week); document.querySelectorAll("tr.weekrow").forEach(r => r.classList.toggle("active", r === wr)); renderCharts(); } return; }
+  const tr = btn.closest("tr"), ds = tr.dataset.date, act = btn.dataset.act;
+  try {
+    if (act === "add") {
+      await DB.putShift({ id: newId(), date: ds, in: "", out: "", location: "", notes: "" });
+      renderAll();
+    } else if (act === "del") {
+      if (!tr.dataset.id) { toast("אין משמרת למחיקה בשורה הזאת"); return; }
+      if (!confirm("למחוק את המשמרת?")) return;
+      await DB.delShift(tr.dataset.id); renderAll(); toast("המשמרת נמחקה");
+    } else if (act === "clear") {
+      if (!tr.dataset.id) { tr.querySelectorAll("input").forEach(i => { if (i.dataset.f !== "location") i.value = ""; }); return; }
+      await DB.putShift({ ...shifts.get(tr.dataset.id), in: "", out: "", notes: "", location: "" }); renderAll(); toast("השורה נוקתה");
+    } else if (act === "fixed") {
+      const wd = parseYmd(ds).getDay(), fx = settings.fixed[wd];
+      if (!fx || !fx.in || !fx.out) { toast(`לא הוגדרו שעות קבועות ליום ${DAYS[wd]}. לחץ על "⏱ שעות קבועות" למעלה.`); return; }
+      const s = tr.dataset.id ? { ...shifts.get(tr.dataset.id) } : { id: newId(), date: ds, in: "", out: "", location: "", notes: "" };
+      s.in = fx.in; s.out = fx.out;
+      await DB.putShift(s); renderAll(); toast(`מולאו שעות קבועות: ${fx.in}–${fx.out}`);
     }
+  } catch (err) { toast("שגיאה: " + (err.code || err.message)); }
+}
 
-    // העברה חד-פעמית של רשומות נוכחות ישנות מהדפדפן (localStorage) לענן
-    async function migrateLocalRecords() {
-        try {
-            const flag = "migrated_to_cloud_" + currentUser;
-            if (localStorage.getItem(flag)) return;
-            const old = JSON.parse(localStorage.getItem("attendance_records_" + currentUser) || "[]");
-            for (const r of old) {
-                await addDoc(collection(db, "attendance", currentUser, "records"), {
-                    type: r.type, time: r.time, ts: parseHeDate(r.time) || Date.now(), migrated: true
-                });
-            }
-            localStorage.setItem(flag, "1");
-        } catch (e) { console.warn("migration skipped", e); }
+// ================== סיכומים ==================
+function renderSummary(){
+  const [f, t] = monthRange(cur.y, cur.m);
+  const [pf, pt] = monthRange(cur.y, cur.m - 1);
+  const h = hoursInRange(f, t), ph = hoursInRange(pf, pt);
+  const rate = +settings.hourlyRate || 0, target = +settings.monthlyTarget || 0;
+  const diff = h - ph, pct = ph ? Math.round(diff / ph * 100) : null;
+  const base = target || Math.max(ph, h) || 1;
+  const prog = Math.min(100, Math.round(h / base * 100));
+  const wd = workDays(f, t);
+  const cmp = ph === 0 && h === 0 ? `<span class="muted">—</span>`
+    : `<span class="${diff >= 0 ? "up" : "down"}">${diff >= 0 ? "▲" : "▼"} ${fmtHM(Math.abs(diff))}${pct !== null ? ` (${pct > 0 ? "+" : ""}${pct}%)` : ""}</span>`;
+  $("sumcard").innerHTML = `
+    <div class="lbl" style="margin-top:14px">סה״כ שעות החודש הנבחר</div>
+    <div class="big">${h.toFixed(2)} שעות</div>
+    <div class="progress" title="${target ? "מתוך יעד של " + target + " שעות" : ""}"><div style="width:${prog}%"></div></div>
+    ${rate ? `<div class="muted" style="font-size:13px;margin-top:8px">שכר החודש: <b>${money(h * rate)}</b></div>` : ""}`;
+}
+
+// ================== גרפים ==================
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function barChart(existing, canvas, labels, data, hi, tipTitle){
+  if (existing) existing.destroy();
+  const accent = cssVar("--accent"), soft = cssVar("--accent-2"), ink = cssVar("--muted"), grid = cssVar("--line");
+  return new Chart(canvas, {
+    type: "bar",
+    data: { labels, datasets: [{ data, backgroundColor: data.map((_, i) => i === hi ? soft : accent), borderRadius: 4, maxBarThickness: 34 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { rtl: true, textDirection: "rtl", callbacks: { title: tipTitle, label: c => ` ${fmtHM(c.parsed.y)} שעות (${c.parsed.y.toFixed(2)})` } } },
+      scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink }, grid: { color: grid }, title: { display: true, text: "שעות", color: ink } } }
     }
-
-    async function refreshAttendance() {
-        const q = query(collection(db, "attendance", currentUser, "records"), orderBy("ts", "desc"));
-        const snap = await getDocs(q);
-        currentRecords = snap.docs.map(d => d.data());
-        renderUserAttendanceHistory();
-        updateAttendanceChart();
+  });
+}
+function renderCharts(){
+  const yd = MONTHS.map((_, i) => { const [f, t] = monthRange(cur.y, i); return +hoursInRange(f, t).toFixed(2); });
+  $("year-title").textContent = `📈 גרף מעקב שנתי – ${cur.y}`;
+  if (yearChart) yearChart.destroy();
+  const accent = cssVar("--accent"), ink = cssVar("--muted"), grid = cssVar("--line");
+  yearChart = new Chart($("year-chart"), {
+    type: "line",
+    data: { labels: MONTHS, datasets: [{ data: yd, borderColor: accent, borderWidth: 2, tension: .25, pointRadius: yd.map((_, i) => i === cur.m ? 7 : 5), pointHoverRadius: 8, pointBackgroundColor: yd.map((_, i) => i === cur.m ? "#e0a020" : "#6f42c1"), pointBorderColor: cssVar("--card"), pointBorderWidth: 2, fill: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: "index", intersect: false },
+      onClick: (e, els, chart) => { const p = chart.getElementsAtEventForMode(e, "index", { intersect: false }, false); if (p.length) setMonth(cur.y, p[0].index); },
+      onHover: (e, els) => { e.native.target.style.cursor = els.length ? "pointer" : "default"; },
+      plugins: { legend: { display: false }, tooltip: { rtl: true, textDirection: "rtl", callbacks: { title: it => MONTHS[it[0].dataIndex] + " " + cur.y, label: c => ` ${c.parsed.y.toFixed(2)} שעות (${fmtHM(c.parsed.y)})`, footer: () => "לחץ כדי לפתוח את החודש" } } },
+      scales: { x: { ticks: { color: ink, font: { size: 11 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink }, grid: { color: grid } } }
     }
+  });
+  const days = [...Array(7)].map((_, i) => addDays(weekStart, i));
+  const wd = days.map(d => +hoursOnDate(ymd(d)).toFixed(2));
+  const best = wd.indexOf(Math.max(...wd));
+  $("week-title").textContent = `השבוע ${dm(days[0])} – ${dm(days[6])}`;
+  $("week-best").textContent = Math.max(...wd) > 0 ? `היום החזק: יום ${DAYS[best]} (${fmtHM(wd[best])} שעות) · סה"כ ${fmtHM(wd.reduce((a,b)=>a+b,0))}` : "אין שעות בשבוע הזה";
+  if (false) weekChart = barChart(weekChart, $("week-chart"), days.map(d => DAYS[d.getDay()]), wd, Math.max(...wd) > 0 ? best : -1, it => `יום ${DAYS[it[0].dataIndex]} ${dmy(days[it[0].dataIndex])}`);
+}
 
-    async function renderUsersList() {
-        const container = $("users-list-container");
-        container.innerHTML = "טוען משתמשים...";
-        const snap = await getDocs(collection(db, "users"));
-        container.innerHTML = "";
-        snap.forEach(d => {
-            const email = d.id;
-            const row = document.createElement("div");
-            row.className = "user-row";
-            const textSpan = document.createElement("span");
-            textSpan.innerHTML = "מייל: <b></b>";
-            textSpan.querySelector("b").innerText = email;
-            row.appendChild(textSpan);
-            if (email !== MASTER_ADMIN) {
-                const deleteBtn = document.createElement("button");
-                deleteBtn.className = "btn-danger";
-                deleteBtn.innerText = "מחק משתמש";
-                deleteBtn.onclick = () => deleteUser(email);
-                row.appendChild(deleteBtn);
-            } else {
-                const badge = document.createElement("span");
-                badge.style.color = "#28a745";
-                badge.style.fontWeight = "bold";
-                badge.innerText = "(מנהל ראשי)";
-                row.appendChild(badge);
-            }
-            container.appendChild(row);
-        });
+// ================== חלונות ==================
+function modal(html){
+  $("modal-root").innerHTML = `<div class="modal-bg"><div class="modal">${html}</div></div>`;
+  const bg = $("modal-root").firstChild;
+  bg.addEventListener("click", e => { if (e.target === bg || e.target.closest("[data-close]")) closeModal(); });
+  return bg.querySelector(".modal");
+}
+function closeModal(){ $("modal-root").innerHTML = ""; }
+const closeX = `<button class="iconbtn mini" data-close>✕</button>`;
+
+// ---- שעות קבועות ----
+function openFixed(){
+  const m = modal(`<h3>⏱ שעות קבועות לכל יום ${closeX}</h3>
+    <div class="muted" style="margin-bottom:10px">הגדר שעות קבועות. בטבלה, כפתור ⏱ בכל יום ממלא את השעות של אותו יום בשבוע.</div>
+    <div class="fixed-grid">${DAYS.map((n, i) => `<div>${n}</div>
+      <input type="time" data-d="${i}" data-k="in" value="${esc(settings.fixed[i]?.in || "")}">
+      <input type="time" data-d="${i}" data-k="out" value="${esc(settings.fixed[i]?.out || "")}">`).join("")}</div>
+    <div class="frow" style="margin-top:14px;justify-content:space-between">
+      <button class="b-green" id="fx-save">שמור</button>
+      <button class="b-gray" id="fx-fill">מלא את ${MONTHS[cur.m]} לפי השעות הקבועות</button>
+    </div>`);
+  const collect = () => { const fx = {}; m.querySelectorAll("input[data-d]").forEach(i => { (fx[i.dataset.d] ||= {})[i.dataset.k] = i.value; }); Object.keys(fx).forEach(k => { if (!fx[k].in && !fx[k].out) delete fx[k]; }); return fx; };
+  m.querySelector("#fx-save").onclick = async () => { settings.fixed = collect(); await DB.putSettings(); closeModal(); toast("השעות הקבועות נשמרו"); };
+  m.querySelector("#fx-fill").onclick = async () => {
+    settings.fixed = collect(); await DB.putSettings();
+    const last = new Date(cur.y, cur.m + 1, 0).getDate(), add = [];
+    for (let day = 1; day <= last; day++) {
+      const d = new Date(cur.y, cur.m, day), fx = settings.fixed[d.getDay()];
+      if (fx && fx.in && fx.out && !shiftsOn(ymd(d)).length) add.push({ id: newId(), date: ymd(d), in: fx.in, out: fx.out, location: "", notes: "" });
     }
+    if (!add.length) { toast("אין ימים ריקים למילוי"); return; }
+    if (!confirm(`להוסיף ${add.length} משמרות לימים הריקים ב${MONTHS[cur.m]}?`)) return;
+    await DB.putMany(add); closeModal(); renderAll(); toast(`נוספו ${add.length} משמרות`);
+  };
+}
 
-    window.addNewUser = async function () {
-        const email = norm($("new-user-email").value);
-        const pass = $("new-user-pass").value;
-        if (!email || !pass) { setMsg("admin-msg", "אנא הזן מייל וסיסמה.", false); return; }
-        if (pass.length < 6) { setMsg("admin-msg", "הסיסמה חייבת להכיל לפחות 6 תווים.", false); return; }
-        const existing = await getDoc(doc(db, "users", email));
-        if (existing.exists()) { setMsg("admin-msg", "המשתמש כבר קיים במערכת!", false); return; }
-        let note = "";
-        try {
-            await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-            await signOut(secondaryAuth);
-        } catch (err) {
-            if (err.code === "auth/email-already-in-use") {
-                // משתמש שנמחק בעבר - החשבון קיים, נשלח לו קישור לקביעת סיסמה
-                await sendPasswordResetEmail(auth, email);
-                note = " (המשתמש היה רשום בעבר - נשלח אליו קישור לקביעת סיסמה חדשה)";
-            } else {
-                setMsg("admin-msg", authErrorText(err), false);
-                return;
-            }
-        }
-        await setDoc(doc(db, "users", email), { email, role: "user", createdAt: Date.now() });
-        $("new-user-email").value = "";
-        $("new-user-pass").value = "";
-        setMsg("admin-msg", "המשתמש נוסף בהצלחה!" + note, true);
-        renderUsersList();
-    };
+// ---- הוספת משמרת לתאריך ----
+function openAddDate(){
+  const m = modal(`<h3>➕ הוספת משמרת בתאריך ${closeX}</h3>
+    <div class="frow"><label>תאריך</label><input type="date" id="ad-date" value="${ymd(today)}"></div>
+    <div class="frow"><label>כניסה</label><input type="time" id="ad-in"><label style="min-width:auto">יציאה</label><input type="time" id="ad-out"></div>
+    <div class="frow"><label>דירה / מיקום</label><input id="ad-loc" list="loc-list" style="flex:1"></div>
+    <div class="frow"><label>הוראות</label><input id="ad-notes" style="flex:1"></div>
+    <div class="muted" id="ad-info" style="margin-bottom:10px"></div>
+    <button class="b-green" id="ad-save">הוסף משמרת</button>`);
+  const upd = () => {
+    const v = m.querySelector("#ad-date").value; if (!v) return;
+    const d = parseYmd(v), fx = settings.fixed[d.getDay()];
+    m.querySelector("#ad-in").value = fx?.in || ""; m.querySelector("#ad-out").value = fx?.out || "";
+    m.querySelector("#ad-loc").value = locationFor(v);
+    m.querySelector("#ad-info").textContent = `יום ${DAYS[d.getDay()]} · ${hebDate(d)}` + (fx?.in ? " · מולאו השעות הקבועות" : "");
+  };
+  m.querySelector("#ad-date").onchange = upd; upd();
+  m.querySelector("#ad-save").onclick = async () => {
+    const date = m.querySelector("#ad-date").value; if (!date) return toast("בחר תאריך");
+    let loc = m.querySelector("#ad-loc").value.trim(); if (loc === locationFor(date)) loc = "";
+    await DB.putShift({ id: newId(), date, in: m.querySelector("#ad-in").value, out: m.querySelector("#ad-out").value, location: loc, notes: m.querySelector("#ad-notes").value.trim() });
+    closeModal(); const d = parseYmd(date); weekStart = startOfWeek(d); setMonth(d.getFullYear(), d.getMonth()); toast("המשמרת נוספה");
+  };
+}
 
-    async function deleteUser(email) {
-        if (!confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${email}?`)) return;
-        try {
-            const recs = await getDocs(collection(db, "attendance", email, "records"));
-            for (const r of recs.docs) await deleteDoc(r.ref);
-            await deleteDoc(doc(db, "userdata", email));
-            await deleteDoc(doc(db, "users", email));
-            setMsg("admin-msg", "המשתמש נמחק ואין לו יותר גישה למערכת.", true);
-        } catch (err) {
-            setMsg("admin-msg", "שגיאה במחיקה: " + (err.code || err.message), false);
-        }
-        renderUsersList();
+// ---- הגדרות ----
+function openSettings(){
+  const locs = [...settings.locations].sort((a,b) => a.from.localeCompare(b.from));
+  const m = modal(`<h3>⚙️ הגדרות ${closeX}</h3>
+    <h4>פרטים</h4>
+    <div class="frow"><label>שם העובד</label><input id="st-name" value="${esc(settings.name)}" style="flex:1"></div>
+    <div class="frow"><label>שכר לשעה (₪)</label><input id="st-rate" type="number" min="0" step="0.5" value="${esc(settings.hourlyRate || "")}" style="width:120px"></div>
+    <div class="frow"><label>יעד שעות חודשי</label><input id="st-target" type="number" min="0" step="1" value="${esc(settings.monthlyTarget || "")}" style="width:120px"><span class="muted">(לפס ההתקדמות – לא חובה)</span></div>
+    <button class="b-green" id="st-save">שמור פרטים</button>
+
+    <h4>דירות / מיקומים</h4>
+    <div class="muted" style="margin-bottom:8px">מהתאריך שתבחר, כל המשמרות יקבלו את הכתובת הזאת אוטומטית. אפשר לשנות מיקום של משמרת בודדת ישר בטבלה.</div>
+    <div id="st-locs">${locs.length ? locs.map((l, i) => `<div class="list-item"><span><b>${esc(l.address)}</b> <span class="muted">מתאריך ${dmy(parseYmd(l.from))}</span></span><button class="mini del" data-rmloc="${i}">✕</button></div>`).join("") : `<div class="muted">עדיין לא הוגדרו מיקומים</div>`}</div>
+    <div class="frow" style="margin-top:8px"><input id="st-loc-addr" placeholder="כתובת, למשל ז'בוטינסקי 107" style="flex:1"><input id="st-loc-from" type="date" value="${ymd(today)}"><button class="b-green" id="st-loc-add">＋ הוסף</button></div>
+
+    <h4>שינוי סיסמה</h4>
+    <div class="frow"><input type="password" id="st-cur" placeholder="סיסמה נוכחית"><input type="password" id="st-new" placeholder="סיסמה חדשה (6+ תווים)"><button id="st-pass">שנה</button></div>
+    <div id="st-pass-msg" class="msg"></div>
+
+    ${isAdmin ? `<h4>👥 ניהול משתמשים (מנהל בלבד)</h4>
+    <div class="muted" style="margin-bottom:8px">לכל משתמש יש מערכת שעות משלו. נכנסים עם המייל והסיסמה שתקבע כאן.</div>
+    <div id="st-users">טוען...</div>
+    <div class="frow" style="margin-top:8px"><input id="nu-name" placeholder="שם העובד" style="flex:1"><input id="nu-email" type="email" placeholder="מייל (שם משתמש)" style="flex:1.3"></div>
+    <div class="frow"><input id="nu-pass" type="password" placeholder="סיסמה (6+ תווים)" style="flex:1"><button class="b-green" id="nu-add">＋ הוסף משתמש</button></div>
+    <div id="nu-msg" class="msg"></div>` : ""}`);
+
+  m.querySelector("#st-save").onclick = async () => {
+    settings.name = m.querySelector("#st-name").value.trim(); settings.hourlyRate = +m.querySelector("#st-rate").value || 0; settings.monthlyTarget = +m.querySelector("#st-target").value || 0;
+    await DB.putSettings(); updateHeader(); renderAll(); toast("הפרטים נשמרו");
+  };
+  m.querySelectorAll("[data-rmloc]").forEach(b => b.onclick = async () => {
+    const l = locs[+b.dataset.rmloc]; if (!confirm(`להסיר את "${l.address}"?`)) return;
+    settings.locations = settings.locations.filter(x => !(x.address === l.address && x.from === l.from));
+    await DB.putSettings(); renderAll(); openSettings();
+  });
+  m.querySelector("#st-loc-add").onclick = async () => {
+    const address = m.querySelector("#st-loc-addr").value.trim(), from = m.querySelector("#st-loc-from").value;
+    if (!address || !from) return toast("מלא כתובת ותאריך");
+    settings.locations.push({ address, from }); await DB.putSettings(); renderAll(); openSettings(); toast("המיקום נוסף");
+  };
+  m.querySelector("#st-pass").onclick = () => changePassword(m.querySelector("#st-cur").value, m.querySelector("#st-new").value);
+  if (isAdmin) { renderUsers(m); m.querySelector("#nu-add").onclick = () => addUser(m); }
+}
+
+// ---- גיבוי ----
+function openBackup(){
+  const m = modal(`<h3>☁ גיבוי ושחזור ${closeX}</h3>
+    <p>הגיבוי כולל את כל המשמרות וההגדרות של ${esc(settings.name || viewEmail)}. הוא יורד כקובץ למחשב ונשלח גם למייל ${esc(me)}.</p>
+    <button class="b-purple" id="bk-go">⬇ הורד גיבוי ושלח למייל</button>
+    <h4>שחזור מגיבוי</h4>
+    <p class="muted">בחר קובץ גיבוי (.json). משמרות מהקובץ יתווספו או יעודכנו, ושום דבר לא יימחק.</p>
+    <input type="file" id="bk-file" accept=".json,application/json">
+    <div id="bk-msg" class="msg"></div>`);
+  m.querySelector("#bk-go").onclick = () => doBackup(m);
+  m.querySelector("#bk-file").onchange = e => doRestore(e.target.files[0], m);
+}
+async function doBackup(m){
+  const data = { app: "my-hours", version: 1, exportedAt: new Date().toISOString(), email: viewEmail, settings, shifts: [...shifts.values()] };
+  const json = JSON.stringify(data);
+  const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `גיבוי-שעות-${ymd(today)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  if (DEMO) { setMsg("bk-msg", "הקובץ ירד (במצב הדגמה לא נשלח מייל).", true); return; }
+  if (json.length > 45000) { setMsg("bk-msg", "הקובץ ירד למחשב. הגיבוי גדול מדי למייל, אז שמור את הקובץ במקום בטוח.", true); return; }
+  try {
+    emailjs.init(CFG.emailjs.key);
+    await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, {
+      to_email: me, name: settings.name || me, to_name: me,
+      subject: `גיבוי מערכת שעות – ${dmy(today)}`,
+      message: `גיבוי אוטומטי של מערכת השעות (${[...shifts.values()].length} משמרות).\nלשחזור: שמור את הטקסט שבין הקווים כקובץ .json והעלה אותו בחלון "גיבוי".\n------------------------------\n${json}\n------------------------------`
+    });
+    setMsg("bk-msg", "הקובץ ירד למחשב והגיבוי נשלח למייל ✔", true);
+  } catch (e) { setMsg("bk-msg", "הקובץ ירד, אבל השליחה למייל נכשלה: " + (e.text || e.message), false); }
+}
+async function doRestore(file, m){
+  if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!d || !Array.isArray(d.shifts)) throw new Error("זה לא קובץ גיבוי של המערכת");
+    if (!confirm(`לשחזר ${d.shifts.length} משמרות והגדרות מהגיבוי מתאריך ${d.exportedAt ? dmy(new Date(d.exportedAt)) : "?"}?`)) return;
+    if (d.settings) { settings = Object.assign(defaultSettings(), settings, d.settings); await DB.putSettings(); }
+    const list = d.shifts.filter(s => s && s.id && s.date).map(s => ({ id: String(s.id), date: s.date, in: s.in || "", out: s.out || "", location: s.location || "", notes: s.notes || "" }));
+    await DB.putMany(list);
+    updateHeader(); renderAll(); setMsg("bk-msg", `שוחזרו ${list.length} משמרות ✔`, true);
+  } catch (e) { setMsg("bk-msg", "שחזור נכשל: " + e.message, false); }
+}
+
+// ================== ייצוא PDF / אקסל ==================
+function monthRows(){
+  const out = []; const last = new Date(cur.y, cur.m + 1, 0).getDate();
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(cur.y, cur.m, day), ds = ymd(d), list = shiftsOn(ds), notes = dayNotes(d).map(x => x.text);
+    (list.length ? list : [null]).forEach((s, i) => out.push({ type: "shift", d, first: i === 0, s, notes, loc: s?.location || locationFor(ds), dayTotal: hoursOnDate(ds) }));
+    if (d.getDay() === 6 || day === last) { const ws = startOfWeek(d), we = addDays(ws, 6); out.push({ type: "week", ws, we, h: hoursInRange(ymd(ws), ymd(we)) }); }
+  }
+  return out;
+}
+async function sendReport(){
+  const [f, t] = monthRange(cur.y, cur.m), h = hoursInRange(f, t), rate = +settings.hourlyRate || 0;
+  let lines = [];
+  for (const r of monthRows()) {
+    if (r.type === "week") { lines.push(`— סיכום שבועי ${dm(r.ws)}–${dm(r.we)}: ${fmtHM(r.h)} שעות${rate ? " · " + money(r.h * rate) : ""}`, ""); continue; }
+    if (!r.s || !shiftHours(r.s)) continue;
+    lines.push(`${dmy(r.d)} (${DAYS[r.d.getDay()]}): ${r.s.in}–${r.s.out} = ${fmtHM(shiftHours(r.s))}${r.loc ? " · " + r.loc : ""}${r.s.notes ? " · " + r.s.notes : ""}`);
+  }
+  const msg = `דו"ח שעות – ${settings.name || viewEmail}\nחודש ${MONTHS[cur.m]} ${cur.y}\n\nסה"כ: ${h.toFixed(2)} שעות (${fmtHM(h)}) · ${workDays(f, t)} ימי עבודה${rate ? " · שכר " + money(h * rate) : ""}\n\n${lines.join("\n")}`;
+  if (DEMO) { toast("במצב הדגמה לא נשלח מייל"); return; }
+  toast("שולח דו\"ח למייל...");
+  emailjs.init(CFG.emailjs.key);
+  await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { to_email: me, name: settings.name || me, to_name: me, subject: `דו"ח שעות – ${MONTHS[cur.m]} ${cur.y}`, message: msg });
+  toast("הדו\"ח נשלח למייל " + me + " ✔");
+}
+async function exportPDF(){
+  toast("מכין PDF...");
+  try { await loadScript("https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"); }
+  catch (e) { return toast("לא ניתן לטעון את רכיב ה-PDF"); }
+  const [f, t] = monthRange(cur.y, cur.m), h = hoursInRange(f, t), rate = +settings.hourlyRate || 0;
+  const td = "border:1px solid #ccc;padding:4px 5px;text-align:center;font-size:11px";
+  let rows = "";
+  for (const r of monthRows()) {
+    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי ${dm(r.ws)}–${dm(r.we)}: ${fmtHM(r.h)} שעות · ${money(r.h * rate)}</td></tr>`; continue; }
+    const s = r.s, bg = r.d.getDay() === 6 ? "background:#eef3ff;" : "";
+    rows += `<tr style="${bg}"><td style="${td}">${r.first ? `${dmy(r.d)}<br><span style="color:#666">${esc(hebDate(r.d))}</span>` : ""}</td><td style="${td}">${r.first ? DAYS[r.d.getDay()] : ""}</td>
+      <td style="${td}">${esc(s?.in || "")}</td><td style="${td}">${esc(s?.out || "")}</td><td style="${td}">${s && shiftHours(s) ? fmtHM(shiftHours(s)) : ""}</td>
+      <td style="${td};font-weight:bold">${r.first && r.dayTotal ? fmtHM(r.dayTotal) : ""}</td><td style="${td}">${esc(r.loc)}</td>
+      <td style="${td}">${esc([...(r.first ? r.notes : []), s?.notes].filter(Boolean).join(" · "))}</td></tr>`;
+  }
+  const el = document.createElement("div");
+  el.innerHTML = `<div dir="rtl" style="font-family:Arial,sans-serif;color:#000;background:#fff;padding:10px;width:1060px">
+    <div style="font-size:20px;font-weight:bold">מערכת ניהול שעות ונוכחות – ${esc(settings.name || viewEmail)}</div>
+    <div style="font-size:15px;margin:4px 0 10px">דו"ח חודש ${MONTHS[cur.m]} ${cur.y} · סה"כ ${fmtHM(h)} שעות · ${workDays(f, t)} ימי עבודה${rate ? ` · שכר ${money(h * rate)}` : ""}</div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f0f2f6">${["תאריך","יום","כניסה","יציאה","שעות","סה\"כ יומי","דירה / מיקום","הוראות"].map(x => `<th style="${td};font-weight:bold">${x}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
+    <div style="font-size:10px;color:#777;margin-top:8px">הופק ב-${dmy(today)}</div></div>`;
+  await html2pdf().set({
+    margin: 7, filename: `שעות-${MONTHS[cur.m]}-${cur.y}.pdf`,
+    image: { type: "jpeg", quality: 0.95 }, html2canvas: { scale: 2, backgroundColor: "#ffffff" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }, pagebreak: { mode: ["css", "legacy"], avoid: "tr" }
+  }).from(el.firstElementChild).save();
+  toast("ה-PDF ירד למחשב ✔");
+}
+async function exportExcel(){
+  try { await loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"); }
+  catch (e) { return toast("לא ניתן לטעון את רכיב האקסל"); }
+  const [f, t] = monthRange(cur.y, cur.m), h = hoursInRange(f, t), rate = +settings.hourlyRate || 0;
+  const r2 = n => Math.round(n * 100) / 100;
+  const aoa = [[`מערכת ניהול שעות ונוכחות – ${settings.name || viewEmail}`], [`חודש ${MONTHS[cur.m]} ${cur.y}`], [],
+    ["תאריך", "תאריך עברי", "יום", "כניסה", "יציאה", "שעות", "סה\"כ יומי", "דירה / מיקום", "הוראות"]];
+  for (const r of monthRows()) {
+    if (r.type === "week") { aoa.push([`סיכום שבועי ${dm(r.ws)}–${dm(r.we)}`, "", "", "", "", r2(r.h), "", rate ? `שכר: ${r2(r.h * rate)} ₪` : "", ""]); continue; }
+    const s = r.s;
+    aoa.push([dmy(r.d), hebDate(r.d), DAYS[r.d.getDay()], s?.in || "", s?.out || "", s ? r2(shiftHours(s)) : "", r.first ? r2(r.dayTotal) : "", r.loc, [...(r.first ? r.notes : []), s?.notes].filter(Boolean).join(" · ")]);
+  }
+  aoa.push([], ["סה\"כ חודשי", "", "", "", "", r2(h), "", rate ? `שכר: ${r2(h * rate)} ₪` : "", ""]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [12, 18, 8, 8, 8, 8, 9, 22, 40].map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, `${MONTHS[cur.m]} ${cur.y}`);
+  XLSX.writeFile(wb, `שעות-${MONTHS[cur.m]}-${cur.y}.xlsx`);
+  toast("קובץ האקסל ירד למחשב ✔");
+}
+
+// ================== התחברות (Firebase) ==================
+async function initFirebase(){
+  const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  const [app, a, f] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-firestore.js")]);
+  const main = app.initializeApp(CFG.firebase);
+  fb = { a, f, auth: a.getAuth(main), db: f.getFirestore(main), secondaryAuth: a.getAuth(app.initializeApp(CFG.firebase, "secondary")) };
+  fb.auth.languageCode = "he";
+  a.onAuthStateChanged(fb.auth, onAuth);
+}
+async function onAuth(user){
+  if (!user) { me = null; show("login-screen"); return; }
+  const { a, f } = fb, email = norm(user.email);
+  try {
+    if (email === CFG.admin && !user.emailVerified) {
+      await user.reload();
+      if (!fb.auth.currentUser.emailVerified) {
+        try { await a.sendEmailVerification(fb.auth.currentUser); } catch (e) {}
+        await a.signOut(fb.auth);
+        setMsg("login-msg", "נשלח אליך מייל אימות. לחץ על הקישור שבו ואז היכנס שוב.", true); return;
+      }
     }
+    let u = await f.getDoc(f.doc(fb.db, "users", email));
+    if (!u.exists() && email === CFG.admin) { await f.setDoc(f.doc(fb.db, "users", email), { email, role: "admin", name: "", createdAt: Date.now() }); u = await f.getDoc(f.doc(fb.db, "users", email)); }
+    if (!u.exists()) { await a.signOut(fb.auth); setMsg("login-msg", "אין לך הרשאת גישה למערכת. פנה למנהל.", false); return; }
+    me = email; isAdmin = email === CFG.admin;
+    await openSystem(email, u.data().name);
+  } catch (err) {
+    console.error(err); await a.signOut(fb.auth); setMsg("login-msg", "שגיאה בטעינה: " + (err.code || err.message), false);
+  }
+}
+async function openSystem(email, fallbackName){
+  viewEmail = email;
+  await DB.loadAll(email);
+  if (!settings.name && fallbackName) settings.name = fallbackName;
+  updateHeader(); show("app"); setMonth(cur.y, cur.m);
+  if (isAdmin) fillUserSwitcher();
+}
+function updateHeader(){
+  $("who-name").textContent = settings.name || viewEmail;
+  document.title = `${settings.name ? settings.name + " – " : ""}מערכת ניהול שעות ונוכחות`;
+}
+async function fillUserSwitcher(){
+  const sel = $("view-user");
+  try {
+    const q = await fb.f.getDocs(fb.f.collection(fb.db, "users"));
+    const users = q.docs.map(d => ({ email: d.id, name: d.data().name || "" }));
+    if (users.length < 2) { sel.classList.add("hidden"); return; }
+    sel.innerHTML = users.map(u => `<option value="${esc(u.email)}">${esc(u.email === me ? "המערכת שלי" : (u.name || u.email))}</option>`).join("");
+    sel.value = viewEmail; sel.classList.remove("hidden");
+  } catch (e) { console.warn(e); }
+}
 
-    window.changeMyPassword = async function () {
-        const currentPass = $("current-password-input").value;
-        const newPass = $("new-password-input").value;
-        if (!newPass || newPass.length < 6) { setMsg("password-msg", "אנא הזן סיסמה חדשה תקינה (לפחות 6 תווים).", false); return; }
-        try {
-            const cred = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
-            await reauthenticateWithCredential(auth.currentUser, cred);
-            await updatePassword(auth.currentUser, newPass);
-            $("current-password-input").value = "";
-            $("new-password-input").value = "";
-            setMsg("password-msg", "הסיסמה שונתה בהצלחה!", true);
-        } catch (err) {
-            setMsg("password-msg", ["auth/invalid-credential", "auth/wrong-password"].includes(err.code) ? "הסיסמה הנוכחית שהקשת שגויה." : authErrorText(err), false);
-        }
-    };
+const errText = err => ({
+  "auth/invalid-email": "כתובת המייל לא תקינה.", "auth/invalid-credential": "שם משתמש או סיסמה שגויים.", "auth/wrong-password": "שם משתמש או סיסמה שגויים.",
+  "auth/user-not-found": "שם משתמש או סיסמה שגויים.", "auth/weak-password": "הסיסמה חלשה מדי (לפחות 6 תווים).", "auth/email-already-in-use": "המייל כבר רשום.",
+  "auth/too-many-requests": "יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.", "auth/network-request-failed": "בעיית חיבור לאינטרנט."
+}[err?.code] || ("שגיאה: " + (err?.code || err?.message)));
 
-    window.saveUserData = async function () {
-        try {
-            await setDoc(doc(db, "userdata", currentUser), { text: $("user-data-input").value, updatedAt: Date.now() });
-            setMsg("data-msg", "הנתונים האישיים נשמרו בהצלחה.", true);
-        } catch (err) {
-            setMsg("data-msg", "שגיאה בשמירה: " + (err.code || err.message), false);
-        }
-    };
+async function login(){
+  const email = norm($("login-email").value), pass = $("login-password").value;
+  if (!email || !pass) return setMsg("login-msg", "הקלד שם משתמש וסיסמה.", false);
+  $("login-btn").disabled = true; setMsg("login-msg", "", true);
+  try { await fb.a.signInWithEmailAndPassword(fb.auth, email, pass); }
+  catch (err) {
+    if (email === CFG.admin && ["auth/invalid-credential", "auth/user-not-found"].includes(err.code)) {
+      try { await fb.a.createUserWithEmailAndPassword(fb.auth, email, pass); }
+      catch (e2) { setMsg("login-msg", e2.code === "auth/email-already-in-use" ? "שם משתמש או סיסמה שגויים." : errText(e2), false); }
+    } else setMsg("login-msg", errText(err), false);
+  } finally { $("login-btn").disabled = false; }
+}
 
-    window.markAttendance = async function (actionType) {
-        const now = new Date();
-        const timeString = now.toLocaleString("he-IL");
-        try {
-            await addDoc(collection(db, "attendance", currentUser, "records"), { type: actionType, time: timeString, ts: now.getTime() });
-            await refreshAttendance();
-            setMsg("attendance-msg", `דווח בהצלחה: ${actionType} בתאריך ${timeString}`, true);
-        } catch (err) {
-            setMsg("attendance-msg", "שגיאה בדיווח: " + (err.code || err.message), false);
-        }
-    };
+// ---- שחזור סיסמה בקוד של 4 ספרות ----
+async function resetCall(body){
+  if (!CFG.resetApi) throw new Error("שחזור הסיסמה בקוד עדיין לא הופעל. פנה למנהל המערכת.");
+  const r = await fetch(CFG.resetApi, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || "שגיאה");
+  return j;
+}
+function showForgot(on){
+  $("login-view").classList.toggle("hidden", on); $("forgot-view").classList.toggle("hidden", !on);
+  if (on) { $("fp-email").value = $("login-email").value; $("fp-step2").classList.add("hidden"); $("fp-pass-box").classList.add("hidden"); $("fp-code").value = ""; setMsg("fp-msg", "", true); }
+}
+async function sendCode(){
+  const email = norm($("fp-email").value); if (!email) return setMsg("fp-msg", "הקלד את המייל שלך.", false);
+  $("fp-send").disabled = true;
+  try { await resetCall({ action: "sendCode", email }); $("fp-step2").classList.remove("hidden"); $("fp-code").focus(); setMsg("fp-msg", "נשלח קוד למייל " + email, true); $("fp-send").textContent = "שלח קוד חדש"; }
+  catch (e) { setMsg("fp-msg", e.message, false); }
+  finally { $("fp-send").disabled = false; }
+}
+async function saveNewPassword(){
+  const email = norm($("fp-email").value), code = $("fp-code").value.trim(), p1 = $("fp-pass1").value, p2 = $("fp-pass2").value;
+  if (p1.length < 6) return setMsg("fp-msg", "הסיסמה חייבת להכיל לפחות 6 תווים.", false);
+  if (p1 !== p2) return setMsg("fp-msg", "שתי הסיסמאות אינן זהות.", false);
+  $("fp-save").disabled = true;
+  try {
+    await resetCall({ action: "resetPassword", email, code, password: p1 });
+    setMsg("fp-msg", "הסיסמה שונתה! נכנס למערכת...", true);
+    $("login-email").value = email;
+    await fb.a.signInWithEmailAndPassword(fb.auth, email, p1);
+    showForgot(false);
+  } catch (e) { setMsg("fp-msg", e.message, false); if (/קוד/.test(e.message)) { $("fp-pass-box").classList.add("hidden"); $("fp-code").value = ""; $("fp-code").focus(); } }
+  finally { $("fp-save").disabled = false; }
+}
 
-    function renderUserAttendanceHistory() {
-        const tbody = $("user-attendance-table-body");
-        tbody.innerHTML = "";
-        if (currentRecords.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="2">אין עדיין רשומות נוכחות במערכת.</td></tr>`;
-            return;
-        }
-        currentRecords.forEach(rec => {
-            const tr = document.createElement("tr");
-            const td1 = document.createElement("td"); td1.innerHTML = "<b></b>"; td1.firstChild.innerText = rec.type;
-            const td2 = document.createElement("td"); td2.innerText = rec.time;
-            tr.append(td1, td2);
-            tbody.appendChild(tr);
-        });
-    }
+async function changePassword(curPass, newPass){
+  if (DEMO) return setMsg("st-pass-msg", "לא זמין במצב הדגמה.", false);
+  if (!newPass || newPass.length < 6) return setMsg("st-pass-msg", "הסיסמה החדשה חייבת להכיל לפחות 6 תווים.", false);
+  try {
+    const u = fb.auth.currentUser;
+    await fb.a.reauthenticateWithCredential(u, fb.a.EmailAuthProvider.credential(u.email, curPass));
+    await fb.a.updatePassword(u, newPass);
+    setMsg("st-pass-msg", "הסיסמה שונתה ✔", true);
+  } catch (e) { setMsg("st-pass-msg", ["auth/invalid-credential","auth/wrong-password"].includes(e.code) ? "הסיסמה הנוכחית שגויה." : errText(e), false); }
+}
 
-    function updateAttendanceChart() {
-        const entryCount = currentRecords.filter(r => r.type === "כניסה").length;
-        const exitCount = currentRecords.filter(r => r.type === "יציאה").length;
-        const ctx = $("attendanceChart").getContext("2d");
-        if (myChartInstance) myChartInstance.destroy();
-        myChartInstance = new Chart(ctx, {
-            type: "bar",
-            data: {
-                labels: ["כניסות", "יציאות"],
-                datasets: [{ label: "כמות דיווחים", data: [entryCount, exitCount], backgroundColor: ["#28a745", "#dc3545"], borderWidth: 1 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
-    }
+// ---- ניהול משתמשים (מנהל) ----
+async function renderUsers(m){
+  const box = m.querySelector("#st-users");
+  const q = await fb.f.getDocs(fb.f.collection(fb.db, "users"));
+  box.innerHTML = q.docs.map(d => { const u = d.data();
+    return `<div class="list-item"><span><b>${esc(u.name || "")}</b> <span class="muted">${esc(d.id)}</span></span>${d.id === CFG.admin ? `<span class="up">מנהל ראשי</span>` : `<button class="mini del" data-rmuser="${esc(d.id)}">מחק</button>`}</div>`; }).join("");
+  box.querySelectorAll("[data-rmuser]").forEach(b => b.onclick = () => deleteUser(b.dataset.rmuser, m));
+}
+async function addUser(m){
+  const name = m.querySelector("#nu-name").value.trim(), email = norm(m.querySelector("#nu-email").value), pass = m.querySelector("#nu-pass").value;
+  if (!email || pass.length < 6) return setMsg("nu-msg", "הקלד מייל וסיסמה של לפחות 6 תווים.", false);
+  const { f, a } = fb;
+  if ((await f.getDoc(f.doc(fb.db, "users", email))).exists()) return setMsg("nu-msg", "המשתמש כבר קיים.", false);
+  let note = "";
+  try { await a.createUserWithEmailAndPassword(fb.secondaryAuth, email, pass); await a.signOut(fb.secondaryAuth); }
+  catch (e) { if (e.code === "auth/email-already-in-use") note = " (המשתמש היה רשום בעבר – הסיסמה הישנה שלו נשארה; אפשר לאפס עם 'שכחתי סיסמה')"; else return setMsg("nu-msg", errText(e), false); }
+  await f.setDoc(f.doc(fb.db, "users", email), { email, name, role: "user", createdAt: Date.now() });
+  await f.setDoc(f.doc(fb.db, "settings", email), { ...defaultSettings(), name, locations: settings.locations || [] });
+  m.querySelector("#nu-name").value = m.querySelector("#nu-email").value = m.querySelector("#nu-pass").value = "";
+  setMsg("nu-msg", "המשתמש נוסף ✔" + note, true); renderUsers(m); fillUserSwitcher();
+}
+async function deleteUser(email, m){
+  if (!confirm(`למחוק את המשתמש ${email} ואת כל השעות שלו? אי אפשר לבטל.`)) return;
+  const { f } = fb;
+  try {
+    const q = await f.getDocs(f.collection(fb.db, "shifts", email, "items"));
+    for (let i = 0; i < q.docs.length; i += 400) { const b = f.writeBatch(fb.db); q.docs.slice(i, i+400).forEach(d => b.delete(d.ref)); await b.commit(); }
+    await f.deleteDoc(f.doc(fb.db, "settings", email)); await f.deleteDoc(f.doc(fb.db, "users", email));
+    setMsg("nu-msg", "המשתמש נמחק.", true);
+  } catch (e) { setMsg("nu-msg", "שגיאה במחיקה: " + (e.code || e.message), false); }
+  renderUsers(m); fillUserSwitcher();
+}
 
-    window.sendAutomatedEmailReport = async function () {
-        let recordsText = currentRecords.map(r => `- ${r.type} בתאריך: ${r.time}`).join("\n");
-        if (!recordsText) recordsText = "אין רשומות נוכחות פעילות כרגע.";
-        const entryCount = currentRecords.filter(r => r.type === "כניסה").length;
-        const exitCount = currentRecords.filter(r => r.type === "יציאה").length;
-        const emailParams = {
-            to_email: currentUser,
-            name: currentUser,
-            to_name: currentUser,
-            subject: 'דו"ח נוכחות ונתונים מופק אוטומטית',
-            message: `סיכום נתוני הנוכחות שלך במערכת:\n- סך כניסות: ${entryCount}\n- סך יציאות: ${exitCount}\n\nפירוט מלא:\n${recordsText}`
-        };
-        setMsg("attendance-msg", "שולח דו\"ח...", true);
-        try {
-            await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, emailParams);
-            setMsg("attendance-msg", "דו\"ח הנוכחות נשלח בהצלחה למייל: " + currentUser, true);
-        } catch (error) {
-            setMsg("attendance-msg", "שגיאה בשליחת הדו\"ח: " + (error.text || JSON.stringify(error)), false);
-        }
-    };
+// ================== מצב יום / לילה ==================
+function applyTheme(t){
+  document.documentElement.dataset.theme = t; $("theme-btn").textContent = "🌙/☀️ מצב תצוגה";
+  try { localStorage.setItem("theme", t); } catch (e) {}
+  if (!$("app").classList.contains("hidden")) renderCharts();
+}
 
-    // Enter בשדה הסיסמה = התחברות
-    $("login-password").addEventListener("keydown", e => { if (e.key === "Enter") window.login(); });
+// ================== חיבור כפתורים ==================
+function wire(){
+  $("login-btn").onclick = login;
+  $("login-password").onkeydown = e => { if (e.key === "Enter") login(); };
+  $("forgot-link").onclick = () => showForgot(true);
+  $("fp-back").onclick = () => showForgot(false);
+  $("fp-send").onclick = sendCode;
+  $("fp-code").oninput = e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); $("fp-pass-box").classList.toggle("hidden", e.target.value.length !== 4); if (e.target.value.length === 4) $("fp-pass1").focus(); };
+  $("fp-save").onclick = saveNewPassword;
+  $("fp-pass2").onkeydown = e => { if (e.key === "Enter") saveNewPassword(); };
+
+  $("sel-month").onchange = () => { const v = $("sel-month").value; if (v) { const [y, m] = v.split("-").map(Number); setMonth(y, m - 1); } };
+  $("report-btn").onclick = () => { openBackup(); doBackup(document.querySelector(".modal")); };
+  $("prev-month").onclick = () => setMonth(cur.y, cur.m - 1);
+  $("next-month").onclick = () => setMonth(cur.y, cur.m + 1);
+  $("today-btn").onclick = () => { weekStart = startOfWeek(today); setMonth(today.getFullYear(), today.getMonth()); };
+  $("week-prev").onclick = () => { weekStart = addDays(weekStart, -7); renderCharts(); markWeek(); };
+  $("week-next").onclick = () => { weekStart = addDays(weekStart, 7); renderCharts(); markWeek(); };
+  $("sheet-body").addEventListener("change", onFieldChange);
+  $("sheet-body").addEventListener("click", onRowAction);
+  $("add-date-btn").onclick = openAddDate;
+  $("fixed-btn").onclick = openFixed;
+  $("pdf-btn").onclick = () => exportPDF().catch(e => toast("שגיאה ב-PDF: " + e.message));
+  $("excel-btn").onclick = () => exportExcel().catch(e => toast("שגיאה באקסל: " + e.message));
+  $("backup-btn").onclick = openBackup;
+  $("settings-btn").onclick = openSettings;
+  $("theme-btn").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+  $("logout-btn").onclick = async () => { if (DEMO) { location.href = location.pathname; return; } await fb.a.signOut(fb.auth); $("login-password").value = ""; };
+  $("view-user").onchange = async e => { await openSystem(e.target.value); toast("מוצגת המערכת של " + (settings.name || viewEmail)); };
+}
+function markWeek(){ document.querySelectorAll("tr.weekrow").forEach(r => r.classList.toggle("active", r.dataset.week === ymd(weekStart))); }
+
+// ================== הפעלה ==================
+(async function start(){
+  let t = "light"; try { t = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); } catch (e) {}
+  document.documentElement.dataset.theme = t; $("theme-btn").textContent = "🌙/☀️ מצב תצוגה";
+  fillMonthSelectors(); wire();
+  await loadHebcal();
+  if (DEMO) { $("demo-flag").classList.remove("hidden"); me = viewEmail = "demo@example.com"; await DB.loadAll(me); updateHeader(); show("app"); setMonth(cur.y, cur.m); return; }
+  try { await initFirebase(); }
+  catch (e) { show("login-screen"); setMsg("login-msg", "שגיאה בחיבור לשרת. בדוק את האינטרנט ורענן.", false); }
+})();
 </script>
-
 </body>
 </html>
