@@ -43,6 +43,13 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
 #app{width:100%;margin:0;padding:12px 18px}
 @media(max-width:600px){#app{padding:10px}}
 .hero .greet{font-size:13.5px;opacity:.9;margin-top:6px}
+.hero-clock{position:absolute;right:18px;top:50%;transform:translateY(-50%);text-align:right;z-index:2;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 14px;line-height:1.35}
+.hero-clock .t{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.hero-clock .d{font-size:12.5px;opacity:.9}
+@media(max-width:1250px){.hero-clock{position:static;transform:none;display:inline-block;text-align:center;margin-bottom:8px}}
+.wnote{display:inline-block;margin-inline-start:14px;color:var(--amber);font-weight:700}
+tr.monthrow .wnote{color:#ffd57a}
+.notebtn{margin-inline-start:10px;background:transparent;border:1px dashed currentColor;color:inherit;padding:2px 9px;font-size:12px;border-radius:6px}
 .hero .clock{font-variant-numeric:tabular-nums;font-weight:700}
 .announce{background:#fff4d6;color:#5a4300;border:1px solid #f0d27a;border-radius:10px;padding:9px 14px;margin-bottom:12px;font-weight:600}
 html[data-theme="dark"] .announce{background:#3a3012;color:#f3dc92;border-color:#6b5820}
@@ -210,6 +217,7 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
       <select id="view-user" class="hidden" title="צפייה במערכת של עובד"></select>
       <button id="logout-btn">🚪 יציאה</button>
     </div>
+    <div class="hero-clock" id="hero-clock"><div class="t" id="hc-time"></div><div class="d" id="hc-date"></div><div class="d" id="hc-heb"></div></div>
     <div class="name" id="who-name"></div>
     <div class="sub">מערכת ניהול שעות נוכחות ודאשבורד מעקב מתקדם <span id="demo-flag" class="demo-flag hidden">מצב הדגמה</span></div>
     <div class="greet" id="greet"></div>
@@ -572,6 +580,23 @@ function hoursCell(s){
   if (!s || !shiftHours(s)) return "";
   return fmtHM(shiftHours(s)) + (isNightShift(s) ? `<span class="nightbadge" title="כולל שעות לילה">🌙 לילה</span>` : "");
 }
+const noteOf = k => (settings.notes || {})[k] || "";
+function noteHtml(k){
+  const t = noteOf(k);
+  return `${t ? `<span class="wnote">📝 הוראות: ${esc(t)}</span>` : ""}${isAdmin ? `<button class="notebtn" data-note="${k}">${t ? "✏️ ערוך הוראות" : "＋ הוסף הוראות"}</button>` : ""}`;
+}
+function openNote(k){
+  if (!isAdmin) return;
+  const [type, key] = [k.slice(0, 1), k.slice(2)];
+  const title = type === "w" ? `לשבוע ${dm(parseYmd(key))}–${dm(addDays(parseYmd(key), 6))}` : `לחודש ${MONTHS[+key.split("-")[1] - 1]} ${key.split("-")[0]}`;
+  const m = modal(`<h3>📝 הוראות ${title} ${closeX}</h3>
+    <div class="muted" style="margin-bottom:8px">ההוראות יופיעו בשורת הסיכום אצל ${esc(settings.name || viewEmail)}.</div>
+    <textarea id="nt-text" rows="4" style="width:100%">${esc(noteOf(k))}</textarea>
+    <div class="frow" style="margin-top:8px"><button class="b-green" id="nt-save">שמור</button>${noteOf(k) ? `<button class="b-gray" id="nt-del">מחק הוראות</button>` : ""}</div>`);
+  const save = async t => { settings.notes = { ...(settings.notes || {}) }; if (t) settings.notes[k] = t; else delete settings.notes[k]; await DB.putSettings(); closeModal(); refreshWeekRows(); toast("ההוראות נשמרו ✔"); };
+  m.querySelector("#nt-save").onclick = () => save(m.querySelector("#nt-text").value.trim());
+  const del = m.querySelector("#nt-del"); if (del) del.onclick = () => save("");
+}
 function refreshMonthRow(){
   const el = $("month-sum"); if (!el) return;
   const [f, t] = monthRange(cur.y, cur.m), h = hoursInRange(f, t), p = calcPay(shiftsInRange(f, t)), adj = adjFor(cur.y, cur.m);
@@ -579,14 +604,14 @@ function refreshMonthRow(){
     &nbsp;|&nbsp; ☀️ שעות יום ${fmtHM(p.dayH)} = ${money(p.dayPay)}
     &nbsp;|&nbsp; 🌙 ${p.nights} לילות = ${money(p.nightPay)}
     ${adj.map(a => ` &nbsp;|&nbsp; 🎁 ${esc(a.label)} ${+a.amount < 0 ? "−" : "+"}${money(Math.abs(+a.amount))}`).join("")}
-    &nbsp;|&nbsp; 💰 סה"כ לתשלום: <span class="g">${money(p.total + adjSum(adj))}</span>`;
+    &nbsp;|&nbsp; 💰 סה"כ לתשלום: <span class="g">${money(p.total + adjSum(adj))}</span> ${noteHtml("m:" + monthKey(cur.y, cur.m))}`;
 }
 function refreshWeekRows(){
   refreshMonthRow();
   document.querySelectorAll("[data-weeksum]").forEach(td => {
     const ws = parseYmd(td.dataset.weeksum), we = addDays(ws, 6);
     const h = hoursInRange(ymd(ws), ymd(we)), p = calcPay(shiftsInRange(ymd(ws), ymd(we)));
-    td.innerHTML = `📖 סיכום שבועי: ${h ? `&nbsp; <b>${h.toFixed(2)}</b> שעות (${fmtHM(h)}) &nbsp;·&nbsp; ${money(p.total)}${p.nights ? ` <span class="muted">(${p.nights} לילות)</span>` : ""}` : ""}`;
+    td.innerHTML = `📖 סיכום שבועי: ${h ? `&nbsp; <b>${h.toFixed(2)}</b> שעות (${fmtHM(h)}) &nbsp;·&nbsp; ${money(p.total)}${p.nights ? ` <span class="muted">(${p.nights} לילות)</span>` : ""}` : ""} ${noteHtml("w:" + td.dataset.weeksum)}`;
   });
 }
 
@@ -618,6 +643,7 @@ async function onFieldChange(e){
 }
 
 async function onRowAction(e){
+  const nb = e.target.closest("[data-note]"); if (nb) { openNote(nb.dataset.note); return; }
   const btn = e.target.closest("[data-act]");
   if (!btn) { const wr = e.target.closest("tr.weekrow"); if (wr) { weekStart = parseYmd(wr.dataset.week); document.querySelectorAll("tr.weekrow").forEach(r => r.classList.toggle("active", r === wr)); renderCharts(); } return; }
   const tr = btn.closest("tr"), ds = tr.dataset.date, act = btn.dataset.act;
@@ -711,6 +737,9 @@ function renderGreeting(){
   const d = new Date(), h = d.getHours();
   const w = h < 5 ? "לילה טוב" : h < 12 ? "בוקר טוב" : h < 17 ? "צהריים טובים" : h < 21 ? "ערב טוב" : "לילה טוב";
   const first = (settings.name || "").split(" ")[0];
+  $("hc-time").textContent = `${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  $("hc-date").textContent = `יום ${DAYS[d.getDay()]} · ${dmy(d)}`;
+  $("hc-heb").textContent = hebDate(d);
   $("greet").innerHTML = `${w}${first && viewEmail === me ? ", " + esc(first) : ""} 👋 &nbsp;·&nbsp; יום ${DAYS[d.getDay()]}, ${esc(hebDate(d))} &nbsp;·&nbsp; ${dmy(d)} &nbsp;·&nbsp; <span class="clock">${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}</span>`;
 }
 function renderAnnounce(){
@@ -1138,7 +1167,7 @@ async function exportPDF(){
   const td = "border:1px solid #ccc;padding:4px 5px;text-align:center;font-size:11px";
   let rows = "";
   for (const r of monthRows()) {
-    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי ${dm(r.ws)}–${dm(r.we)}: ${fmtHM(r.h)} שעות · ${money(r.pay)}</td></tr>`; continue; }
+    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי ${dm(r.ws)}–${dm(r.we)}: ${fmtHM(r.h)} שעות · ${money(r.pay)}${noteOf("w:" + ymd(r.ws)) ? ` · הוראות: ${esc(noteOf("w:" + ymd(r.ws)))}` : ""}</td></tr>`; continue; }
     const s = r.s, bg = "";
     rows += `<tr style="${bg}"><td style="${td}">${r.first ? `${dmy(r.d)}<br><span style="color:#666">${esc(hebDate(r.d))}</span>` : ""}</td><td style="${td}">${r.first ? DAYS[r.d.getDay()] : ""}</td>
       <td style="${td}">${esc(s?.in || "")}</td><td style="${td}">${esc(s?.out || "")}</td><td style="${td}">${s && shiftHours(s) ? fmtHM(shiftHours(s)) : ""}</td>
@@ -1146,7 +1175,7 @@ async function exportPDF(){
       <td style="${td}">${esc([...(r.first ? r.notes : []), s?.notes].filter(Boolean).join(" · "))}</td></tr>`;
   }
   const A = adjFor(cur.y, cur.m);
-  rows += `<tr><td colspan="8" style="${td};background:#0f2542;color:#fff;font-weight:bold;text-align:right;font-size:12px">סיכום חודש ${MONTHS[cur.m]} ${cur.y}: ${fmtHM(h)} שעות · שעות יום ${fmtHM(P.dayH)} = ${money(P.dayPay)} · ${P.nights} לילות = ${money(P.nightPay)}${A.map(a => ` · ${esc(a.label)} ${money(+a.amount)}`).join("")} · סה"כ לתשלום ${money(P.total + adjSum(A))}</td></tr>`;
+  rows += `<tr><td colspan="8" style="${td};background:#0f2542;color:#fff;font-weight:bold;text-align:right;font-size:12px">סיכום חודש ${MONTHS[cur.m]} ${cur.y}: ${fmtHM(h)} שעות · שעות יום ${fmtHM(P.dayH)} = ${money(P.dayPay)} · ${P.nights} לילות = ${money(P.nightPay)}${A.map(a => ` · ${esc(a.label)} ${money(+a.amount)}`).join("")} · סה"כ לתשלום ${money(P.total + adjSum(A))}${noteOf("m:" + monthKey(cur.y, cur.m)) ? ` · הוראות: ${esc(noteOf("m:" + monthKey(cur.y, cur.m)))}` : ""}</td></tr>`;
   const el = document.createElement("div");
   el.innerHTML = `<div dir="rtl" style="font-family:Arial,sans-serif;color:#000;background:#fff;padding:10px;width:1060px">
     <div style="font-size:20px;font-weight:bold">מערכת ניהול שעות ונוכחות – ${esc(settings.name || viewEmail)}</div>
