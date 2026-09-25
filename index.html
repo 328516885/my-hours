@@ -41,6 +41,10 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
 .login-card input{width:100%;margin-bottom:10px;padding:9px 10px}
 .login-card button{width:100%;margin-top:4px}
 .linkbtn{background:none;color:var(--accent);padding:6px;font-size:13px}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#3c4043;border:1px solid #dadce0;font-weight:600}
+.gbtn:hover{background:#f7f8fa}
+.or-sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin:10px 0 6px}
+.or-sep::before,.or-sep::after{content:"";flex:1;height:1px;background:var(--line)}
 .code-input{font-size:26px;letter-spacing:12px;text-align:center;direction:ltr}
 .msg{font-size:13px;min-height:18px;margin-top:8px}
 .msg.err{color:var(--red)} .msg.ok{color:var(--green)}
@@ -57,6 +61,9 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
 @media(max-width:1250px){.hero-clock{position:static;transform:none;display:inline-flex;text-align:right;margin-bottom:8px}}
 .wnote{display:inline-block;margin-inline-start:14px;color:var(--amber);font-weight:700}
 tr.monthrow .wnote{color:#ffd57a}
+.wnote-w{color:#1f7ae0}
+html[data-theme="dark"] .wnote-w{color:#8fb1f5}
+tr.monthrow .wnote-w{color:#a8d0ff}
 .planbadge{display:inline-block;background:#e6f0ff;color:#1f4fa8;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:600;white-space:nowrap}
 html[data-theme="dark"] .planbadge{background:#1d2a45;color:#9fc0ff}
 .pendbadge{display:inline-block;font-size:11px;background:#fff1d6;color:#8a5a00;border-radius:8px;padding:0 6px;margin-inline-start:4px}
@@ -209,6 +216,8 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
       <input type="email" id="login-email" placeholder="שם משתמש (מייל)" autocomplete="username">
       <input type="password" id="login-password" placeholder="סיסמה" autocomplete="current-password">
       <button id="login-btn">כניסה</button>
+      <div class="or-sep"><span>או</span></div>
+      <button id="google-btn" class="gbtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg> כניסה עם חשבון Google (ג'ימייל)</button>
       <button class="linkbtn" id="forgot-link">שכחתי סיסמה</button>
       <div id="login-msg" class="msg"></div>
     </div>
@@ -325,6 +334,8 @@ const CFG = {
     appId: "1:869467101665:web:fbe5f713c1d3ed93e0daa0"
   },
   admin: "ay0533115854@gmail.com",
+  senderName: "מוצלח",          // השם שמופיע כשולח במיילים
+  senderEmail: "bnyytmrkwt@gmail.com", // המייל של החברה שממנו נשלחים המיילים
   emailjs: { service: "service_nybca58", template: "template_gzcqacc", key: "6G0YaH5dH_TKKk_hu" },
   // כתובת סקריפט שליחת הקוד (Apps Script). ריק = שחזור בקוד עדיין לא הופעל
   resetApi: "https://script.google.com/macros/s/AKfycbwmfTL90LvRP1Md-D09KlEsZQyr2GJoHzCDLhM7iGe9ee-T-f-NNYnLA62EPippqoKeFA/exec"
@@ -681,20 +692,29 @@ function hoursCell(s){
   return fmtHM(shiftHours(s)) + (isNightShift(s) ? `<span class="nightbadge" title="כולל שעות לילה">🌙 לילה</span>` : "")
     + (s.approved === false ? (isAdmin ? `<button class="mini apv" data-act="approve" title="אשר את המשמרת">✔ אשר</button>` : `<span class="pendbadge" title="ממתין לאישור המנהל">⏳ ממתין</span>`) : "");
 }
-const noteOf = k => (settings.notes || {})[k] || "";
+const noteOf = (k, f = "notes") => (settings[f] || {})[k] || "";
+// הוראות: המנהל כותב ב-notes, העובד כותב ב-wnotes. כל אחד עורך רק את שלו, ושניהם רואים את שתיהן.
 function noteHtml(k){
-  const t = noteOf(k);
-  return `${t ? `<span class="wnote">📝 הוראות: ${esc(t)}</span>` : ""}${isAdmin ? `<button class="notebtn" data-note="${k}">${t ? "✏️ ערוך הוראות" : "＋ הוסף הוראות"}</button>` : ""}`;
+  const t = noteOf(k), u = noteOf(k, "wnotes"), mine = isAdmin ? "notes" : "wnotes", has = isAdmin ? t : u;
+  const locked = !isAdmin && isLocked(k.slice(0, 1) === "m" ? k.slice(2) + "-01" : k.slice(2));
+  return `${t ? `<span class="wnote">📝 הוראות המנהל: ${esc(t)}</span>` : ""}${u ? `<span class="wnote wnote-w">🗒️ הוראות העובד: ${esc(u)}</span>` : ""}`
+    + (locked ? "" : `<button class="notebtn" data-note="${k}" data-nf="${mine}">${has ? "✏️ ערוך הוראות" : "＋ הוסף הוראות"}</button>`);
 }
-function openNote(k){
-  if (!isAdmin) return;
+function openNote(k, f = "notes"){
+  if (f === "notes" && !isAdmin) return;
+  if (f === "wnotes" && isAdmin) return;
   const [type, key] = [k.slice(0, 1), k.slice(2)];
   const title = type === "w" ? `לשבוע \u2066${dm(parseYmd(key))}–${dm(addDays(parseYmd(key), 6))}\u2069` : `לחודש ${MONTHS[+key.split("-")[1] - 1]} ${key.split("-")[0]}`;
+  const other = f === "notes" ? noteOf(k, "wnotes") : noteOf(k, "notes");
   const m = modal(`<h3>📝 הוראות ${title} ${closeX}</h3>
-    <div class="muted" style="margin-bottom:8px">ההוראות יופיעו בשורת הסיכום אצל ${esc(settings.name || viewEmail)}.</div>
-    <textarea id="nt-text" rows="4" style="width:100%">${esc(noteOf(k))}</textarea>
-    <div class="frow" style="margin-top:8px"><button class="b-green" id="nt-save">שמור</button>${noteOf(k) ? `<button class="b-gray" id="nt-del">מחק הוראות</button>` : ""}</div>`);
-  const save = async t => { settings.notes = { ...(settings.notes || {}) }; if (t) settings.notes[k] = t; else delete settings.notes[k]; await DB.putSettings(); closeModal(); refreshWeekRows(); toast("ההוראות נשמרו ✔"); };
+    <div class="muted" style="margin-bottom:8px">${f === "notes" ? `ההוראות יופיעו בשורת הסיכום אצל ${esc(settings.name || viewEmail)}.` : "ההוראות שלך יופיעו בשורת הסיכום, והמנהל יראה אותן."}</div>
+    ${other ? `<div class="list-item" style="margin-bottom:8px"><span>${f === "notes" ? "🗒️ העובד כתב" : "📝 המנהל כתב"}: ${esc(other)}</span></div>` : ""}
+    <textarea id="nt-text" rows="4" style="width:100%" placeholder="כתוב כאן...">${esc(noteOf(k, f))}</textarea>
+    <div class="frow" style="margin-top:8px"><button class="b-green" id="nt-save">שמור</button>${noteOf(k, f) ? `<button class="b-gray" id="nt-del">מחק</button>` : ""}</div>`);
+  const save = async t => {
+    settings[f] = { ...(settings[f] || {}) }; if (t) settings[f][k] = t; else delete settings[f][k];
+    try { await DB.putSettings(); closeModal(); refreshWeekRows(); toast("ההוראות נשמרו ✔"); } catch (e) { toast("שגיאה: " + (e.code || e.message)); }
+  };
   m.querySelector("#nt-save").onclick = () => save(m.querySelector("#nt-text").value.trim());
   const del = m.querySelector("#nt-del"); if (del) del.onclick = () => save("");
 }
@@ -793,7 +813,7 @@ async function onFieldChange(e){
 }
 
 async function onRowAction(e){
-  const nb = e.target.closest("[data-note]"); if (nb) { openNote(nb.dataset.note); return; }
+  const nb = e.target.closest("[data-note]"); if (nb) { openNote(nb.dataset.note, nb.dataset.nf || "notes"); return; }
   const mb = e.target.closest("[data-mact]"); if (mb) { monthAction(mb.dataset.mact); return; }
   const btn = e.target.closest("[data-act]");
   if (!btn) { const wr = e.target.closest("tr.weekrow"); if (wr) { weekStart = parseYmd(wr.dataset.week); document.querySelectorAll("tr.weekrow").forEach(r => r.classList.toggle("active", r === wr)); renderCharts(); } return; }
@@ -1324,11 +1344,11 @@ async function sendMonthlyReports(y, m, team, progress = () => {}){
   for (const mem of team) {
     const txt = summaryText(mem, y, m); all += txt + "\n------------------------------\n";
     if (mem.u.email === CFG.admin) continue;
-    try { await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { to_email: mem.u.email, name: mem.u.name || mem.u.email, to_name: mem.u.email, subject: `סיכום שעות ושכר – ${MONTHS[m]} ${y}`, message: `שלום ${mem.u.name || ""},\n\n${txt}\nלצפייה בפרטים: ${location.origin}${location.pathname}` }); n++; progress(`נשלח ל-${n} עובדים...`); await wait(1200); }
+    try { await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { from_name: CFG.senderName, reply_to: CFG.admin, to_email: mem.u.email, name: mem.u.name || mem.u.email, to_name: mem.u.email, subject: `סיכום שעות ושכר – ${MONTHS[m]} ${y}`, message: `שלום ${mem.u.name || ""},\n\n${txt}\nלצפייה בפרטים: ${location.origin}${location.pathname}` }); n++; progress(`נשלח ל-${n} עובדים...`); await wait(1200); }
     catch (e) { console.warn(e); }
   }
   const tot = team.reduce((a, mem) => a + memberMonth(mem, y, m).total, 0);
-  await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { to_email: CFG.admin, name: "מערכת השעות", to_name: CFG.admin, subject: `סיכום חודשי לכל העובדים – ${MONTHS[m]} ${y}`, message: `סיכום כל העובדים לחודש ${MONTHS[m]} ${y}\nסה"כ לתשלום לכולם: ${money(tot)}\n\n${all}` });
+  await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { from_name: CFG.senderName, reply_to: CFG.admin, to_email: CFG.admin, name: "מערכת השעות", to_name: CFG.admin, subject: `סיכום חודשי לכל העובדים – ${MONTHS[m]} ${y}`, message: `סיכום כל העובדים לחודש ${MONTHS[m]} ${y}\nסה"כ לתשלום לכולם: ${money(tot)}\n\n${all}` });
   progress(`הסיכום נשלח ל-${n} עובדים ואליך ✔`);
   return true;
 }
@@ -1570,7 +1590,7 @@ async function doFullBackup({ email = true, download = false, silent = false } =
     const size = 40000, parts = Math.ceil(b64.length / size);
     emailjs.init(CFG.emailjs.key);
     for (let i = 0; i < parts; i++) {
-      await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, {
+      await emailjs.send(CFG.emailjs.service, CFG.emailjs.template, { from_name: CFG.senderName, reply_to: CFG.admin,
         to_email: CFG.admin, name: "מערכת השעות", to_name: CFG.admin,
         subject: `גיבוי מלא – מערכת השעות – ${dmy(today)}${parts > 1 ? ` (חלק ${i + 1} מתוך ${parts})` : ""}`,
         message: `גיבוי מלא של מערכת השעות מתאריך ${dmy(today)}.\n${data.users.length} עובדים.\n\n${summary}\n\nלשחזור: היכנס להגדרות מנהל ← גיבוי, והדבק את כל הטקסט של ${parts > 1 ? "כל החלקים" : "המייל הזה"} בתיבת השחזור.\n\nMYHOURS-BACKUP ${i + 1}/${parts}:${b64.slice(i * size, (i + 1) * size)}:END`
@@ -1641,7 +1661,7 @@ async function exportPDF(){
   const td = "border:1px solid #ccc;padding:4px 5px;text-align:center;font-size:11px";
   let rows = "";
   for (const r of monthRows()) {
-    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי \u2066${dm(r.ws)}–${dm(r.we)}\u2069: ${fmtHM(r.h)} שעות · ${money(r.pay)}${noteOf("w:" + ymd(r.ws)) ? ` · הוראות: ${esc(noteOf("w:" + ymd(r.ws)))}` : ""}</td></tr>`; continue; }
+    if (r.type === "week") { rows += `<tr><td colspan="8" style="${td};background:#e8f4ec;font-weight:bold;text-align:right">סיכום שבועי \u2066${dm(r.ws)}–${dm(r.we)}\u2069: ${fmtHM(r.h)} שעות · ${money(r.pay)}${noteOf("w:" + ymd(r.ws)) ? ` · הוראות המנהל: ${esc(noteOf("w:" + ymd(r.ws)))}` : ""}${noteOf("w:" + ymd(r.ws), "wnotes") ? ` · הוראות העובד: ${esc(noteOf("w:" + ymd(r.ws), "wnotes"))}` : ""}</td></tr>`; continue; }
     const s = r.s, bg = "";
     rows += `<tr style="${bg}"><td style="${td}">${r.first ? `${dmy(r.d)}<br><span style="color:#666">${esc(hebDate(r.d))}</span>` : ""}</td><td style="${td}">${r.first ? DAYS[r.d.getDay()] : ""}</td>
       <td style="${td}">${esc(s?.in || "")}</td><td style="${td}">${esc(s?.out || "")}</td><td style="${td}">${s && shiftHours(s) ? fmtHM(shiftHours(s)) : ""}</td>
@@ -1649,7 +1669,7 @@ async function exportPDF(){
       <td style="${td}">${esc([...(r.first ? r.notes : []), s?.notes].filter(Boolean).join(" · "))}</td></tr>`;
   }
   const A = adjFor(cur.y, cur.m);
-  rows += `<tr><td colspan="8" style="${td};background:#0f2542;color:#fff;font-weight:bold;text-align:right;font-size:12px">סיכום חודש ${MONTHS[cur.m]} ${cur.y}: ${fmtHM(h)} שעות · שעות יום ${fmtHM(P.dayH)} = ${money(P.dayPay)} · ${P.nights} לילות = ${money(P.nightPay)}${A.map(a => ` · ${esc(a.label)} ${money(+a.amount)}`).join("")} · סה"כ לתשלום ${money(P.total + adjSum(A))}${noteOf("m:" + monthKey(cur.y, cur.m)) ? ` · הוראות: ${esc(noteOf("m:" + monthKey(cur.y, cur.m)))}` : ""}</td></tr>`;
+  rows += `<tr><td colspan="8" style="${td};background:#0f2542;color:#fff;font-weight:bold;text-align:right;font-size:12px">סיכום חודש ${MONTHS[cur.m]} ${cur.y}: ${fmtHM(h)} שעות · שעות יום ${fmtHM(P.dayH)} = ${money(P.dayPay)} · ${P.nights} לילות = ${money(P.nightPay)}${A.map(a => ` · ${esc(a.label)} ${money(+a.amount)}`).join("")} · סה"כ לתשלום ${money(P.total + adjSum(A))}${noteOf("m:" + monthKey(cur.y, cur.m)) ? ` · הוראות המנהל: ${esc(noteOf("m:" + monthKey(cur.y, cur.m)))}` : ""}${noteOf("m:" + monthKey(cur.y, cur.m), "wnotes") ? ` · הוראות העובד: ${esc(noteOf("m:" + monthKey(cur.y, cur.m), "wnotes"))}` : ""}</td></tr>`;
   const el = document.createElement("div");
   el.innerHTML = `<div dir="rtl" style="font-family:Arial,sans-serif;color:#000;background:#fff;padding:10px;width:1060px">
     <div style="font-size:20px;font-weight:bold">מערכת ניהול שעות ונוכחות – ${esc(settings.name || viewEmail)}</div>
@@ -1758,6 +1778,20 @@ async function login(){
   } finally { $("login-btn").disabled = false; }
 }
 
+// ---- כניסה עם Google ----
+async function googleLogin(){
+  if (DEMO) return;
+  const btn = $("google-btn"); btn.disabled = true; setMsg("login-msg", "", true);
+  try {
+    const p = new fb.a.GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" });
+    try { await fb.a.signInWithPopup(fb.auth, p); }
+    catch (e) { if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) await fb.a.signInWithRedirect(fb.auth, p); else throw e; }
+  } catch (e) {
+    const t = { "auth/popup-closed-by-user": "החלון נסגר לפני שהכניסה הסתיימה.", "auth/cancelled-popup-request": "", "auth/unauthorized-domain": "הכניסה עם Google עוד לא הופעלה לאתר הזה. פנה למנהל.", "auth/operation-not-allowed": "הכניסה עם Google עוד לא הופעלה. פנה למנהל.", "auth/account-exists-with-different-credential": "למייל הזה כבר יש סיסמה – היכנס עם המייל והסיסמה." }[e.code];
+    if (t !== "") setMsg("login-msg", t || errText(e), false);
+  } finally { btn.disabled = false; }
+}
+
 // ---- שחזור סיסמה בקוד של 4 ספרות ----
 async function resetCall(body){
   if (!CFG.resetApi) throw new Error("שחזור הסיסמה בקוד עדיין לא הופעל. פנה למנהל המערכת.");
@@ -1839,6 +1873,7 @@ function applyTheme(t){
 // ================== חיבור כפתורים ==================
 function wire(){
   $("login-btn").onclick = login;
+  $("google-btn").onclick = googleLogin;
   $("login-password").onkeydown = e => { if (e.key === "Enter") login(); };
   $("forgot-link").onclick = () => showForgot(true);
   $("fp-back").onclick = () => showForgot(false);
