@@ -195,6 +195,17 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
 .modal h4{margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
 .frow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .frow label{min-width:90px;color:var(--muted)}
+.rcp-cam{display:inline-flex;align-items:center;cursor:pointer;padding:8px 14px;border-radius:8px;background:#2563eb !important;color:#fff !important;font-weight:700}
+.rcp-thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;flex:none}
+#rc-prev{width:90px;height:90px}
+.rcp-cards{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.rcp-card{flex:1;min-width:150px;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.rcp-card b{font-size:22px;display:block}
+.rcp-table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.rcp-table th,.rcp-table td{border:1px solid var(--line);padding:6px 8px;text-align:right}
+.rcp-full{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:zoom-out}
+.rcp-full img{max-width:95vw;max-height:88vh;border-radius:8px;background:#fff}
+.rcp-full-x{color:#fff;font-weight:700}
 .list-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
 .fixed-grid{display:grid;grid-template-columns:70px 1fr 1fr;gap:6px 10px;align-items:center}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:10px;z-index:99;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
@@ -301,6 +312,7 @@ tr.weekrow.active td{outline:2px solid var(--green);outline-offset:-2px}
       <button class="b-blue" id="fixed-btn">⚙️ שעות קבועות לימים</button>
       <button class="b-gray" id="locs-btn">🏠 הדירות שלי</button>
       <button class="b-gray" id="slip-btn">🧾 תלוש שכר</button>
+      <button class="b-gray" id="rcp-btn">📸 קבלות קניות</button>
       <button class="b-gray" id="msg-btn">✉️ הודעה למנהל</button>
       <button class="b-purple hidden" id="report-btn">📧 גיבוי ענן למייל</button>
       <button class="b-excel" id="excel-btn">📊 ייצוא לאקסל</button>
@@ -614,6 +626,133 @@ const MSG = {
     await fb.f.deleteDoc(fb.f.doc(fb.db, "messages", id));
   }
 };
+// ================== קבלות קניות לדירות ==================
+const RCP = {
+  demo(){ try { return JSON.parse(localStorage.getItem("demo_rcp") || "[]"); } catch (e) { return []; } },
+  demoSet(l){ try { localStorage.setItem("demo_rcp", JSON.stringify(l)); } catch (e) { toast("אין מקום לשמור עוד תמונות במצב הדגמה"); } },
+  async add(r){
+    const d = { from: me, fromName: isAdmin ? "המנהל" : (settings.name || me), at: Date.now(), ...r };
+    if (DEMO) { const l = this.demo(); l.push({ id: newId(), ...d }); this.demoSet(l); return; }
+    await fb.f.addDoc(fb.f.collection(fb.db, "receipts"), d);
+  },
+  async list(){
+    if (DEMO) { const l = this.demo(); return (isAdmin ? l : l.filter(x => x.from === me)).sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at); }
+    const col = fb.f.collection(fb.db, "receipts");
+    const q = await fb.f.getDocs(isAdmin ? col : fb.f.query(col, fb.f.where("from", "==", me)));
+    return q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at);
+  },
+  async remove(id){
+    if (DEMO) { this.demoSet(this.demo().filter(x => x.id !== id)); return; }
+    await fb.f.deleteDoc(fb.f.doc(fb.db, "receipts", id));
+  }
+};
+function shrinkImage(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(new Error("לא הצלחתי לקרוא את התמונה"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rej(new Error("הקובץ אינו תמונה"));
+      img.onload = () => {
+        let max = 1200, q = 0.65, out = "";
+        for (let i = 0; i < 6; i++) {
+          const k = Math.min(1, max / Math.max(img.width, img.height));
+          const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+          out = c.toDataURL("image/jpeg", q);
+          if (out.length < 650000) break;
+          max = Math.round(max * 0.8); q = Math.max(0.4, q - 0.08);
+        }
+        res(out);
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function rcpApts(){
+  const names = (globalCfg.apartments || []).map(a => a.name).filter(Boolean);
+  const mine = (settings.locations || []).map(l => { const a = aptFor(l.address); return a ? a.name : l.address; }).filter(Boolean);
+  return { list: [...new Set([...(isAdmin ? names : []), ...mine, ...(isAdmin ? [] : names)])], mine: [...new Set(mine)] };
+}
+function openReceiptImg(src){
+  const w = document.createElement("div"); w.className = "rcp-full"; w.innerHTML = `<img src="${src}" alt="קבלה"><div class="rcp-full-x">✕ סגור</div>`;
+  w.onclick = () => w.remove(); document.body.appendChild(w);
+}
+async function openReceipts(){
+  const A = rcpApts(), mk = monthKey(cur.y, cur.m);
+  const m = modal(`<h3>📸 קבלות קניות לדירה ${closeX}</h3>
+    <div class="rcp-form">
+      <div class="frow"><label>דירה</label><select id="rc-apt" style="flex:1">${A.list.map(a => `<option ${A.mine[0] === a ? "selected" : ""}>${esc(a)}</option>`).join("")}<option value="__other">אחר…</option></select><input id="rc-apt-o" class="hidden" placeholder="שם הדירה" style="flex:1"></div>
+      <div class="frow"><label>תאריך</label><input type="date" id="rc-date" value="${ymd(today)}"><label style="min-width:auto">סכום (₪)</label><input type="number" id="rc-amount" step="0.01" min="0" style="width:120px" placeholder="למשל 85.90"></div>
+      <div class="frow"><label>מה קנו</label><input id="rc-note" style="flex:1" placeholder="למשל: מוצרי ניקיון, מצעים"></div>
+      <div class="frow"><label>תמונת הקבלה</label>
+        <label class="b-blue rcp-cam">📷 צלם / בחר תמונה<input type="file" id="rc-file" accept="image/*" capture="environment" hidden></label>
+        <img id="rc-prev" class="rcp-thumb hidden" alt=""></div>
+      <button class="b-green" id="rc-save">💾 שמור קבלה</button>
+    </div>
+    <hr style="margin:14px 0;border:0;border-top:1px solid var(--line)">
+    <div class="frow"><label>הצג</label><select id="rc-month"></select>${isAdmin ? `<select id="rc-fapt"><option value="">כל הדירות</option></select>` : ""}</div>
+    <div id="rc-sum"></div><div id="rc-list">טוען...</div>`);
+  let img = "", all = [];
+  const aptSel = m.querySelector("#rc-apt"), other = m.querySelector("#rc-apt-o");
+  aptSel.onchange = () => other.classList.toggle("hidden", aptSel.value !== "__other");
+  m.querySelector("#rc-file").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { toast("מעבד את התמונה..."); img = await shrinkImage(f); const p = m.querySelector("#rc-prev"); p.src = img; p.classList.remove("hidden"); }
+    catch (err) { toast(err.message); }
+  };
+  m.querySelector("#rc-save").onclick = async () => {
+    const apt = aptSel.value === "__other" ? other.value.trim() : aptSel.value;
+    const amount = parseFloat(m.querySelector("#rc-amount").value), date = m.querySelector("#rc-date").value;
+    if (!apt) return toast("בחר דירה");
+    if (!date) return toast("בחר תאריך");
+    if (!(amount > 0)) return toast("כתוב את סכום הקנייה");
+    if (!img) return toast("צלם או בחר את תמונת הקבלה");
+    const btn = m.querySelector("#rc-save"); btn.disabled = true; btn.textContent = "שומר...";
+    try {
+      await RCP.add({ apt, date, month: date.slice(0, 7), amount: Math.round(amount * 100) / 100, note: m.querySelector("#rc-note").value.trim(), img });
+      toast("הקבלה נשמרה ✔");
+      img = ""; m.querySelector("#rc-prev").classList.add("hidden"); m.querySelector("#rc-amount").value = ""; m.querySelector("#rc-note").value = ""; m.querySelector("#rc-file").value = "";
+      await load(date.slice(0, 7));
+    } catch (e) { toast("שגיאה בשמירה: " + (e.code || e.message)); }
+    btn.disabled = false; btn.textContent = "💾 שמור קבלה";
+  };
+  const msel = m.querySelector("#rc-month"), fsel = m.querySelector("#rc-fapt");
+  const load = async keep => {
+    try { all = await RCP.list(); } catch (e) { m.querySelector("#rc-list").innerHTML = `<div class="err">שגיאה בטעינה: ${esc(e.code || e.message)}</div>`; return; }
+    const months = [...new Set([mk, ...all.map(r => r.month)])].sort().reverse();
+    const cv = keep || msel.value || mk;
+    msel.innerHTML = months.map(k => `<option value="${k}">${MONTHS[+k.slice(5) - 1]} ${k.slice(0, 4)}</option>`).join("") + `<option value="all">כל החודשים</option>`;
+    msel.value = months.includes(cv) || cv === "all" ? cv : mk;
+    if (fsel) { const fv = fsel.value; fsel.innerHTML = `<option value="">כל הדירות</option>` + [...new Set(all.map(r => r.apt))].sort().map(a => `<option>${esc(a)}</option>`).join(""); fsel.value = fv; }
+    draw();
+  };
+  const draw = () => {
+    const mv = msel.value, fv = fsel ? fsel.value : "";
+    const inMonth = all.filter(r => mv === "all" || r.month === mv), list = inMonth.filter(r => !fv || r.apt === fv);
+    const tot = l => l.reduce((s, r) => s + (+r.amount || 0), 0);
+    const byApt = {}; all.forEach(r => { const o = byApt[r.apt] || (byApt[r.apt] = { month: 0, all: 0, n: 0 }); o.all += +r.amount || 0; if (mv === "all" || r.month === mv) { o.month += +r.amount || 0; o.n++; } });
+    const mLabel = mv === "all" ? "כל החודשים" : `${MONTHS[+mv.slice(5) - 1]} ${mv.slice(0, 4)}`;
+    const rows = Object.entries(byApt).filter(([a]) => !fv || a === fv).sort((a, b) => b[1].month - a[1].month);
+    m.querySelector("#rc-sum").innerHTML = `
+      <div class="rcp-cards"><div class="rcp-card"><div class="muted">סה״כ ${esc(mLabel)}</div><b>${money(tot(list))}</b><div class="muted">${list.length} קבלות</div></div>
+      <div class="rcp-card"><div class="muted">סה״כ כל החודשים</div><b>${money(tot(all.filter(r => !fv || r.apt === fv)))}</b><div class="muted">${all.filter(r => !fv || r.apt === fv).length} קבלות</div></div></div>
+      ${rows.length ? `<table class="rcp-table"><thead><tr><th>דירה</th><th>${esc(mLabel)}</th><th>סה״כ כל החודשים</th></tr></thead><tbody>${rows.map(([a, o]) => `<tr><td>🏠 ${esc(a)}</td><td>${money(o.month)} <span class="muted">(${o.n})</span></td><td>${money(o.all)}</td></tr>`).join("")}</tbody></table>` : ""}`;
+    m.querySelector("#rc-list").innerHTML = list.length ? list.map(r => `<div class="list-item rcp-item">
+      <img class="rcp-thumb" src="${r.img}" data-full="${r.id}" alt="קבלה" title="לחץ להגדלה">
+      <div style="flex:1;min-width:0"><b>${money(+r.amount || 0)}</b> · 🏠 ${esc(r.apt)}<div class="muted">${r.date.split("-").reverse().join("/")}${r.note ? " · " + esc(r.note) : ""}${isAdmin ? ` · צולם ע״י ${esc(r.fromName || r.from)}` : ""}</div></div>
+      ${isAdmin || r.from === me ? `<button class="iconbtn mini" data-rdel="${r.id}" title="מחק">🗑️</button>` : ""}</div>`).join("") : `<div class="muted">אין קבלות ב${esc(mLabel)}</div>`;
+  };
+  msel.onchange = draw; if (fsel) fsel.onchange = draw;
+  m.querySelector("#rc-list").onclick = async e => {
+    const t = e.target.closest("[data-full]"); if (t) return openReceiptImg(t.src);
+    const d = e.target.closest("[data-rdel]"); if (!d) return;
+    if (!confirm("למחוק את הקבלה?")) return;
+    try { await RCP.remove(d.dataset.rdel); toast("נמחק"); await load(); } catch (err) { toast("שגיאה: " + (err.code || err.message)); }
+  };
+  load(mk);
+}
 const isLocked = ds => !!userLocks[String(ds).slice(0, 7)];
 
 function seedDemo(){
@@ -1887,6 +2026,7 @@ function wire(){
   $("me-btn").onclick = openMe;
   $("slip-btn").onclick = () => exportSlips([selfMember()], cur.y, cur.m);
   $("msg-btn").onclick = openMessages;
+  $("rcp-btn").onclick = () => openReceipts().catch(e => toast("שגיאה: " + e.message));
   $("locs-btn").onclick = openMe;
   $("prev-month").onclick = () => setMonth(cur.y, cur.m - 1);
   $("next-month").onclick = () => setMonth(cur.y, cur.m + 1);
